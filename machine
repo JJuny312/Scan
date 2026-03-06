@@ -1,0 +1,3505 @@
+// Decompiled with JetBrains decompiler
+// Type: MOVEit.DMZ.WebApp.SILMachine
+// Assembly: midmz, Version=17.1.0.32, Culture=neutral, PublicKeyToken=null
+// MVID: 19A679F4-C903-44F5-B74E-24E9B3BF5DA6
+// Assembly location: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\9a11d1d0\5debd404\assembly\dl3\e1ee3793\0082a404_1055dc01\midmz.dll
+
+using Microsoft.VisualBasic;
+using Microsoft.VisualBasic.CompilerServices;
+using MOVEit.DMZ.Application.Contracts.Folders.Settings;
+using MOVEit.DMZ.Application.Contracts.Users.Enum;
+using MOVEit.DMZ.ClassLib;
+using MOVEit.DMZ.ClassLib.Authentication;
+using MOVEit.DMZ.ClassLib.Authentication.Federated.SAML;
+using MOVEit.DMZ.ClassLib.Dto;
+using MOVEit.DMZ.Core;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
+using System.Web;
+using System.Web.SessionState;
+using System.Xml;
+
+#nullable disable
+namespace MOVEit.DMZ.WebApp;
+
+public class SILMachine
+{
+  private SILGlobals siGlobs;
+  private string RemoteIP;
+  private int ErrorCode;
+  private string ErrorDescription;
+  private XmlDocument objXMLDoc;
+  private object CertKey;
+  private string _XMLResult;
+  public readonly Encoding OutputEncoding;
+
+  public SILMachine()
+  {
+    this._XMLResult = "";
+    this.OutputEncoding = Encoding.UTF8;
+  }
+
+  public string Version() => ".NET version 0.2.0.0";
+
+  public string XMLResult => this._XMLResult;
+
+  public bool ParseXMLList(string sXML, ref string[] arrText, ref int arrSize)
+  {
+    this.siGlobs.objDebug.Log(40, "ParseXMLList: start, sXML = " + sXML);
+    bool xmlList = false;
+    try
+    {
+      XmlElement documentElement = MOVEit.DMZ.Core.Xml.GetSafeNonValidatingXmlDocumentFromString(sXML).DocumentElement;
+      arrText = new string[checked (documentElement.ChildNodes.Count + 1)];
+      arrSize = documentElement.ChildNodes.Count;
+      this.siGlobs.objDebug.Log(40, "ParseXMLList: array length = " + Conversions.ToString(arrSize));
+      int num = checked (documentElement.ChildNodes.Count - 1);
+      int index = 0;
+      while (index <= num)
+      {
+        arrText[index] = Strings.Trim(SILUtility.XHTMLClean(documentElement.ChildNodes.Item(index).InnerText));
+        this.siGlobs.objDebug.Log(40, $"ParseXMLList: array({Conversions.ToString(index)}) = {arrText[index]}");
+        checked { ++index; }
+      }
+      xmlList = true;
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      ProjectData.ClearProjectError();
+    }
+    this.siGlobs.objDebug.Log(40, "ParseXMLList: end; returning " + Conversions.ToString(xmlList));
+    return xmlList;
+  }
+
+  public string WarnBadID(string ID)
+  {
+    this.ErrorCode = 2056;
+    this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60000, ID);
+    return "";
+  }
+
+  public bool IsAllowedExternal(string InterfaceName)
+  {
+    SILDictionary<string, string> silDictionary = this.siGlobs.objWrap.DoReadQueryRow("SELECT Authmethod,DefaultFTPCertRequired,DefaultSSHCertRequired FROM Institutions WHERE DefaultInst=1;");
+    return silDictionary != null && Conversions.ToDouble(silDictionary["Authmethod"]) != 0.0 && !(Operators.CompareString(InterfaceName, "SSH", false) == 0 & Conversions.ToDouble(silDictionary["DefaultSSHCertRequired"]) == 1.0) && !(Operators.CompareString(InterfaceName, "FTP", false) == 0 & Conversions.ToDouble(silDictionary["DefaultFTPCertRequired"]) == 1.0);
+  }
+
+  public string HandleFTPClientCertCheck(
+    string LoginName,
+    string CertCN,
+    string KeyHash,
+    string IssuerCN,
+    string InstID = "")
+  {
+    string str = "";
+    LoginName = LoginName.ToLower();
+    string empty = string.Empty;
+    this.siGlobs.objUser.InstID = this.siGlobs.objUser.DiscoverInstID(LoginName, InstID, ref empty);
+    bool CertPlusPW;
+    if (Operators.CompareString(this.siGlobs.objUser.Username, "", false) == 0)
+    {
+      if (this.IsAllowedExternal("FTP"))
+      {
+        CertPlusPW = true;
+      }
+      else
+      {
+        this.ErrorCode = 2050;
+        this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60001);
+        this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.Signon, this.siGlobs.objUser.InstID.ToString(), LoginName, "", "", "", "", "", "", this.siGlobs.objUser.IPAddress, this.ErrorCode, "FTP", "", "", "", this.ErrorDescription, "", "", "", 0.0, "", "", "", "", 0);
+        this.siGlobs.objUser.LogAccessFail(LoginName, this.siGlobs.objUser.InstID, this.siGlobs.objUser.IPAddress);
+      }
+    }
+    else if (this.siGlobs.objUser.Permission == UserPermissionType.TemporaryUser)
+    {
+      this.ErrorCode = 2417;
+      this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60039);
+      this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.Signon, this.siGlobs.objUser.InstID.ToString(), this.siGlobs.objUser.Username, "", "", "", "", "", "", this.siGlobs.objUser.IPAddress, this.ErrorCode, "FTP", "", "", "", this.ErrorDescription, "", "", "", 0.0, "", "", "", "", 0);
+      this.siGlobs.objUser.LogAccessFail(this.siGlobs.objUser.Username, this.siGlobs.objUser.InstID, this.siGlobs.objUser.IPAddress);
+    }
+    else
+    {
+      this.siGlobs.objUser.GetInstInfo(this.siGlobs.objUser.InstID, true);
+      bool CertRequired;
+      if (!this.siGlobs.objEngine.userEngine.UserCheckClientCert(this.siGlobs.objUser.Username, 3, true, (SILClientCert) null, CertCN, KeyHash, IssuerCN, ref CertRequired, ref CertPlusPW))
+      {
+        this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.ClientCertSignon, this.siGlobs.objUser.InstID.ToString(), this.siGlobs.objUser.Username, "", "", "", "", "", "", this.siGlobs.objUser.IPAddress, this.siGlobs.objEngine.ErrorCode, KeyHash, CertCN, IssuerCN, "", this.siGlobs.objEngine.ErrorDescription, "", "", "", 0.0, "", "", "", "", 0);
+        this.siGlobs.objUser.LogAccessFail(this.siGlobs.objUser.Username, this.siGlobs.objUser.InstID, this.siGlobs.objUser.IPAddress);
+        if (CertRequired)
+        {
+          this.ErrorCode = this.siGlobs.objEngine.ErrorCode;
+          this.ErrorDescription = this.siGlobs.objEngine.ErrorDescription;
+        }
+        else
+          CertPlusPW = true;
+      }
+    }
+    if (this.ErrorCode == 0)
+    {
+      this.siGlobs.objEngine.ClearError();
+      string challenge = ServiceAuthenticator.CreateChallenge(this.siGlobs.objSession.SessionId);
+      str = SILUtility.MakeTag("Challenge", (object) challenge) + SILUtility.MakeTag("PWRequired", (object) SILUtility.BoolToStr(CertPlusPW));
+      this.siGlobs.objSession.SetValue("MyChallenge", (object) challenge);
+    }
+    return str;
+  }
+
+  public string UserCheck(string LoginName, string InterfaceName, string InstID = "")
+  {
+    string str1 = "";
+    string str2 = "0";
+    string str3 = "0";
+    string str4 = "1";
+    string str5 = "0";
+    this.ErrorCode = 0;
+    LoginName = LoginName.ToLower();
+    string empty = string.Empty;
+    this.siGlobs.objUser.InstID = this.siGlobs.objUser.DiscoverInstID(LoginName, InstID, ref empty);
+    this.siGlobs.objUser.SetIPAddressIfTrusted(this.siGlobs.IPAddressExplicitFromUser);
+    if (this.siGlobs.objUser.AllowedAtHost(LoginName))
+    {
+      if (Operators.CompareString(this.siGlobs.objUser.Username, string.Empty, false) == 0)
+      {
+        if (this.IsAllowedExternal(InterfaceName))
+        {
+          str2 = "1";
+        }
+        else
+        {
+          this.ErrorCode = 2050;
+          this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60001);
+          this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.Signon, this.siGlobs.objUser.InstID.ToString(), LoginName, "", "", "", "", "", "", this.siGlobs.objUser.IPAddress, this.ErrorCode, InterfaceName, "", "", "", this.ErrorDescription, "", "", "", 0.0, "", "", "", "", 0);
+          this.siGlobs.objUser.LogAccessFail(LoginName, this.siGlobs.objUser.InstID, this.siGlobs.objUser.IPAddress);
+        }
+      }
+      else if ((InterfaceName.Equals("ftp", StringComparison.OrdinalIgnoreCase) || InterfaceName.Equals("ssh", StringComparison.OrdinalIgnoreCase)) && this.siGlobs.objUser.IsRequiredChangePassword())
+      {
+        this.ErrorCode = 2410;
+        this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60025);
+        this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.Signon, this.siGlobs.objUser.InstID.ToString(), this.siGlobs.objUser.Username, "", "", "", "", "", "", this.siGlobs.objUser.IPAddress, 2410, InterfaceName, "", "", "", this.siGlobs.objI11N.GetMsg(60025), "", "", "", 0.0, "", "", "", "", 0);
+        this.siGlobs.objUser.LogAccessFail(this.siGlobs.objUser.Username, this.siGlobs.objUser.InstID, this.siGlobs.objUser.IPAddress);
+      }
+      else if (this.siGlobs.objUser.Permission == UserPermissionType.TemporaryUser)
+      {
+        str4 = "0";
+        this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.Signon, this.siGlobs.objUser.InstID.ToString(), this.siGlobs.objUser.Username, "", "", "", "", "", "", this.siGlobs.objUser.IPAddress, 2417, InterfaceName, "", "", "", this.siGlobs.objI11N.GetMsg(60039), "", "", "", 0.0, "", "", "", "", 0);
+        this.siGlobs.objUser.LogAccessFail(this.siGlobs.objUser.Username, this.siGlobs.objUser.InstID, this.siGlobs.objUser.IPAddress);
+      }
+      else
+      {
+        string Left = Strings.LCase(InterfaceName);
+        if (Operators.CompareString(Left, "ssh", false) != 0)
+        {
+          if (Operators.CompareString(Left, "ftp", false) == 0)
+          {
+            if (this.siGlobs.objUser.IsAllowedFromInterface(3))
+            {
+              str5 = !this.siGlobs.objUser.IsAllowedFromInterface(2) ? "1" : "0";
+              str3 = Conversions.ToString(this.siGlobs.objUser.FTPCertRequired);
+              str2 = Conversions.ToString(this.siGlobs.objUser.FTPCertPlusPW);
+            }
+            else
+              str4 = "0";
+          }
+        }
+        else if (this.siGlobs.objUser.IsAllowedFromInterface(4))
+        {
+          str3 = Conversions.ToString(this.siGlobs.objUser.SSHCertRequired);
+          str2 = Conversions.ToString(this.siGlobs.objUser.SSHCertPlusPW);
+        }
+        else
+          str4 = "0";
+      }
+    }
+    else
+    {
+      this.ErrorCode = this.siGlobs.objUser.ErrorCode;
+      this.ErrorDescription = this.siGlobs.objUser.ErrorDescription;
+    }
+    if (this.ErrorCode == 0)
+      str1 = SILUtility.MakeTag("PWRequired", (object) str2) + SILUtility.MakeTag("CertRequired", (object) str3) + SILUtility.MakeTag("SecureRequired", (object) str5) + SILUtility.MakeTag("InterfaceAllowed", (object) str4);
+    return str1;
+  }
+
+  public void IndicateCannotCleanSecMsg()
+  {
+    this.ErrorCode = 4400;
+    this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60048);
+  }
+
+  public bool ProcessPreAuthXMLRequest(string CallingPage, string RequestLang)
+  {
+    string lower = this.siGlobs.Transaction.ToLower();
+    bool flag;
+    if (Operators.CompareString(lower, "wakeup", false) != 0)
+    {
+      if (Operators.CompareString(lower, "liccheckgw", false) != 0)
+      {
+        if (Operators.CompareString(lower, "sitegetsecbanner", false) != 0)
+        {
+          if (Operators.CompareString(lower, "sitegetorginfo", false) != 0)
+          {
+            if (Operators.CompareString(lower, "instgetsamlsignoninfo", false) != 0)
+            {
+              if (Operators.CompareString(lower, "passchangerequest", false) == 0)
+              {
+                this.siGlobs.objDebug.Log(50, $"------ {CallingPage} called for password change request.");
+                string orgId = this.siGlobs.OrgID;
+                SILCurrentUser objUser;
+                int instId = (objUser = this.siGlobs.objUser).InstID;
+                ref int local1 = ref instId;
+                int.TryParse(orgId, out local1);
+                objUser.InstID = instId;
+                this.siGlobs.objEngine.userEngine.UserProcessPassChangeRequest(this.siGlobs.LoginName, this.siGlobs.Arg01);
+                string MyErrCode = Conversions.ToString(0);
+                string empty = string.Empty;
+                ref string local2 = ref empty;
+                this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local2);
+                flag = true;
+              }
+              else
+                flag = false;
+            }
+            else
+            {
+              this.siGlobs.objDebug.Log(50, $"------ {CallingPage} called for org SAML signon info.");
+              string orgId = this.siGlobs.Arg01;
+              if (string.IsNullOrEmpty(orgId))
+                orgId = this.siGlobs.OrgID;
+              this.siGlobs.objUser.GetInstInfo(int.Parse(orgId), false);
+              string MyErrCode = Conversions.ToString(0);
+              string empty = string.Empty;
+              ref string local = ref empty;
+              this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+              XmlElement element = this.objXMLDoc.CreateElement("Payload");
+              element.AppendChild((XmlNode) this.siGlobs.objEngine.orgEngine.InstGetSAMLEntitiesXML(true, true, ref this.objXMLDoc));
+              this.objXMLDoc.DocumentElement.AppendChild((XmlNode) element);
+              flag = true;
+            }
+          }
+          else
+          {
+            this.siGlobs.objDebug.Log(50, $"------ {CallingPage} called for site org info.");
+            this.ErrorCode = 0;
+            this.ErrorDescription = "";
+            this.objXMLDoc = this.MakeXMLReplySkeleton(Conversions.ToString(this.ErrorCode), ref this.ErrorDescription);
+            XmlElement element = this.objXMLDoc.CreateElement("Payload");
+            string idFromHostname = this.siGlobs.Arg01;
+            string str = this.siGlobs.Arg02;
+            if (Operators.CompareString(idFromHostname, string.Empty, false) == 0 & Operators.CompareString(str, string.Empty, false) != 0)
+              idFromHostname = this.siGlobs.objEngine.orgEngine.InstGetIDFromHostname(str);
+            element.AppendChild((XmlNode) this.siGlobs.objEngine.orgEngine.InstGetInstPublicInfoXML(idFromHostname, ref this.objXMLDoc, RequestLang));
+            this.objXMLDoc.DocumentElement.AppendChild((XmlNode) element);
+            flag = true;
+          }
+        }
+        else
+        {
+          this.siGlobs.objDebug.Log(50, $"------- {CallingPage} called for site security banner.");
+          this.ErrorCode = 0;
+          this.ErrorDescription = "";
+          this.objXMLDoc = this.MakeXMLReplySkeleton(Conversions.ToString(this.ErrorCode), ref this.ErrorDescription);
+          XmlElement element = this.objXMLDoc.CreateElement("Payload");
+          element.InnerText = !Versioned.IsNumeric((object) this.siGlobs.Arg01) ? this.siGlobs.objEngine.orgEngine.InstGetDefaultInstSecInfo(0) : this.siGlobs.objEngine.orgEngine.InstGetDefaultInstSecInfo(Conversions.ToInteger(this.siGlobs.Arg01));
+          this.objXMLDoc.DocumentElement.AppendChild((XmlNode) element);
+          flag = true;
+        }
+      }
+      else
+      {
+        this.siGlobs.objDebug.Log(50, $"------- {CallingPage} called for Gateway licence check");
+        this.ErrorCode = 0;
+        this.ErrorDescription = string.Empty;
+        this.objXMLDoc = this.MakeXMLReplySkeleton(Conversions.ToString(this.ErrorCode), ref this.ErrorDescription);
+        XmlElement element = this.objXMLDoc.CreateElement("Payload");
+        element.InnerXml = this.siGlobs.objEngine.sysEngine.SysCheckLicenseGw();
+        this.objXMLDoc.DocumentElement.AppendChild((XmlNode) element);
+        flag = true;
+      }
+    }
+    else
+    {
+      this.siGlobs.objDebug.Log(50, $"------- {CallingPage} called for wakeup.  DSN={this.siGlobs.TheDSN}");
+      this.ErrorCode = 0;
+      this.ErrorDescription = "Woke up OK.  DSN=" + this.siGlobs.TheDSN;
+      this.objXMLDoc = this.MakeXMLReplySkeleton(Conversions.ToString(this.ErrorCode), ref this.ErrorDescription);
+      flag = true;
+    }
+    return flag;
+  }
+
+  private object FixUndefinedArg(string Arg)
+  {
+    return Interaction.IIf(Operators.CompareString(Arg.ToLower(), "undefined", false) == 0, (object) "", (object) Arg);
+  }
+
+  public string ProcessXMLRequest(int interfaceCode)
+  {
+    string Expression = "";
+    string FolderID1 = (string) null;
+    string str1 = (string) null;
+    string PathHash = (string) null;
+    bool flag1 = false;
+    string ErrStr = (string) null;
+    XmlDocument xmlDocument1 = MOVEit.DMZ.Core.Xml.GetSafeNonValidatingXmlDocumentFromString(SILUtility.MakeTag("Nothing"));
+    if (!this.siGlobs.objUtility.FeatureIsValid(!ListUtility.InList<string>(this.siGlobs.LicAgentBrand, "MOVEit DMZ FTP", "MOVEit Transfer FTP", "MOVEit Transfer SFTP", "MOVEit Central", "MOVEit Automation", "MIDMZCheck", "MOVEit EZ", "MOVEit Wizard Win", "MOVEit Wizard Java", "MOVEit Xfer Win", "MOVEit Xfer Java", "Outlook Plug-in", "MOVEit ISAPI", "MOVEit Sync", "Ipswitch Gateway", "MOVEit Gateway") ? 2 : 1, ref ErrStr))
+    {
+      this.ErrorCode = 3400;
+      this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60004, ErrStr);
+    }
+    else if (Operators.CompareString(this.siGlobs.LicAgentBrand, "MOVEit Sync", false) == 0 && SILUtility.StrToBool(RegUtility.GetSILRegValueDef("DisallowSyncClient", "0")))
+    {
+      this.siGlobs.objDebug.Log(60, "ProcessXMLRequest: Sync client agent denied by DisallowSyncClient setting");
+      this.ErrorCode = 2977;
+      this.ErrorDescription = $"{"MOVEit Sync"} is not supported.";
+    }
+    else
+    {
+      this.siGlobs.objDebug.Log(60, "ProcessXMLRequest - " + this.siGlobs.Transaction);
+      string str2 = Strings.LCase(this.siGlobs.Transaction);
+      int num1;
+      // ISSUE: reference to a compiler-generated method
+      switch (\u003CPrivateImplementationDetails\u003E.ComputeStringHash(str2))
+      {
+        case 9665853:
+          if (Operators.CompareString(str2, "folderlistfreshfilesin", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+              ref SILFolder local1 = ref folder;
+              bool flag2 = true;
+              ref bool local2 = ref flag2;
+              string str3 = "";
+              ref string local3 = ref str3;
+              Expression = folderEngine.FolderListFilesInXml(ref local1, ref local2, ref local3);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 12297738:
+          if (Operators.CompareString(str2, "usergroupdelete", false) == 0)
+          {
+            string id = this.siGlobs.objEngine.userGroupEngine.UserGroupNameToID(this.siGlobs.Arg01);
+            if (Conversions.ToLong(id) > 0L)
+            {
+              Expression = Conversions.ToString(this.siGlobs.objEngine.userGroupEngine.UserGroupDelete(Conversions.ToInteger(id)));
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60020, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 140122775:
+          if (Operators.CompareString(str2, "hostpermitdelete", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.orgEngine.InstDeleteHostAccess(Conversions.ToInteger(this.siGlobs.Arg01), Conversions.ToInteger(this.siGlobs.Arg02)));
+            goto label_613;
+          }
+          goto default;
+        case 161561521:
+          if (Operators.CompareString(str2, "userloginnametousername", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            goto label_613;
+          }
+          goto default;
+        case 174361268:
+          if (Operators.CompareString(str2, "foldergethome", false) == 0)
+          {
+            if (this.siGlobs.objUser.Permission >= UserPermissionType.Admin)
+            {
+              string homeFolderId = this.siGlobs.objEngine.userEngine.UserGetHomeFolderID(this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01));
+              if (Operators.CompareString(homeFolderId, "", false) != 0)
+              {
+                Expression = this.siGlobs.objEngine.folderEngine.FolderGetDetailsXml(Conversions.ToInteger(homeFolderId));
+                goto label_613;
+              }
+              this.ErrorCode = 2850;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60013, this.siGlobs.Arg01);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2020;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60014);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 181593398:
+          if (Operators.CompareString(str2, "usergroupnametoid", false) == 0)
+          {
+            string id = this.siGlobs.objEngine.userGroupEngine.UserGroupNameToID(this.siGlobs.Arg01);
+            if (Conversions.ToLong(id) > 0L)
+            {
+              Expression = id;
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60020, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 255715296:
+          if (Operators.CompareString(str2, "mailboxaddbypath", false) == 0)
+          {
+            IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+            string FolderPath = this.siGlobs.Arg01;
+            List<string> stringList1 = (List<string>) null;
+            ref List<string> local4 = ref stringList1;
+            List<string> stringList2 = (List<string>) null;
+            ref List<string> local5 = ref stringList2;
+            Expression = folderEngine.FolderAddByPath(FolderPath, FolderIDList: ref local4, FolderTypeList: ref local5, bEnforceMailbox: true);
+            goto label_613;
+          }
+          goto default;
+        case 383092198:
+          if (Operators.CompareString(str2, "mailboxlistall", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.MailboxListXMLForUser(ref this.siGlobs.objUser.Username, false, SILUtility.StrToBool(this.siGlobs.Arg01));
+            goto label_613;
+          }
+          goto default;
+        case 449620085:
+          if (Operators.CompareString(str2, "useraddaddrbookentry", false) == 0)
+          {
+            if (this.siGlobs.objUser.Permission >= UserPermissionType.Admin)
+            {
+              string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+              string NewEntry = this.siGlobs.Arg02;
+              if (NewEntry.ToLower().StartsWith("user:"))
+              {
+                string Left = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(NewEntry.Substring(5));
+                if (Operators.CompareString(Left, "", false) == 0)
+                  Left = NewEntry.Substring(5);
+                NewEntry = "user:" + Left;
+              }
+              Expression = Conversions.ToString(this.siGlobs.objEngine.userEngine.UserAddAddrBookEntry(ref username, ref NewEntry, ref this.siGlobs.Arg03));
+              goto label_613;
+            }
+            this.ErrorCode = 2020;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60018);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 460129863:
+          if (Operators.CompareString(str2, "reportruncustom", false) == 0)
+          {
+            Expression = $"<![CDATA[{this.siGlobs.objEngine.reportEngine.ReportRunCustom(this.siGlobs.Arg01, this.siGlobs.Arg02, this.siGlobs.Arg03, this.siGlobs.Arg04, this.siGlobs.Arg05, this.siGlobs.Arg06, this.siGlobs.Arg07)}]]>";
+            goto label_613;
+          }
+          goto default;
+        case 470221232:
+          if (Operators.CompareString(str2, "usergroupdeleteaddrbookentry", false) == 0)
+          {
+            if (this.siGlobs.objUser.Permission >= UserPermissionType.Admin)
+            {
+              string id = this.siGlobs.objEngine.userGroupEngine.UserGroupNameToID(this.siGlobs.Arg01);
+              if (Conversions.ToLong(id) > 0L)
+              {
+                string username = this.siGlobs.Arg02;
+                if (Operators.CompareString(this.siGlobs.Arg03, "user", false) == 0)
+                  username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(username);
+                Expression = Conversions.ToString(this.siGlobs.objEngine.userGroupEngine.UserGroupDeleteAddrBookEntry(ref id, ref username, ref this.siGlobs.Arg03));
+                goto label_613;
+              }
+              this.ErrorCode = 2850;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60020, this.siGlobs.Arg01);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2020;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60019);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 477628789:
+          if (Operators.CompareString(str2, "foldergetsetting", false) == 0)
+          {
+            IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+            ref string local6 = ref this.siGlobs.Arg01;
+            SILFolder silFolder = (SILFolder) null;
+            ref SILFolder local7 = ref silFolder;
+            string id = folderEngine.FolderPathToID(ref local6, ref local7);
+            if (Conversions.ToLong(id) > 0L)
+            {
+              if (Conversions.ToLong(id) >= 100000L)
+              {
+                Expression = this.siGlobs.objEngine.folderEngine.FolderGetSetting(ref id, ref this.siGlobs.Arg02);
+                goto label_613;
+              }
+              this.ErrorCode = 2020;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60010);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 504274715:
+          if (Operators.CompareString(str2, "userview", false) == 0)
+          {
+            string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            string detailsXml = this.siGlobs.objEngine.userEngine.UserGetDetailsXml(ref username);
+            Expression = Conversions.ToString(Operators.CompareString(detailsXml, string.Empty, false) != 0 ? (object) detailsXml : (object) false);
+            goto label_613;
+          }
+          goto default;
+        case 511801385:
+          if (Operators.CompareString(str2, "msglistdelete", false) == 0)
+          {
+            IEnumerable<string> array1 = (IEnumerable<string>) this.siGlobs.objUtility.DelimitedString2ArrayList(this.siGlobs.Arg01, ",").ToArray(typeof (string));
+            IEnumerable<string> array2 = (IEnumerable<string>) this.siGlobs.objUtility.DelimitedString2ArrayList(this.siGlobs.Arg02, ",").ToArray(typeof (string));
+            Expression = Conversions.ToString(this.siGlobs.objEngine.msgEngine.MsgINLISTDelete(ref array1, ref array2));
+            goto label_613;
+          }
+          goto default;
+        case 558602973:
+          if (Operators.CompareString(str2, "filegetdetails", false) == 0)
+          {
+            Expression = this.FileGetDetailsMachine(this.siGlobs.Arg01);
+            goto label_613;
+          }
+          goto default;
+        case 581579276:
+          if (Operators.CompareString(str2, "userlistadvanced", false) == 0)
+          {
+            if (this.siGlobs.objUtility.isValidValueInRange(this.siGlobs.Arg02, 5L, 1000L))
+            {
+              this.siGlobs.objUser.UserListLength = int.Parse(this.siGlobs.Arg02);
+              IUserEngine userEngine = this.siGlobs.objEngine.userEngine;
+              string Page = this.siGlobs.Arg01;
+              string Permission = this.siGlobs.Arg03;
+              string Status = this.siGlobs.Arg04;
+              string GroupID = this.siGlobs.Arg05;
+              string SortBy = this.siGlobs.Arg06;
+              ref string local8 = ref this.siGlobs.Arg07;
+              string str4 = "";
+              ref string local9 = ref str4;
+              string OrgID = this.siGlobs.Arg08;
+              Expression = userEngine.UserListXml(Page, Permission, Status, GroupID, SortBy, ref local8, ref local9, OrgID);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(30265, 5L, 1000L);
+            Expression = "";
+            goto label_613;
+          }
+          goto default;
+        case 621131986:
+          if (Operators.CompareString(str2, "userchangeemail", false) == 0)
+          {
+            string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            IUserEngine userEngine = this.siGlobs.objEngine.userEngine;
+            ref string local10 = ref username;
+            ref string local11 = ref this.siGlobs.Arg02;
+            string str5 = Conversions.ToString(1);
+            ref string local12 = ref str5;
+            string str6 = Conversions.ToString(true);
+            ref string local13 = ref str6;
+            Expression = Conversions.ToString(userEngine.UserChangeEmail(ref local10, ref local11, ref local12, ref local13));
+            goto label_613;
+          }
+          goto default;
+        case 643486526:
+          if (Operators.CompareString(str2, "usercertkeyadd", false) == 0)
+          {
+            string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            Expression = Conversions.ToString(this.siGlobs.objEngine.userEngine.UserCertAdd(ref username, ref this.siGlobs.Arg02, ref this.siGlobs.Arg03));
+            goto label_613;
+          }
+          goto default;
+        case 690389419:
+          if (Operators.CompareString(str2, "fileaddcomment", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.fileEngine.FileAddComment(this.siGlobs.Arg01, this.siGlobs.Arg02, true));
+            goto label_613;
+          }
+          goto default;
+        case 690462159:
+          if (Operators.CompareString(str2, "msgloaddrafttemplate", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.msgEngine.MsgGetDraftTemplate(this.siGlobs.Arg01);
+            goto label_613;
+          }
+          goto default;
+        case 707974989:
+          if (Operators.CompareString(str2, "userdelete", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.userEngine.UserDelete(this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01), this.siGlobs.Arg02));
+            goto label_613;
+          }
+          goto default;
+        case 721154689:
+          if (Operators.CompareString(str2, "mailboxrename", false) == 0)
+          {
+            IFolderEngine folderEngine1 = this.siGlobs.objEngine.folderEngine;
+            ref string local14 = ref this.siGlobs.Arg01;
+            SILFolder silFolder = (SILFolder) null;
+            ref SILFolder local15 = ref silFolder;
+            string id = folderEngine1.FolderPathToID(ref local14, ref local15);
+            if (Conversions.ToLong(id) > 0L)
+            {
+              if (Conversions.ToLong(id) >= 100000L)
+              {
+                IFolderEngine folderEngine2 = this.siGlobs.objEngine.folderEngine;
+                int integer = Conversions.ToInteger(id);
+                ref string local16 = ref this.siGlobs.Arg02;
+                string str7 = (string) null;
+                ref string local17 = ref str7;
+                Expression = Conversions.ToString(folderEngine2.FolderRename(integer, ref local16, CustomCharSet: ref local17));
+                goto label_613;
+              }
+              this.ErrorCode = 2020;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60016);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60041, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 737396667:
+          if (Operators.CompareString(str2, "userchangepassword", false) == 0)
+          {
+            string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            IUserEngine userEngine = this.siGlobs.objEngine.userEngine;
+            ref string local18 = ref username;
+            string str8 = "\0";
+            ref string local19 = ref str8;
+            string str9 = SILUtility.XHTMLUnClean(this.siGlobs.Arg03);
+            ref string local20 = ref str9;
+            string str10 = SILUtility.XHTMLUnClean(this.siGlobs.Arg04);
+            ref string local21 = ref str10;
+            ref string local22 = ref this.siGlobs.Arg05;
+            string str11 = Conversions.ToString(true);
+            ref string local23 = ref str11;
+            bool flag3 = false;
+            ref bool local24 = ref flag3;
+            string str12 = "";
+            ref string local25 = ref str12;
+            string str13 = "";
+            ref string local26 = ref str13;
+            int num2 = 0;
+            ref int local27 = ref num2;
+            Expression = Conversions.ToString(userEngine.UserChangePassword(ref local18, ref local19, ref local20, ref local21, ref local22, -2, ref local23, ref local24, ref local25, ref local26, ref local27));
+            goto label_613;
+          }
+          goto default;
+        case 781475543:
+          if (Operators.CompareString(str2, "filedownload", false) == 0)
+          {
+            if (Conversions.ToInteger(this.siGlobs.Arg02) == 31 /*0x1F*/)
+            {
+              xmlDocument1 = this.FileDownloadMachine(this.siGlobs.Arg01, ref this.siGlobs.Arg02);
+              flag1 = true;
+              goto label_613;
+            }
+            string[] FileID = new string[2]
+            {
+              this.siGlobs.Arg01,
+              null
+            };
+            xmlDocument1 = this.BundleDownloadMachine(ref FileID, 1, this.siGlobs.Arg02);
+            if (this.siGlobs.objEngine.ErrorCode == 0)
+            {
+              flag1 = true;
+              goto label_613;
+            }
+            goto label_613;
+          }
+          goto default;
+        case 784867128:
+          if (Operators.CompareString(str2, "userlistmembergroups", false) == 0)
+          {
+            string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            string Left = this.siGlobs.objEngine.userEngine.UserListMemberGroupsXml(ref username, true);
+            Expression = Conversions.ToString(Operators.CompareString(Left, string.Empty, false) != 0 ? (object) Left : (object) false);
+            goto label_613;
+          }
+          goto default;
+        case 811317617:
+          if (Operators.CompareString(str2, "folderlistshort", false) == 0)
+          {
+            IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+            ref string local28 = ref this.siGlobs.Arg01;
+            ref string local29 = ref this.siGlobs.Arg02;
+            ref string local30 = ref this.siGlobs.Arg03;
+            ref string local31 = ref this.siGlobs.Arg04;
+            string str14 = "all";
+            ref string local32 = ref str14;
+            ref string local33 = ref this.siGlobs.Arg05;
+            bool flag4 = false;
+            ref bool local34 = ref flag4;
+            bool flag5 = true;
+            ref bool local35 = ref flag5;
+            Expression = folderEngine.FolderListSummaryXml(ref local28, ref local29, ref local30, ref local31, ref local32, ref local33, ref local34, ref local35);
+            goto label_613;
+          }
+          goto default;
+        case 913447356:
+          if (Operators.CompareString(str2, "folderadd", false) == 0)
+          {
+            string username = this.siGlobs.Arg05;
+            if (Operators.CompareString(username, "", false) != 0)
+              username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(username);
+            if (!ListUtility.InList<string>(this.siGlobs.Arg08, Conversions.ToString(2), Conversions.ToString(1), Conversions.ToString(0)))
+              this.siGlobs.Arg08 = Conversions.ToString(2);
+            if (ListUtility.InList<string>(this.siGlobs.Arg03, Conversions.ToString(4), Conversions.ToString(19)))
+            {
+              SILUtility.SplitFolderIDAndPathHash(this.siGlobs.Arg07, ref FolderID1, ref PathHash);
+              IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+              string Name = this.siGlobs.Arg01;
+              // ISSUE: variable of a reference type
+              string& local36;
+              // ISSUE: explicit reference operation
+              int integer1 = Conversions.ToInteger(^(local36 = ref this.siGlobs.Arg02));
+              ref int local37 = ref integer1;
+              // ISSUE: variable of a reference type
+              string& local38;
+              // ISSUE: explicit reference operation
+              int integer2 = Conversions.ToInteger(^(local38 = ref this.siGlobs.Arg03));
+              ref int local39 = ref integer2;
+              // ISSUE: variable of a reference type
+              string& local40;
+              // ISSUE: explicit reference operation
+              int integer3 = Conversions.ToInteger(^(local40 = ref this.siGlobs.Arg04));
+              ref int local41 = ref integer3;
+              ref string local42 = ref username;
+              ref string local43 = ref this.siGlobs.Arg06;
+              bool flag6 = true;
+              ref bool local44 = ref flag6;
+              SILFolder silFolder = SILFolder.FromID(this.siGlobs, FolderID1, PathHash);
+              ref SILFolder local45 = ref silFolder;
+              bool flag7 = true;
+              ref bool local46 = ref flag7;
+              bool flag8 = false;
+              ref bool local47 = ref flag8;
+              bool flag9 = false;
+              ref bool local48 = ref flag9;
+              // ISSUE: variable of a reference type
+              string& local49;
+              // ISSUE: explicit reference operation
+              int integer4 = Conversions.ToInteger(^(local49 = ref this.siGlobs.Arg08));
+              ref int local50 = ref integer4;
+              int num3 = folderEngine.FolderAdd(Name, ref local37, ref local39, ref local41, ref local42, ref local43, ref local44, ref local45, ref local46, ref local47, ref local48, ref local50);
+              local49 = Conversions.ToString(integer4);
+              local40 = Conversions.ToString(integer3);
+              local38 = Conversions.ToString(integer2);
+              local36 = Conversions.ToString(integer1);
+              Expression = Conversions.ToString(num3);
+              goto label_613;
+            }
+            this.ErrorCode = 2020;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60011, this.siGlobs.Arg01);
+            Expression = "0";
+            goto label_613;
+          }
+          goto default;
+        case 926806152:
+          if (Operators.CompareString(str2, "useraddtemporary", false) == 0)
+          {
+            IUserEngine userEngine1 = this.siGlobs.objEngine.userEngine;
+            string MyLoginName = this.siGlobs.Arg01;
+            ref string local51 = ref str1;
+            string Pass1 = SILUtility.XHTMLUnClean(this.siGlobs.Arg02);
+            string Pass2 = SILUtility.XHTMLUnClean(this.siGlobs.Arg03);
+            string MustChangePassword = this.siGlobs.Arg09;
+            // ISSUE: variable of a boxed type
+            __Boxed<int> instId = (ValueType) this.siGlobs.objUser.InstID;
+            string RealName = this.siGlobs.Arg05;
+            string Email = this.siGlobs.Arg01;
+            string str15 = "";
+            ref string local52 = ref str15;
+            string str16 = "";
+            ref string local53 = ref str16;
+            string str17 = Conversions.ToString(20);
+            ref string local54 = ref str17;
+            bool flag10 = false;
+            ref bool local55 = ref flag10;
+            string str18 = "";
+            ref string local56 = ref str18;
+            bool flag11 = false;
+            ref bool local57 = ref flag11;
+            bool flag12 = false;
+            ref bool local58 = ref flag12;
+            string str19 = "";
+            ref string local59 = ref str19;
+            string str20 = "";
+            ref string local60 = ref str20;
+            int num4;
+            if (userEngine1.UserAdd(MyLoginName, ref local51, Pass1, Pass2, MustChangePassword, (object) instId, RealName, Email, "1", 6, "", "", "", ref local52, ref local53, ref local54, ref local55, ref local56, ref local57, ref local58, ExistingHomeFolderPath: ref local59, SuggestedHomeFolderPath: ref local60))
+            {
+              IUserEngine userEngine2 = this.siGlobs.objEngine.userEngine;
+              ref string local61 = ref this.siGlobs.objUser.Username;
+              str20 = "user:" + str1;
+              ref string local62 = ref str20;
+              string str21 = "0";
+              ref string local63 = ref str21;
+              if (userEngine2.UserAddAddrBookEntry(ref local61, ref local62, ref local63))
+              {
+                num4 = this.siGlobs.objEngine.userEngine.UserTempAddToMyGroups(ref str1) ? 1 : 0;
+                goto label_529;
+              }
+            }
+            num4 = 0;
+label_529:
+            Expression = Conversions.ToString(num4 != 0);
+            goto label_613;
+          }
+          goto default;
+        case 932354077:
+          if (Operators.CompareString(str2, "filepathtodetails", false) == 0)
+          {
+            IFileEngine fileEngine = this.siGlobs.objEngine.fileEngine;
+            string MOVEitPath = this.siGlobs.Arg01;
+            SILFolder silFolder = (SILFolder) null;
+            ref SILFolder local = ref silFolder;
+            string id = fileEngine.FilePathToID(MOVEitPath, ref local);
+            Expression = Operators.CompareString(id, "", false) == 0 ? "" : this.FileGetDetailsMachine(id);
+            goto label_613;
+          }
+          goto default;
+        case 955801049:
+          if (Operators.CompareString(str2, "userdeleteaddrbookentry", false) == 0)
+          {
+            if (this.siGlobs.objUser.Permission >= UserPermissionType.Admin)
+            {
+              string username1 = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+              string username2 = this.siGlobs.Arg02;
+              if (Operators.CompareString(this.siGlobs.Arg03, "user", false) == 0)
+                username2 = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(username2);
+              Expression = Conversions.ToString(this.siGlobs.objEngine.userEngine.UserDeleteAddrBookEntry(ref username1, ref username2, ref this.siGlobs.Arg03));
+              goto label_613;
+            }
+            this.ErrorCode = 2020;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60019);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1024120997:
+          if (Operators.CompareString(str2, "folderchangemainsettings", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              Expression = Conversions.ToString(this.siGlobs.objEngine.folderEngine.FolderChangeMaintenanceSettings(folder.ID, folder.PathHash, this.siGlobs.Arg02, this.siGlobs.Arg03, this.siGlobs.Arg04, this.siGlobs.Arg07, this.siGlobs.Arg08, this.siGlobs.Arg10, this.siGlobs.Arg05, true));
+              goto label_613;
+            }
+            this.ErrorCode = 2020;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60007);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1028271020:
+          if (Operators.CompareString(str2, "userlistsendasusers", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.msgEngine.MsgGetSendAsUserXML();
+            goto label_613;
+          }
+          goto default;
+        case 1051701266:
+          if (Operators.CompareString(str2, "versionview", false) == 0)
+          {
+            if (this.siGlobs.objUser.SysAdmin)
+            {
+              Expression = this.Version();
+              goto label_613;
+            }
+            this.ErrorCode = 2320;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60021, this.siGlobs.Transaction);
+            goto label_613;
+          }
+          goto default;
+        case 1097883694:
+          if (Operators.CompareString(str2, "userlist", false) == 0)
+          {
+            this.siGlobs.objUser.UserListLength = 1000;
+            IUserEngine userEngine = this.siGlobs.objEngine.userEngine;
+            string str22 = "";
+            ref string local64 = ref str22;
+            string str23 = "";
+            ref string local65 = ref str23;
+            string OrgID = this.siGlobs.Arg05;
+            Expression = userEngine.UserListXml("all", "", "", "", "", ref local64, ref local65, OrgID);
+            goto label_613;
+          }
+          goto default;
+        case 1107179818:
+          if (Operators.CompareString(str2, "msgread", false) == 0)
+          {
+            bool flag13 = false;
+            string FolderPath = Conversions.ToString(this.FixUndefinedArg(this.siGlobs.Arg02));
+            string str24 = Conversions.ToString(this.FixUndefinedArg(this.siGlobs.Arg03));
+            if (Operators.CompareString(str24, "", false) != 0)
+            {
+              string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(str24);
+              if (Operators.CompareString(username, "", false) != 0)
+                str24 = username;
+            }
+            bool flag14;
+            if (Operators.CompareString(FolderPath, "", false) == 0)
+            {
+              if (Operators.CompareString(str24, "", false) == 0)
+              {
+                IMsgEngine msgEngine = this.siGlobs.objEngine.msgEngine;
+                string ID = this.siGlobs.Arg01;
+                ref string local66 = ref str24;
+                flag14 = false;
+                ref bool local67 = ref flag14;
+                flag13 = msgEngine.MsgCurrentUserCanAccessMessage(ID, MailboxOwner: ref local66, bIsAdminView: ref local67);
+              }
+              else
+                flag13 = this.siGlobs.objUser.MayXUser(str24, this.siGlobs.objUser.InstID, "viewmsgs", 10);
+            }
+            else
+            {
+              SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref FolderPath, MailboxOwner: str24);
+              if (folder != null && folder.IsMailbox() && this.siGlobs.objUser.MayXUser(folder.Owner, this.siGlobs.objUser.InstID, "viewmsgs", 10))
+              {
+                FolderPath = Conversions.ToString(folder.ID);
+                str24 = folder.Owner;
+                flag13 = true;
+              }
+            }
+            if (flag13)
+            {
+              IMsgEngine msgEngine = this.siGlobs.objEngine.msgEngine;
+              ref string local68 = ref this.siGlobs.Arg01;
+              flag14 = true;
+              ref bool local69 = ref flag14;
+              string MailboxID = FolderPath;
+              string MailboxOwner = str24;
+              Expression = msgEngine.MsgGetMessage(ref local68, ref local69, MailboxID, MailboxOwner, true, bHideBCCRecipsIfNec: true, bGetExtraInfo: true);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60049, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1159074296:
+          if (Operators.CompareString(str2, "userchangesecurity", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.userEngine.UserChangeSecurity(this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01), this.siGlobs.Arg02, this.siGlobs.Arg03));
+            goto label_613;
+          }
+          goto default;
+        case 1176440996:
+          if (Operators.CompareString(str2, "blowup", false) == 0)
+            throw new Exception("Fake error thrown by blowup transaction");
+          goto default;
+        case 1203120180:
+          if (Operators.CompareString(str2, "usergroupadd", false) == 0)
+          {
+            IUserGroupEngine userGroupEngine = this.siGlobs.objEngine.userGroupEngine;
+            ref string local70 = ref this.siGlobs.Arg01;
+            ref string local71 = ref this.siGlobs.Arg02;
+            string str25 = "";
+            ref string local72 = ref str25;
+            string str26 = "";
+            ref string local73 = ref str26;
+            Expression = Conversions.ToString(userGroupEngine.UserGroupAdd(ref local70, ref local71, ref local72, ref local73));
+            goto label_613;
+          }
+          goto default;
+        case 1231506257:
+          if (Operators.CompareString(str2, "liccheck", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.sysEngine.SysCheckLicense(this.siGlobs.Arg01);
+            goto label_613;
+          }
+          goto default;
+        case 1246958074:
+          if (Operators.CompareString(str2, "userlistuseraddressbook", false) == 0)
+            goto label_539;
+          goto default;
+        case 1251412291:
+          if (Operators.CompareString(str2, "folderaccessdeleteuser", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg02);
+              if (Operators.CompareString(username, string.Empty, false) != 0)
+              {
+                IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+                string FolderID2 = folder.ID.ToString();
+                string pathHash = folder.PathHash;
+                ref string local74 = ref username;
+                string str27 = "user";
+                ref string local75 = ref str27;
+                Expression = Conversions.ToString(folderEngine.FolderUserDelete(FolderID2, pathHash, ref local74, ref local75));
+                goto label_613;
+              }
+              this.ErrorCode = 2850;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60001);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1269049696:
+          if (Operators.CompareString(str2, "filedelete", false) == 0)
+          {
+            string FolderID3 = this.siGlobs.Arg02;
+            SILUtility.SplitFolderIDAndPathHash(FolderID3, ref FolderID3, ref PathHash);
+            Expression = Operators.CompareString(FolderID3, string.Empty, false) == 0 ? Conversions.ToString(this.siGlobs.objEngine.fileEngine.FileDelete(this.siGlobs.Arg01)) : Conversions.ToString(this.siGlobs.objEngine.fileEngine.FileDelete(this.siGlobs.Arg01, FolderID3, PathHash));
+            goto label_613;
+          }
+          goto default;
+        case 1274906440:
+          if (Operators.CompareString(str2, "wakeup", false) == 0)
+          {
+            this.ErrorCode = 0;
+            goto label_613;
+          }
+          goto default;
+        case 1294776900:
+          if (Operators.CompareString(str2, "instchangesettings", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.orgEngine.InstChangeSettings(this.siGlobs.objUser.InstID, this.siGlobs.Arg01, this.siGlobs.Arg02, this.siGlobs.Arg03, this.siGlobs.Arg04, this.siGlobs.Arg05, this.siGlobs.Arg06));
+            goto label_613;
+          }
+          goto default;
+        case 1330165802:
+          if (Operators.CompareString(str2, "filecopy", false) == 0)
+          {
+            SILUtility.SplitFolderIDAndPathHash(this.siGlobs.Arg02, ref FolderID1, ref PathHash);
+            string s = FolderID1;
+            int num5 = new int();
+            ref int local = ref num5;
+            if (int.TryParse(s, out local))
+            {
+              Expression = Conversions.ToString(this.siGlobs.objEngine.fileEngine.FileCopy(this.siGlobs.Arg01, int.Parse(FolderID1), PathHash, this.siGlobs.Arg03, this.siGlobs.Arg04));
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, FolderID1);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1342990684:
+          if (Operators.CompareString(str2, "usergetnewcounts", false) == 0)
+          {
+            Expression = SILUtility.MakeTag("NewFilesCount", (object) this.siGlobs.objEngine.fileEngine.FileCountNew()) + SILUtility.MakeTag("NewMsgsCount", (object) this.siGlobs.objEngine.msgEngine.MsgCountNew());
+            goto label_613;
+          }
+          goto default;
+        case 1358582595:
+          if (Operators.CompareString(str2, "folderfilelist", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+              string FolderID4 = Conversions.ToString(folder.ID);
+              ref SILFolder local76 = ref folder;
+              ref string local77 = ref this.siGlobs.Arg02;
+              ref string local78 = ref this.siGlobs.Arg03;
+              string str28 = "all";
+              ref string local79 = ref str28;
+              List<string> stringList3 = (List<string>) null;
+              ref List<string> local80 = ref stringList3;
+              List<string> stringList4 = (List<string>) null;
+              ref List<string> local81 = ref stringList4;
+              Expression = folderEngine.FolderFileList(FolderID4, ref local76, ref local77, ref local78, ref local79, ref local80, ref local81);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1390699955:
+          if (Operators.CompareString(str2, "usercertkeylist", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.userEngine.UserGetCertKeyDetails(this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01));
+            goto label_613;
+          }
+          goto default;
+        case 1426358809:
+          if (Operators.CompareString(str2, "folderaccessadduser", false) == 0)
+          {
+            int relationship;
+            if (Strings.InStr(this.siGlobs.Arg03, "A") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) num1, 25));
+            if (Strings.InStr(this.siGlobs.Arg03, "E") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) relationship, 2));
+            if (Strings.InStr(this.siGlobs.Arg03, "D") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) relationship, 23));
+            if (Strings.InStr(this.siGlobs.Arg03, "L") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) relationship, 22));
+            if (Strings.InStr(this.siGlobs.Arg03, "N") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) relationship, new int[1]));
+            if (Strings.InStr(this.siGlobs.Arg03, "R") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) relationship, 20));
+            if (Strings.InStr(this.siGlobs.Arg03, "W") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) relationship, 21));
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg02);
+              if (Operators.CompareString(username, string.Empty, false) != 0)
+              {
+                Expression = Conversions.ToString(this.siGlobs.objEngine.folderEngine.FolderUserAdd(folder.ID.ToString(), folder.PathHash, ref username, ref relationship, this.siGlobs.Arg04));
+                goto label_613;
+              }
+              this.ErrorCode = 2850;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60001);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1442786660:
+          if (Operators.CompareString(str2, "usergetdetails", false) == 0)
+          {
+            string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            string detailsXml = this.siGlobs.objEngine.userEngine.UserGetDetailsXml(ref username, true);
+            Expression = Conversions.ToString(Operators.CompareString(detailsXml, string.Empty, false) != 0 ? (object) detailsXml : (object) false);
+            goto label_613;
+          }
+          goto default;
+        case 1448768969:
+          if (Operators.CompareString(str2, "signoff", false) == 0)
+          {
+            if (!(Operators.CompareString(this.siGlobs.Arg01, "noaudit", false) == 0 | this.siGlobs.objUser.IsGuest()))
+              Expression = this.siGlobs.objUser.LogSignoff(this.siGlobs.objUser.Username, this.siGlobs.objUser.IPAddress);
+            this.siGlobs.objUser.ActAsAnonymousInInst(Conversions.ToInteger(Conversions.ToString(this.siGlobs.objUser.InstID)));
+            this.siGlobs.objUser.RemoveSession();
+            goto label_613;
+          }
+          goto default;
+        case 1512963506:
+          if (Operators.CompareString(str2, "folderdelete", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              if (folder.IsDistrib() | folder.IsWebpost() | folder.IsVirtual())
+              {
+                Expression = Conversions.ToString(this.siGlobs.objEngine.folderEngine.FolderDelete(folder.ID, true, folder.PathHash));
+                goto label_613;
+              }
+              this.ErrorCode = 2020;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60009);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1519740857:
+          if (Operators.CompareString(str2, "folderaccessaddgroup", false) == 0)
+          {
+            int relationship;
+            if (Strings.InStr(this.siGlobs.Arg03, "A") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) num1, 25));
+            if (Strings.InStr(this.siGlobs.Arg03, "E") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) relationship, 2));
+            if (Strings.InStr(this.siGlobs.Arg03, "D") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) relationship, 23));
+            if (Strings.InStr(this.siGlobs.Arg03, "L") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) relationship, 22));
+            if (Strings.InStr(this.siGlobs.Arg03, "N") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) relationship, new int[1]));
+            if (Strings.InStr(this.siGlobs.Arg03, "R") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) relationship, 20));
+            if (Strings.InStr(this.siGlobs.Arg03, "W") > 0)
+              relationship = checked ((int) SILUtility.BitsAdd((long) relationship, 21));
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              string id = this.siGlobs.objEngine.userGroupEngine.UserGroupNameToID(this.siGlobs.Arg02);
+              if (Conversions.ToLong(id) > 0L)
+              {
+                Expression = Conversions.ToString(this.siGlobs.objEngine.folderEngine.FolderUserGroupAdd(folder.ID.ToString(), folder.PathHash, id, ref relationship));
+                goto label_613;
+              }
+              this.ErrorCode = 2850;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60020, this.siGlobs.Arg02);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1584274493:
+          if (Operators.CompareString(str2, "msgdelete", false) == 0)
+          {
+            bool flag15 = false;
+            string FolderPath = Conversions.ToString(this.FixUndefinedArg(this.siGlobs.Arg02));
+            string str29 = Conversions.ToString(this.FixUndefinedArg(this.siGlobs.Arg03));
+            if (Operators.CompareString(str29, "", false) != 0)
+            {
+              string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(str29);
+              if (Operators.CompareString(username, "", false) != 0)
+                str29 = username;
+            }
+            if (Operators.CompareString(FolderPath, "", false) == 0)
+            {
+              if (Operators.CompareString(str29, "", false) == 0)
+                str29 = this.siGlobs.objUser.Username;
+              if (this.siGlobs.objUser.IsCurrentUser(str29))
+                flag15 = true;
+            }
+            else
+            {
+              SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref FolderPath, MailboxOwner: str29);
+              if (folder != null && folder.IsMailbox() && (this.siGlobs.objUser.IsCurrentUser(folder.Owner) || folder.SystemType == 1 && Operators.CompareString(folder.Name, "Drafts", false) == 0 && this.siGlobs.objUser.MayXUser(folder.Owner, this.siGlobs.objUser.InstID, "sendas", 10)))
+              {
+                FolderPath = Conversions.ToString(folder.ID);
+                flag15 = true;
+              }
+            }
+            if (flag15)
+            {
+              Expression = Conversions.ToString(this.siGlobs.objEngine.msgEngine.MsgDelete(this.siGlobs.Arg01, FolderPath, str29, true));
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60049, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1609213547:
+          if (Operators.CompareString(str2, "folderrename", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+              ref SILFolder local82 = ref folder;
+              ref string local83 = ref this.siGlobs.Arg02;
+              string str30 = (string) null;
+              ref string local84 = ref str30;
+              Expression = Conversions.ToString(folderEngine.FolderRename(ref local82, ref local83, CustomCharSet: ref local84));
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1616025280:
+          if (Operators.CompareString(str2, "userkeyimport", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.userEngine.UserKeyAdd(this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01), this.siGlobs.Arg02));
+            goto label_613;
+          }
+          goto default;
+        case 1748117625:
+          if (Operators.CompareString(str2, "useraddressbooklookup", false) == 0)
+          {
+            string str31 = this.siGlobs.Arg03;
+            if (Operators.CompareString(str31, "", false) != 0)
+            {
+              string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(str31);
+              if (Operators.CompareString(username, "", false) != 0)
+                str31 = username;
+            }
+            if (Operators.CompareString(this.siGlobs.Arg01, "", false) != 0 && Operators.CompareString(this.siGlobs.Arg02, "", false) != 0)
+            {
+              if (Operators.CompareString(str31, "", false) == 0 || this.siGlobs.objUser.MayXUser(str31, this.siGlobs.objUser.InstID, "sendas", 10))
+              {
+                IMsgEngine msgEngine = this.siGlobs.objEngine.msgEngine;
+                string EntryValue = this.siGlobs.Arg01;
+                string EntryType = this.siGlobs.Arg02;
+                string Owner = str31;
+                int num6 = 0;
+                ref int local85 = ref num6;
+                XmlDocument xmlDocument2 = (XmlDocument) null;
+                ref XmlDocument local86 = ref xmlDocument2;
+                Expression = $"<Results>{msgEngine.MsgUserLookup(EntryValue, EntryType, Owner, ref local85, ref local86)}</Results>";
+                goto label_613;
+              }
+              this.ErrorCode = 2850;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60026);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60031);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1799244707:
+          if (Operators.CompareString(str2, "folderaccessdeletegroup", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              string id = this.siGlobs.objEngine.userGroupEngine.UserGroupNameToID(this.siGlobs.Arg02);
+              if (Conversions.ToLong(id) > 0L)
+              {
+                IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+                string FolderID5 = folder.ID.ToString();
+                string pathHash = folder.PathHash;
+                ref string local87 = ref id;
+                string str32 = "group";
+                ref string local88 = ref str32;
+                Expression = Conversions.ToString(folderEngine.FolderUserDelete(FolderID5, pathHash, ref local87, ref local88));
+                goto label_613;
+              }
+              this.ErrorCode = 2850;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60020, this.siGlobs.Arg02);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1809426984:
+          if (Operators.CompareString(str2, "msglistnew", false) == 0)
+          {
+            IMsgEngine msgEngine = this.siGlobs.objEngine.msgEngine;
+            int num7 = SILUtility.StrToBool(this.siGlobs.Arg01) ? 1 : 0;
+            int num8 = 0;
+            ref int local = ref num8;
+            Expression = msgEngine.MsgListNew(num7 != 0, ref local);
+            goto label_613;
+          }
+          goto default;
+        case 1829850870:
+          if (Operators.CompareString(str2, "folderrelativepathtoid", false) == 0)
+          {
+            string empty1 = string.Empty;
+            string empty2 = string.Empty;
+            this.siGlobs.objEngine.folderEngine.FolderRelativePathToID(this.siGlobs.Arg01, this.siGlobs.Arg02, Conversions.ToBoolean(this.siGlobs.Arg03), ref empty1, ref empty2);
+            Expression = empty1;
+            goto label_613;
+          }
+          goto default;
+        case 1906387747:
+          if (Operators.CompareString(str2, "folderlistrecursive", false) == 0)
+          {
+            string[] strArray = (string[]) null;
+            bool flag16 = false;
+            if (Operators.CompareString(this.siGlobs.Arg01, "", false) != 0)
+            {
+              int arrSize;
+              if (this.ParseXMLList(this.siGlobs.Arg01, ref strArray, ref arrSize))
+                flag16 = true;
+              else if (this.ParseXMLList(SILUtility.XHTMLUnClean(this.siGlobs.Arg01), ref strArray, ref arrSize))
+              {
+                flag16 = true;
+              }
+              else
+              {
+                this.ErrorCode = 200;
+                this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60005);
+              }
+              if (flag16)
+              {
+                Expression = this.siGlobs.objEngine.folderEngine.FolderListRecursive(ref strArray, arrSize, this.siGlobs.Arg02, this.siGlobs.Arg03);
+                goto label_613;
+              }
+              goto label_613;
+            }
+            goto label_613;
+          }
+          goto default;
+        case 1911998001:
+          if (Operators.CompareString(str2, "filelocalpath", false) == 0)
+          {
+            IFileUploadDownloadEngine uploadDownloadEngine = this.siGlobs.objEngine.fileUploadDownloadEngine;
+            string ID = this.siGlobs.Arg01;
+            ref string local89 = ref this.siGlobs.Arg02;
+            ref string local90 = ref this.siGlobs.Arg03;
+            SILFile silFile = (SILFile) null;
+            ref SILFile local91 = ref silFile;
+            Expression = uploadDownloadEngine.FileLocalPath(ID, ref local89, ref local90, ref local91);
+            goto label_613;
+          }
+          goto default;
+        case 1916642562:
+          if (Operators.CompareString(str2, "foldergettarget", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              if (folder.IsVirtual())
+              {
+                if (this.siGlobs.objUser.MayXF(folder, "xsettings"))
+                {
+                  Expression = this.siGlobs.objEngine.folderEngine.FolderGetDetailsXml(folder.LinkID);
+                  goto label_613;
+                }
+                this.ErrorCode = 2850;
+                this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60042);
+                Expression = Conversions.ToString(false);
+                goto label_613;
+              }
+              this.ErrorCode = 2850;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60043);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1944058687:
+          if (Operators.CompareString(str2, "usergroupgetdetails", false) == 0)
+          {
+            string id = this.siGlobs.objEngine.userGroupEngine.UserGroupNameToID(this.siGlobs.Arg01);
+            if (Conversions.ToLong(id) > 0L)
+            {
+              Expression = this.siGlobs.objEngine.userGroupEngine.UserGroupGetQuickDetails(Conversions.ToInteger(id));
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60020, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 1946426524:
+          if (Operators.CompareString(str2, "userchangedetails", false) == 0)
+          {
+            string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            IUserEngine userEngine = this.siGlobs.objEngine.userEngine;
+            ref string local92 = ref username;
+            string str33 = "";
+            ref string local93 = ref str33;
+            ref string local94 = ref this.siGlobs.Arg03;
+            ref string local95 = ref this.siGlobs.Arg04;
+            string str34 = "1";
+            ref string local96 = ref str34;
+            ref string local97 = ref this.siGlobs.Arg05;
+            ref string local98 = ref this.siGlobs.Arg06;
+            ref string local99 = ref this.siGlobs.Arg07;
+            string str35 = Conversions.ToString(1);
+            ref string local100 = ref str35;
+            string empty3 = string.Empty;
+            string empty4 = string.Empty;
+            Expression = Conversions.ToString(userEngine.UserChangeDetails(ref local92, ref local93, ref local94, ref local95, ref local96, ref local97, ref local98, ref local99, ref local100, empty3, empty4));
+            goto label_613;
+          }
+          goto default;
+        case 1950990263:
+          if (Operators.CompareString(str2, "foldergetdetails", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              Expression = this.siGlobs.objEngine.folderEngine.FolderGetDetailsXml(ref folder);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 2012158296:
+          if (Operators.CompareString(str2, "guestmsgread", false) == 0)
+          {
+            SILGuestPackageInfo guestPackageInfo = new SILGuestPackageInfo(ref this.siGlobs);
+            guestPackageInfo.LoadFromSession();
+            Expression = this.siGlobs.objEngine.msgEngine.MsgGetMessageForGuestXml(guestPackageInfo.AccessCode);
+            goto label_613;
+          }
+          goto default;
+        case 2079751154:
+          if (Operators.CompareString(str2, "userchangesetting", false) == 0)
+          {
+            string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            Expression = Conversions.ToString(this.siGlobs.objEngine.userEngine.UserChangeSetting(ref username, ref this.siGlobs.Arg02, ref this.siGlobs.Arg03));
+            goto label_613;
+          }
+          goto default;
+        case 2096832854:
+          if (Operators.CompareString(str2, "fileupload", false) == 0)
+          {
+            Expression = "";
+            this.ErrorCode = 100;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60006);
+            goto label_613;
+          }
+          goto default;
+        case 2096847761:
+          if (Operators.CompareString(str2, "usergethomefolder", false) == 0)
+          {
+            string homeFolder = this.siGlobs.objEngine.userEngine.UserGetHomeFolder(this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01));
+            Expression = Conversions.ToString(this.siGlobs.objEngine.ErrorCode == 0 ? (object) homeFolder : (object) false);
+            goto label_613;
+          }
+          goto default;
+        case 2122538169:
+          if (Operators.CompareString(str2, "folderaccessforuser", false) == 0)
+          {
+            IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+            ref string local101 = ref this.siGlobs.Arg01;
+            SILFolder silFolder = (SILFolder) null;
+            ref SILFolder local102 = ref silFolder;
+            string id = folderEngine.FolderPathToID(ref local101, ref local102);
+            this.siGlobs.objEngine.folderEngine.FolderBuildFolderPermsIfNeeded();
+            Expression = SILUtility.MakeTag("FolderRelationship", (object) this.siGlobs.objEngine.folderEngine.FolderUserNiceXMLRelationship(Conversions.ToString(this.siGlobs.objEngine.folderEngine.FolderGetRelationship(id))));
+            goto label_613;
+          }
+          goto default;
+        case 2129960229:
+          if (Operators.CompareString(str2, "instlist", false) == 0)
+          {
+            IOrgEngine orgEngine = this.siGlobs.objEngine.orgEngine;
+            string str36 = "";
+            ref string local = ref str36;
+            Expression = orgEngine.InstListQuick(ref local);
+            goto label_613;
+          }
+          goto default;
+        case 2151267959:
+          if (Operators.CompareString(str2, "guestsignon", false) == 0)
+          {
+            SILGuestPackageInfo guestPackageInfo = new SILGuestPackageInfo(ref this.siGlobs);
+            guestPackageInfo.LoadFromSession();
+            Expression = this.siGlobs.objUser.ReturnUserInfoXML() + guestPackageInfo.ToXMLString();
+            if (Operators.CompareString(guestPackageInfo.PkgID, "0", false) != 0)
+            {
+              Expression += this.siGlobs.objEngine.msgEngine.MsgGetMessageForGuestXml(guestPackageInfo.AccessCode);
+              goto label_613;
+            }
+            goto label_613;
+          }
+          goto default;
+        case 2312246672:
+          if (Operators.CompareString(str2, "folderchangenotesettings", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              FolderNotificationStyleType result1 = FolderNotificationStyleType.Normal;
+              if (System.Enum.TryParse<FolderNotificationStyleType>(this.siGlobs.Arg10, out result1) && !System.Enum.IsDefined(typeof (FolderNotificationStyleType), (object) result1))
+                result1 = FolderNotificationStyleType.Normal;
+              int result2 = -1;
+              int.TryParse(this.siGlobs.Arg03, out result2);
+              int result3 = -1;
+              int.TryParse(this.siGlobs.Arg05, out result3);
+              int result4 = -1;
+              int.TryParse(this.siGlobs.Arg09, out result4);
+              FolderNotificationType result5 = FolderNotificationType.None;
+              if (System.Enum.TryParse<FolderNotificationType>(this.siGlobs.Arg02, out result5) && !System.Enum.IsDefined(typeof (FolderNotificationType), (object) result5))
+                result5 = FolderNotificationType.None;
+              FolderNotificationType result6 = FolderNotificationType.None;
+              if (System.Enum.TryParse<FolderNotificationType>(this.siGlobs.Arg04, out result6) && !System.Enum.IsDefined(typeof (FolderNotificationType), (object) result6))
+                result6 = FolderNotificationType.None;
+              FolderNotificationType result7 = FolderNotificationType.None;
+              if (System.Enum.TryParse<FolderNotificationType>(this.siGlobs.Arg07, out result7) && !System.Enum.IsDefined(typeof (FolderNotificationType), (object) result7))
+                result7 = FolderNotificationType.None;
+              FolderNotificationType result8 = FolderNotificationType.None;
+              if (System.Enum.TryParse<FolderNotificationType>(this.siGlobs.Arg08, out result8) && !System.Enum.IsDefined(typeof (FolderNotificationType), (object) result8))
+                result8 = FolderNotificationType.None;
+              IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+              int id = folder.ID;
+              string pathHash = folder.PathHash;
+              int sendType = (int) result5;
+              int sendTime = result2;
+              int recType = (int) result6;
+              int recTime = result3;
+              int postUploadNotificationType = (int) result7;
+              int noDeliveryType = (int) result8;
+              int noDeliveryTime = result4;
+              int notificationStyle = (int) result1;
+              int num9 = 0;
+              ref int local = ref num9;
+              Expression = Conversions.ToString(folderEngine.FolderChangeNoteSettings(id, pathHash, (FolderNotificationType) sendType, sendTime, (FolderNotificationType) recType, recTime, (FolderNotificationType) postUploadNotificationType, (FolderNotificationType) noDeliveryType, noDeliveryTime, (FolderNotificationStyleType) notificationStyle, true, ref local));
+              goto label_613;
+            }
+            this.ErrorCode = 2020;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60007);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 2317517517:
+          if (Operators.CompareString(str2, "folderviewsettings", false) == 0)
+            break;
+          goto default;
+        case 2343166430:
+          if (Operators.CompareString(str2, "useraddclone", false) == 0)
+          {
+            string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            if (Operators.CompareString(this.siGlobs.Arg03, "", false) == 0)
+              this.siGlobs.Arg03 = this.siGlobs.Arg02;
+            IUserEngine userEngine = this.siGlobs.objEngine.userEngine;
+            string OrigUsername = username;
+            string LoginName = this.siGlobs.Arg02;
+            ref string local103 = ref str1;
+            string RealName = this.siGlobs.Arg03;
+            string Pass1 = SILUtility.XHTMLUnClean(this.siGlobs.Arg04);
+            string Pass2 = SILUtility.XHTMLUnClean(this.siGlobs.Arg05);
+            string MustChangePassword = this.siGlobs.Arg07;
+            string Email = this.siGlobs.Arg08;
+            string Notes = this.siGlobs.Arg09;
+            string str37 = "";
+            ref string local104 = ref str37;
+            string str38 = "";
+            ref string local105 = ref str38;
+            Expression = Conversions.ToString(userEngine.UserAddClone(OrigUsername, LoginName, ref local103, RealName, Pass1, Pass2, MustChangePassword, Email, Notes, ExistingHomeFolderPath: ref local104, SuggestedHomeFolderPath: ref local105));
+            goto label_613;
+          }
+          goto default;
+        case 2396681607:
+          if (Operators.CompareString(str2, "folderlistaccess", false) == 0)
+          {
+            IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+            ref string local106 = ref this.siGlobs.Arg01;
+            SILFolder silFolder = (SILFolder) null;
+            ref SILFolder local107 = ref silFolder;
+            string id = folderEngine.FolderPathToID(ref local106, ref local107);
+            if (Conversions.ToLong(id) > 0L)
+            {
+              if (Conversions.ToLong(id) >= 100000L)
+              {
+                Expression = this.siGlobs.objEngine.folderEngine.FolderUserListXml(Conversions.ToInteger(id)) + this.siGlobs.objEngine.folderEngine.FolderGroupListXml(Conversions.ToInteger(id));
+                goto label_613;
+              }
+              this.ErrorCode = 2020;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60010);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 2417123689:
+          if (Operators.CompareString(str2, "makerandompassword", false) == 0)
+          {
+            if (Operators.CompareString(this.siGlobs.Arg01, "", false) != 0)
+            {
+              string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+              if (Operators.CompareString(username, "", false) == 0)
+                username = this.siGlobs.Arg01;
+              Expression = this.siGlobs.objUtility.MakeRandomPassword(username, this.siGlobs.objUser.InstPassLength, this.siGlobs.objUser.InstPassStrength);
+              goto label_613;
+            }
+            this.siGlobs.objEngine.ErrorCode = 2850;
+            this.siGlobs.objEngine.ErrorDescription = this.siGlobs.objI11N.GetMsg(60017);
+            Expression = "";
+            goto label_613;
+          }
+          goto default;
+        case 2475241785:
+          if (Operators.CompareString(str2, "folderlist", false) == 0)
+          {
+            IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+            ref string local108 = ref this.siGlobs.Arg01;
+            ref string local109 = ref this.siGlobs.Arg02;
+            ref string local110 = ref this.siGlobs.Arg03;
+            ref string local111 = ref this.siGlobs.Arg04;
+            string str39 = "all";
+            ref string local112 = ref str39;
+            ref string local113 = ref this.siGlobs.Arg05;
+            bool flag17 = true;
+            ref bool local114 = ref flag17;
+            bool flag18 = true;
+            ref bool local115 = ref flag18;
+            Expression = folderEngine.FolderListSummaryXml(ref local108, ref local109, ref local110, ref local111, ref local112, ref local113, ref local114, ref local115);
+            goto label_613;
+          }
+          goto default;
+        case 2479934188:
+          if (Operators.CompareString(str2, "samlsignon", false) == 0)
+            goto label_494;
+          goto default;
+        case 2498924867:
+          if (Operators.CompareString(str2, "loglistnewitems", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.LogListNewItems(this.siGlobs.Arg01);
+            goto label_613;
+          }
+          goto default;
+        case 2644311623:
+          if (Operators.CompareString(str2, "hostpermitswap", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.orgEngine.InstSwapHostAccess(Conversions.ToInteger(this.siGlobs.Arg01), Conversions.ToInteger(this.siGlobs.Arg02), ref this.siGlobs.Arg03));
+            goto label_613;
+          }
+          goto default;
+        case 2670854387:
+          if (Operators.CompareString(str2, "folderpathtodetails", false) == 0)
+            break;
+          goto default;
+        case 2687390302:
+          if (Operators.CompareString(str2, "folderaddas2root", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.folderEngine.FolderCheckAddRootAS2Folder();
+            goto label_613;
+          }
+          goto default;
+        case 2689604505:
+          if (Operators.CompareString(str2, "folderaddvirtualbypath", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg02);
+            if (!ListUtility.InList<string>(this.siGlobs.Arg03, Conversions.ToString(2), Conversions.ToString(1), Conversions.ToString(0)))
+              this.siGlobs.Arg03 = Conversions.ToString(2);
+            if (folder != null)
+            {
+              Expression = this.siGlobs.objEngine.folderEngine.FolderAddVirtualByPath(this.siGlobs.Arg01, Conversions.ToString(folder.ID), Conversions.ToInteger(this.siGlobs.Arg03));
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg02);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 2742365361:
+          if (Operators.CompareString(str2, "usergroupchangemembership", false) == 0)
+          {
+            string id = this.siGlobs.objEngine.userGroupEngine.UserGroupNameToID(this.siGlobs.Arg01);
+            if (Conversions.ToLong(id) > 0L)
+            {
+              string Left = this.siGlobs.Arg03;
+              if (Operators.CompareString(Left, "1", false) != 0)
+              {
+                if (Operators.CompareString(Left, "2", false) == 0)
+                {
+                  string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg02);
+                  Expression = Conversions.ToString(this.siGlobs.objEngine.userGroupEngine.UserGroupMemberMakeAdmin(id, username));
+                  goto label_613;
+                }
+                this.ErrorCode = 2850;
+                this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60037);
+                Expression = Conversions.ToString(false);
+                goto label_613;
+              }
+              string username3 = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg02);
+              Expression = Conversions.ToString(this.siGlobs.objEngine.userGroupEngine.UserGroupMemberMakeNotAdmin(id, username3));
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60020, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 2809632505:
+          if (Operators.CompareString(str2, "filerename", false) == 0)
+          {
+            SILUtility.SplitFolderIDAndPathHash(this.siGlobs.Arg02, ref FolderID1, ref PathHash);
+            Expression = Conversions.ToString(this.siGlobs.objEngine.fileEngine.FileRename(this.siGlobs.Arg01, FolderID1, PathHash, this.siGlobs.Arg03));
+            goto label_613;
+          }
+          goto default;
+        case 2862956236:
+          if (Operators.CompareString(str2, "reportrun", false) == 0)
+          {
+            string id = this.siGlobs.objEngine.reportEngine.ReportNameToId(this.siGlobs.Arg01);
+            if (Conversions.ToLong(id) > 0L)
+            {
+              Expression = $"<![CDATA[{this.siGlobs.objEngine.reportEngine.ReportRun(id)}]]>";
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = $"Unable to locate report '{this.siGlobs.Arg01}'";
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 2876577623:
+          if (Operators.CompareString(str2, "msgsetsettings", false) == 0)
+          {
+            this.siGlobs.objEngine.userEngine.UserSetMsgSettings(ref this.siGlobs.Arg01, ref this.siGlobs.Arg02, ref this.siGlobs.Arg03, ref this.siGlobs.Arg04);
+            goto label_613;
+          }
+          goto default;
+        case 2899741688:
+          if (Operators.CompareString(str2, "mailboxdelete", false) == 0)
+          {
+            IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+            ref string local116 = ref this.siGlobs.Arg01;
+            SILFolder silFolder = (SILFolder) null;
+            ref SILFolder local117 = ref silFolder;
+            string id = folderEngine.FolderPathToID(ref local116, ref local117);
+            if (Conversions.ToLong(id) > 0L)
+            {
+              if (Conversions.ToLong(id) >= 100000L)
+              {
+                SILEngine objEngine = this.siGlobs.objEngine;
+                int integer = Conversions.ToInteger(id);
+                ref int local118 = ref integer;
+                bool flag19 = true;
+                ref bool local119 = ref flag19;
+                bool flag20 = true;
+                ref bool local120 = ref flag20;
+                string str40 = "0";
+                ref string local121 = ref str40;
+                bool flag21 = false;
+                ref bool local122 = ref flag21;
+                List<string> stringList5 = (List<string>) null;
+                ref List<string> local123 = ref stringList5;
+                List<string> stringList6 = (List<string>) null;
+                ref List<string> local124 = ref stringList6;
+                int num10 = objEngine.MailboxDelete(ref local118, ref local119, ref local120, ref local121, ref local122, ref local123, ref local124) ? 1 : 0;
+                Conversions.ToString(integer);
+                Expression = Conversions.ToString(num10 != 0);
+                goto label_613;
+              }
+              this.ErrorCode = 2020;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60009);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60041, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 2938927214:
+          if (Operators.CompareString(str2, "guestmsgpost", false) == 0)
+          {
+            SILGuestPackageInfo guestPackageInfo = new SILGuestPackageInfo(ref this.siGlobs);
+            guestPackageInfo.LoadFromSession();
+            CleanedMessage cleanedMessage = new CleanedMessage(this.siGlobs.Arg04);
+            if (!cleanedMessage.IsSafe)
+            {
+              this.IndicateCannotCleanSecMsg();
+              goto label_613;
+            }
+            IMsgEngine msgEngine = this.siGlobs.objEngine.msgEngine;
+            ref SILGuestPackageInfo local125 = ref guestPackageInfo;
+            ref string local126 = ref this.siGlobs.Arg01;
+            ref CleanedMessage local127 = ref cleanedMessage;
+            ref string local128 = ref this.siGlobs.Arg09;
+            ref string local129 = ref this.siGlobs.Arg08;
+            string str41 = "";
+            ref string local130 = ref str41;
+            Expression = msgEngine.MsgPostForGuest(ref local125, ref local126, ref local127, ref local128, ref local129, ref local130);
+            goto label_613;
+          }
+          goto default;
+        case 2941072740:
+          if (Operators.CompareString(str2, "msgpost", false) == 0)
+          {
+            bool flag22 = false;
+            string str42 = Conversions.ToString(this.FixUndefinedArg(this.siGlobs.Opt08));
+            if (Operators.CompareString(str42, "", false) == 0)
+            {
+              str42 = this.siGlobs.objUser.Username;
+              flag22 = true;
+            }
+            else if (SILUtility.isValidEmail(str42, false))
+            {
+              SILDictionary<string, string> withEmailAddress = this.siGlobs.objEngine.userEngine.UserGetListOfUsersWithEmailAddress(str42, Conversions.ToString(this.siGlobs.objUser.InstID), true, true);
+              string Left = "";
+              try
+              {
+                foreach (KeyValuePair<string, string> keyValuePair in (Dictionary<string, string>) withEmailAddress)
+                {
+                  if (this.siGlobs.objUser.MayXUser(keyValuePair.Key, this.siGlobs.objUser.InstID, "sendas", 10))
+                  {
+                    if (Operators.CompareString(Left, "", false) == 0)
+                    {
+                      this.siGlobs.objDebug.Log(50, $"SILMachine: MsgPost: Matching incoming email address {str42} to valid shared user {keyValuePair.Key}");
+                      Left = keyValuePair.Key;
+                    }
+                    else
+                    {
+                      this.siGlobs.objDebug.Log(20, $"SILMachine: MsgPost: Another valid shared user {keyValuePair.Key} matched, after already matching {Left}. Send as user is invalid.");
+                      Left = this.siGlobs.objUser.Username;
+                      break;
+                    }
+                  }
+                }
+              }
+              finally
+              {
+                Dictionary<string, string>.Enumerator enumerator;
+                enumerator.Dispose();
+              }
+              if (Operators.CompareString(Left, "", false) == 0)
+              {
+                this.siGlobs.objDebug.Log(20, "SILMachine: MsgPost: Did't match any valid shared users to incoming email address " + str42);
+                Left = this.siGlobs.objUser.Username;
+              }
+              str42 = Left;
+              flag22 = true;
+            }
+            else
+            {
+              string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(str42);
+              if (Operators.CompareString(username, "", false) != 0)
+                str42 = username;
+              if (this.siGlobs.objUser.MayXUser(str42, this.siGlobs.objUser.InstID, "sendas", 10))
+                flag22 = true;
+            }
+            if (flag22)
+            {
+              this.siGlobs.objUser.SetSendAsUserInfoIfNec(str42);
+              List<string> stringList7 = (List<string>) null;
+              if (Operators.CompareString(this.siGlobs.Arg09, "", false) != 0)
+              {
+                stringList7 = new List<string>((IEnumerable<string>) Strings.Split(this.siGlobs.Arg09, ","));
+                int num11 = checked (stringList7.Count - 1);
+                int num12 = 0;
+                while (num12 <= num11)
+                {
+                  List<string> stringList8 = stringList7;
+                  int index1 = num12;
+                  IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+                  List<string> stringList9;
+                  int index2;
+                  string str43 = (stringList9 = stringList7)[index2 = num12];
+                  ref string local131 = ref str43;
+                  SILFolder silFolder = (SILFolder) null;
+                  ref SILFolder local132 = ref silFolder;
+                  string id = folderEngine.FolderPathToID(ref local131, ref local132);
+                  stringList9[index2] = str43;
+                  stringList8[index1] = id;
+                  checked { ++num12; }
+                }
+              }
+              if (Operators.CompareString(this.siGlobs.Opt07, "1", false) != 0)
+                this.siGlobs.Opt07 = "0";
+              bool bIgnoreInvalidRecips = SILUtility.StrToBool(this.siGlobs.Opt07);
+              if (Operators.CompareString(this.siGlobs.objSession.GetValue("SendAsUserEmail"), "", false) == 0 || Operators.CompareString(this.siGlobs.objSession.GetValue("SendAsUserReceivesNotification"), "0", false) == 0)
+                bIgnoreInvalidRecips = false;
+              SILMsgRecipientList msgRecipientList = new SILMsgRecipientList();
+              SILMsgRecipientList InvalidRecips = new SILMsgRecipientList();
+              if (this.siGlobs.objEngine.msgEngine.MsgGetRecipientListFromString(this.siGlobs.Arg02, ref msgRecipientList, bIgnoreInvalidRecips, ref InvalidRecips, str42))
+              {
+                if (Operators.CompareString(this.siGlobs.Arg12, "-1", false) == 0)
+                {
+                  if (SILUtility.IntToBool(this.siGlobs.objUser.InstEnforceMaxAttchDownloads))
+                  {
+                    string Left = this.siGlobs.objSession.GetValue("SendAsUserDefaultCustomDownloadLimit");
+                    this.siGlobs.Arg12 = Operators.CompareString(Left, "", false) == 0 || Operators.CompareString(Left, "0", false) == 0 ? Conversions.ToString(this.siGlobs.objUser.InstDefaultOrgMaxDownloads) : Left;
+                  }
+                  else
+                    this.siGlobs.Arg12 = "0";
+                }
+                if (Operators.CompareString(this.siGlobs.Arg05, "-1", false) == 0)
+                {
+                  if (SILUtility.IntToBool(-(this.siGlobs.objUser.InstMessagesCleanType == 2 ? 1 : 0)))
+                  {
+                    string Left = this.siGlobs.objSession.GetValue("SendAsUserDefaultCustomMsgExpiration");
+                    this.siGlobs.Arg05 = Operators.CompareString(Left, "", false) == 0 || Operators.CompareString(Left, "0", false) == 0 ? Conversions.ToString(this.siGlobs.objUser.InstDefaultUserCustomMsgExpiration) : Left;
+                  }
+                  else
+                    this.siGlobs.Arg05 = "0";
+                }
+                if (Operators.CompareString(this.siGlobs.Arg08, "-1", false) == 0)
+                  this.siGlobs.Arg08 = "0";
+                if (Operators.CompareString(this.siGlobs.Arg11, "-1", false) == 0)
+                  this.siGlobs.Arg11 = "0";
+                CleanedMessage cleanedMessage = new CleanedMessage(SILUtility.XHTMLClean(this.siGlobs.GetRawWebVar(this.siGlobs.RequestType, "Arg04"), false));
+                if (!cleanedMessage.IsSafe)
+                {
+                  this.IndicateCannotCleanSecMsg();
+                  goto label_613;
+                }
+                if (Operators.CompareString(this.siGlobs.Opt04, "0", false) != 0)
+                  this.siGlobs.Opt04 = "1";
+                if (Operators.CompareString(this.siGlobs.Opt05, "1", false) != 0)
+                  this.siGlobs.Opt05 = "0";
+                IMsgEngine msgEngine1 = this.siGlobs.objEngine.msgEngine;
+                ref string local133 = ref this.siGlobs.Arg01;
+                ref SILMsgRecipientList local134 = ref msgRecipientList;
+                ref string local135 = ref this.siGlobs.Arg03;
+                ref CleanedMessage local136 = ref cleanedMessage;
+                IEnumerable l = (IEnumerable) stringList7;
+                string str44 = SILUtility.ListJoin(ref l);
+                ref string local137 = ref str44;
+                ref string local138 = ref this.siGlobs.Arg08;
+                ref string local139 = ref this.siGlobs.Arg07;
+                ref string local140 = ref this.siGlobs.Arg11;
+                ref string local141 = ref this.siGlobs.Arg12;
+                ref string local142 = ref this.siGlobs.Arg05;
+                string DerivativeID = this.siGlobs.Arg06;
+                string str45 = "";
+                ref string local143 = ref str45;
+                int num13 = SILUtility.StrToBool(this.siGlobs.Opt04) ? 1 : 0;
+                int num14 = SILUtility.StrToBool(this.siGlobs.Opt05) ? 1 : 0;
+                XmlDocument xmlDocument3 = (XmlDocument) null;
+                ref XmlDocument local144 = ref xmlDocument3;
+                int num15 = bIgnoreInvalidRecips ? 1 : 0;
+                ref SILMsgRecipientList local145 = ref InvalidRecips;
+                string SendAsUser = str42;
+                string MessageID = msgEngine1.MsgPost(ref local133, ref local134, ref local135, ref local136, ref local137, ref local138, ref local139, ref local140, ref local141, ref local142, DerivativeID, ref local143, bIsSecureBody: num13 != 0, bClientNotification: num14 != 0, addrbookxml: ref local144, bIgnoreInvalidRecips: num15 != 0, InvalidRecips: ref local145, SendAsUser: SendAsUser);
+                if (Conversions.ToDouble(MessageID) == 0.0)
+                {
+                  Expression = Conversions.ToString(false);
+                  goto label_613;
+                }
+                if (Operators.CompareString(this.siGlobs.Opt05, "1", false) == 0)
+                {
+                  int integer = Conversions.ToInteger(this.siGlobs.objSession.GetValue("SendAsUserEmailFormat"));
+                  if (Operators.CompareString(this.siGlobs.Opt06, "", false) != 0 && Versioned.IsNumeric((object) this.siGlobs.Opt06))
+                    integer = Conversions.ToInteger(this.siGlobs.Opt06);
+                  IMsgEngine msgEngine2 = this.siGlobs.objEngine.msgEngine;
+                  ref string local146 = ref MessageID;
+                  bool flag23 = false;
+                  ref bool local147 = ref flag23;
+                  string MailboxOwner = str42;
+                  Expression = msgEngine2.MsgGetMessage(ref local146, ref local147, MailboxOwner: MailboxOwner, DLPQuarantineAllow: true) + SILUtility.MakeCDataTag("NotificationBody", this.siGlobs.objEngine.msgEngine.MsgGetNewPackageNotificationBody(MessageID, this.siGlobs.Arg01, this.siGlobs.Arg03, ref msgRecipientList, Conversions.ToBoolean(this.siGlobs.Opt04), cleanedMessage.Value, integer, str42)) + SILUtility.MakeTag("RecipientList", (object) msgRecipientList.ToXMLString());
+                  goto label_613;
+                }
+                IMsgEngine msgEngine3 = this.siGlobs.objEngine.msgEngine;
+                ref string local148 = ref MessageID;
+                bool flag24 = false;
+                ref bool local149 = ref flag24;
+                string MailboxOwner1 = str42;
+                Expression = msgEngine3.MsgGetMessage(ref local148, ref local149, MailboxOwner: MailboxOwner1) + SILUtility.MakeTag("RecipientList", (object) msgRecipientList.ToXMLString());
+                goto label_613;
+              }
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.siGlobs.objEngine.ErrorCode = 2020;
+            this.siGlobs.objEngine.ErrorDescription = this.siGlobs.objI11N.GetMsg(30489);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 2943071451:
+          if (Operators.CompareString(str2, "folderlistfilesin", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+              ref SILFolder local150 = ref folder;
+              bool flag25 = false;
+              ref bool local151 = ref flag25;
+              ref string local152 = ref this.siGlobs.Arg02;
+              string SortField = this.siGlobs.Arg03;
+              string SortOrder = this.siGlobs.Arg04;
+              Expression = folderEngine.FolderListFilesInXml(ref local150, ref local151, ref local152, SortField, SortOrder);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 2958500671:
+          if (Operators.CompareString(str2, "msgrecall", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.msgEngine.MsgRecall(this.siGlobs.Arg01));
+            goto label_613;
+          }
+          goto default;
+        case 2978380307:
+          if (Operators.CompareString(str2, "usergroupchangesetting", false) == 0)
+          {
+            string id = this.siGlobs.objEngine.userGroupEngine.UserGroupNameToID(this.siGlobs.Arg01);
+            if (Conversions.ToLong(id) > 0L)
+            {
+              Expression = Conversions.ToString(this.siGlobs.objEngine.userGroupEngine.UserGroupChangeSetting(id, this.siGlobs.Arg02, this.siGlobs.Arg03));
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60020, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 3078306183:
+          if (Operators.CompareString(str2, "hostpermitadd", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.orgEngine.InstAddHostAccess(Conversions.ToInteger(this.siGlobs.Arg01), this.siGlobs.Arg02, this.siGlobs.Arg03, Conversions.ToInteger(this.siGlobs.Arg04), this.siGlobs.Arg05, this.siGlobs.Arg06) != -1);
+            goto label_613;
+          }
+          goto default;
+        case 3136803488:
+          if (Operators.CompareString(str2, "usergroupmemberdelete", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.userEngine.UserGroupMemberDelete(this.siGlobs.Arg01, this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg02)));
+            goto label_613;
+          }
+          goto default;
+        case 3146432877:
+          if (Operators.CompareString(str2, "signon", false) == 0)
+            goto label_494;
+          goto default;
+        case 3230306630:
+          if (Operators.CompareString(str2, "usergroupmemberadd", false) == 0)
+          {
+            string username4 = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg02);
+            IUserEngine userEngine = this.siGlobs.objEngine.userEngine;
+            string groupID = this.siGlobs.Arg01;
+            string username5 = username4;
+            bool flag26 = false;
+            ref bool local = ref flag26;
+            Expression = Conversions.ToString(userEngine.UserGroupMemberAdd(groupID, username5, ref local));
+            goto label_613;
+          }
+          goto default;
+        case 3276867918:
+          if (Operators.CompareString(str2, "instchangescheme", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.orgEngine.InstChangeScheme(Conversions.ToInteger(this.siGlobs.Arg01), Conversions.ToInteger(this.siGlobs.Arg02)));
+            goto label_613;
+          }
+          goto default;
+        case 3280836879:
+          if (Operators.CompareString(str2, "folderlistnewfilesin", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+              ref SILFolder local153 = ref folder;
+              bool flag27 = true;
+              ref bool local154 = ref flag27;
+              string str46 = "";
+              ref string local155 = ref str46;
+              string SortField = this.siGlobs.Arg03;
+              string SortOrder = this.siGlobs.Arg04;
+              Expression = folderEngine.FolderListFilesInXml(ref local153, ref local154, ref local155, SortField, SortOrder);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 3327232411:
+          if (Operators.CompareString(str2, "folderfindfilesinwildcardpath", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.folderEngine.FolderFindFilesInWildcardPathXml(this.siGlobs.Arg01, this.siGlobs.Arg02, this.siGlobs.Arg03, this.siGlobs.Arg04, this.siGlobs.Arg05, this.siGlobs.Arg06);
+            goto label_613;
+          }
+          goto default;
+        case 3361269819:
+          if (Operators.CompareString(str2, "folderchangesetting", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              Expression = Conversions.ToString(this.siGlobs.objEngine.folderEngine.FolderChangeSetting(folder.ID.ToString(), folder.PathHash, this.siGlobs.Arg02, this.siGlobs.Arg03));
+              goto label_613;
+            }
+            this.ErrorCode = 2020;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60007);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 3367796837:
+          if (Operators.CompareString(str2, "folderfindfiles", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.folderEngine.FolderFindFiles(this.siGlobs.Arg01, this.siGlobs.Arg02, this.siGlobs.Arg03, this.siGlobs.Arg04, this.siGlobs.Arg05, this.siGlobs.Arg06);
+            goto label_613;
+          }
+          goto default;
+        case 3409220930:
+          if (Operators.CompareString(str2, "msgcheckrecips", false) == 0)
+          {
+            string[] strArray1 = new string[3];
+            string empty = string.Empty;
+            string str47 = this.siGlobs.Arg02;
+            if (Operators.CompareString(str47, "", false) != 0)
+            {
+              string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(str47);
+              if (Operators.CompareString(username, "", false) != 0)
+                str47 = username;
+            }
+            if (Operators.CompareString(str47, "", false) == 0 || this.siGlobs.objUser.MayXUser(str47, this.siGlobs.objUser.InstID, "sendas", 10))
+            {
+              IUserEngine userEngine = this.siGlobs.objEngine.userEngine;
+              ref string local156 = ref str47;
+              bool flag28 = true;
+              ref bool local157 = ref flag28;
+              string str48 = "";
+              ref string local158 = ref str48;
+              XmlDocument documentFromString = MOVEit.DMZ.Core.Xml.GetSafeNonValidatingXmlDocumentFromString(userEngine.MsgUserListXML(ref local156, ref local157, ref local158));
+              if (Operators.CompareString(this.siGlobs.Arg01, string.Empty, false) != 0)
+              {
+                string[] strArray2 = Strings.Split(this.siGlobs.Arg01, ",");
+                int index = 0;
+                while (index < strArray2.Length)
+                {
+                  string str49 = strArray2[index];
+                  int ResultCount = 0;
+                  SILUtility objUtility = this.siGlobs.objUtility;
+                  string str50 = str49.Trim();
+                  ref string local159 = ref str50;
+                  string[] strArray3 = objUtility.SplitUserlistEntry(ref local159);
+                  string Right = this.siGlobs.objEngine.msgEngine.MsgUserLookup(strArray3[2], strArray3[1], str47, ref ResultCount, ref documentFromString);
+                  if (ResultCount == 0 || ResultCount > 1)
+                    empty = Conversions.ToString(Operators.ConcatenateObject((object) empty, Operators.ConcatenateObject(Operators.ConcatenateObject(Operators.ConcatenateObject(Operators.ConcatenateObject(Operators.ConcatenateObject((object) "<InvalidRecip><RecipName>", Interaction.IIf(Operators.CompareString(Strings.LCase(strArray3[1]), "group", false) == 0, (object) "GROUP:", (object) "")), (object) strArray3[2]), (object) "</RecipName><Matches>"), (object) Right), (object) "</Matches></InvalidRecip>")));
+                  checked { ++index; }
+                }
+              }
+              Expression = $"<Results>{empty}</Results>";
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60026);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 3454559106:
+          if (Operators.CompareString(str2, "folderlistalluploadedsince", false) == 0)
+          {
+            if (Information.IsDate((object) this.siGlobs.Arg01))
+            {
+              Expression = $"<DMZStamp>{SILUtility.MakeStandardTimeDate(DateAndTime.Now)}</DMZStamp>{this.siGlobs.objEngine.fileEngine.FileListNewSince(Conversions.ToDate(this.siGlobs.Arg01))}";
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = "Invalid date stamp";
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 3464625805:
+          if (Operators.CompareString(str2, "usermyaddressbooklist", false) == 0)
+            goto label_539;
+          goto default;
+        case 3473994793:
+          if (Operators.CompareString(str2, "userlistnotmembergroups", false) == 0)
+          {
+            string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            string Left = this.siGlobs.objEngine.userEngine.UserListNotMemberGroups(ref username, true);
+            Expression = Conversions.ToString(Operators.CompareString(Left, string.Empty, false) != 0 ? (object) Left : (object) false);
+            goto label_613;
+          }
+          goto default;
+        case 3479006583:
+          if (Operators.CompareString(str2, "usercertkeyremove", false) == 0)
+          {
+            string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            Expression = Conversions.ToString(this.siGlobs.objEngine.userEngine.UserCertDelete(ref username, ref this.siGlobs.Arg02));
+            goto label_613;
+          }
+          goto default;
+        case 3496500405:
+          if (Operators.CompareString(str2, "folderlistwritable", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.folderEngine.FolderListUploadAllowedQuickXML(ref this.siGlobs.Arg01, ref this.siGlobs.Arg02, ref this.siGlobs.Arg03, ref this.siGlobs.Arg04);
+            goto label_613;
+          }
+          goto default;
+        case 3499165530:
+          if (Operators.CompareString(str2, "msgaddattchfromexisting", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.msgEngine.MsgAddAttachmentFromExisting(this.siGlobs.Arg01);
+            goto label_613;
+          }
+          goto default;
+        case 3523251866:
+          if (Operators.CompareString(str2, "usergroupaddaddrbookentry", false) == 0)
+          {
+            if (this.siGlobs.objUser.Permission >= UserPermissionType.Admin)
+            {
+              string id = this.siGlobs.objEngine.userGroupEngine.UserGroupNameToID(this.siGlobs.Arg01);
+              if (Conversions.ToLong(id) > 0L)
+              {
+                string NewEntry = this.siGlobs.Arg02;
+                if (NewEntry.ToLower().StartsWith("user:"))
+                {
+                  string Left = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(NewEntry.Substring(5));
+                  if (Operators.CompareString(Left, "", false) == 0)
+                    Left = NewEntry.Substring(5);
+                  NewEntry = "user:" + Left;
+                }
+                Expression = Conversions.ToString(this.siGlobs.objEngine.userGroupEngine.UserGroupAddAddrBookEntry(ref id, ref NewEntry, ref this.siGlobs.Arg03));
+                goto label_613;
+              }
+              this.ErrorCode = 2850;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60020, this.siGlobs.Arg01);
+              Expression = Conversions.ToString(false);
+              goto label_613;
+            }
+            this.ErrorCode = 2020;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60018);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 3555127867:
+          if (Operators.CompareString(str2, "msggetsettings", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.userEngine.UserGetMsgSettingsXML();
+            goto label_613;
+          }
+          goto default;
+        case 3562454804:
+          if (Operators.CompareString(str2, "msgsendreceipt", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.msgEngine.MsgGetSendReceiptXML(this.siGlobs.Arg01, this.siGlobs.Arg02);
+            goto label_613;
+          }
+          goto default;
+        case 3577553298:
+          if (Operators.CompareString(str2, "usercheck", false) == 0)
+          {
+            Expression = this.UserCheck(this.siGlobs.LoginName, this.siGlobs.Arg02, this.siGlobs.OrgID);
+            goto label_613;
+          }
+          goto default;
+        case 3620412312:
+          if (Operators.CompareString(str2, "filepathtoid", false) == 0)
+          {
+            IFileEngine fileEngine = this.siGlobs.objEngine.fileEngine;
+            string MOVEitPath = this.siGlobs.Arg01;
+            SILFolder silFolder = (SILFolder) null;
+            ref SILFolder local = ref silFolder;
+            Expression = fileEngine.FilePathToID(MOVEitPath, ref local);
+            goto label_613;
+          }
+          goto default;
+        case 3677912667:
+          if (Operators.CompareString(str2, "folderlistfilesinshort", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              Expression = this.siGlobs.objEngine.folderEngine.FolderListFilesInShort(ref folder, this.siGlobs.Arg03, this.siGlobs.Arg04);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 3681479414:
+          if (Operators.CompareString(str2, "msgsaveasdraft", false) == 0)
+          {
+            string str51 = Conversions.ToString(this.FixUndefinedArg(this.siGlobs.Opt08));
+            if (Operators.CompareString(str51, "", false) != 0)
+            {
+              string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(str51);
+              if (Operators.CompareString(username, "", false) != 0)
+                str51 = username;
+            }
+            CleanedMessage Message = new CleanedMessage(SILUtility.XHTMLClean(this.siGlobs.GetRawWebVar(this.siGlobs.RequestType, "Arg04"), false));
+            if (!Message.IsSafe)
+            {
+              this.IndicateCannotCleanSecMsg();
+              goto label_613;
+            }
+            Expression = this.siGlobs.objEngine.msgEngine.MsgSaveAsDraft(this.siGlobs.Arg01, this.siGlobs.Arg02, this.siGlobs.Opt01, this.siGlobs.Opt02, this.siGlobs.Opt03, this.siGlobs.Arg03, Message, this.siGlobs.Arg09, this.siGlobs.Arg08, this.siGlobs.Arg07, this.siGlobs.Arg11, this.siGlobs.Arg12, this.siGlobs.Arg05, this.siGlobs.Arg10, this.siGlobs.Opt04, str51);
+            goto label_613;
+          }
+          goto default;
+        case 3764066850:
+          if (Operators.CompareString(str2, "folderaddbypath", false) == 0)
+          {
+            if (!ListUtility.InList<string>(this.siGlobs.Arg02, Conversions.ToString(2), Conversions.ToString(1), Conversions.ToString(0)))
+              this.siGlobs.Arg02 = Conversions.ToString(2);
+            IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+            string FolderPath = this.siGlobs.Arg01;
+            int integer = Conversions.ToInteger(this.siGlobs.Arg02);
+            List<string> stringList10 = (List<string>) null;
+            ref List<string> local160 = ref stringList10;
+            List<string> stringList11 = (List<string>) null;
+            ref List<string> local161 = ref stringList11;
+            Expression = folderEngine.FolderAddByPath(FolderPath, InheritPerms: integer, FolderIDList: ref local160, FolderTypeList: ref local161);
+            goto label_613;
+          }
+          goto default;
+        case 3786376313:
+          if (Operators.CompareString(str2, "instchangemotd", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.orgEngine.InstChangeMOTD(Conversions.ToInteger(this.siGlobs.Arg01), this.siGlobs.Arg02));
+            goto label_613;
+          }
+          goto default;
+        case 3787127071:
+          if (Operators.CompareString(str2, "msgmove", false) == 0)
+          {
+            bool flag29 = false;
+            string Left = Conversions.ToString(this.FixUndefinedArg(this.siGlobs.Arg02));
+            string FolderPath = Conversions.ToString(this.FixUndefinedArg(this.siGlobs.Arg03));
+            string str52 = Conversions.ToString(this.FixUndefinedArg(this.siGlobs.Arg04));
+            if (Operators.CompareString(str52, "", false) != 0)
+            {
+              string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(str52);
+              if (Operators.CompareString(username, "", false) != 0)
+                str52 = username;
+            }
+            if (Operators.CompareString(Left, "", false) != 0)
+            {
+              SILFolder folder1 = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref Left, MailboxOwner: str52);
+              if (folder1 != null && folder1.IsMailbox() && (folder1.SystemType == 0 || Operators.CompareString(folder1.Name, "Drafts", false) != 0 && Operators.CompareString(folder1.Name, "Templates", false) != 0) && this.siGlobs.objUser.MayXUser(folder1.Owner, this.siGlobs.objUser.InstID, "sendas", 10))
+              {
+                Left = Conversions.ToString(folder1.ID);
+                str52 = folder1.Owner;
+                if (Operators.CompareString(FolderPath, "", false) == 0)
+                {
+                  flag29 = true;
+                }
+                else
+                {
+                  SILFolder folder2 = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref FolderPath, MailboxOwner: str52);
+                  if (folder2 != null && folder2.IsMailbox() && (folder2.SystemType == 0 || Operators.CompareString(folder2.Name, "Drafts", false) != 0 && Operators.CompareString(folder2.Name, "Templates", false) != 0))
+                  {
+                    FolderPath = Conversions.ToString(folder2.ID);
+                    flag29 = true;
+                  }
+                }
+              }
+            }
+            if (flag29)
+            {
+              Expression = Conversions.ToString(this.siGlobs.objEngine.msgEngine.MsgMove(ref this.siGlobs.Arg01, ref Left, FolderPath, str52, true));
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60049, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 3819442813:
+          if (Operators.CompareString(str2, "folderlistnewuploads", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.folderEngine.FolderListNewUploads(ref this.siGlobs.Arg01, ref this.siGlobs.Arg02, ref this.siGlobs.Arg03, ref this.siGlobs.Arg04);
+            goto label_613;
+          }
+          goto default;
+        case 3869008132:
+          if (Operators.CompareString(str2, "hostpermitlist", false) == 0)
+          {
+            IOrgEngine orgEngine = this.siGlobs.objEngine.orgEngine;
+            int integer = Conversions.ToInteger(this.siGlobs.Arg01);
+            string str53 = "all";
+            ref string local = ref str53;
+            Expression = orgEngine.InstListHostAccess(integer, ref local);
+            goto label_613;
+          }
+          goto default;
+        case 3872914827:
+          if (Operators.CompareString(str2, "usergroupmemberlist", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.userGroupEngine.UserGroupListMembersXml(this.siGlobs.Arg01, true);
+            goto label_613;
+          }
+          goto default;
+        case 3914614112:
+          if (Operators.CompareString(str2, "folderfilelistdelete", false) == 0)
+          {
+            string[] fileList = Strings.Split(this.siGlobs.Arg01, ",");
+            Expression = Conversions.ToString(this.siGlobs.objEngine.folderEngine.FolderFileListDelete((IReadOnlyCollection<string>) Strings.Split(this.siGlobs.Arg02, ","), (IReadOnlyCollection<string>) fileList));
+            goto label_613;
+          }
+          goto default;
+        case 3916923374:
+          if (Operators.CompareString(str2, "folderpathtoid", false) == 0)
+          {
+            bool flag30 = false;
+            if (Operators.CompareString(this.siGlobs.Arg02, "1", false) == 0)
+              flag30 = true;
+            IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+            ref string local162 = ref this.siGlobs.Arg01;
+            SILFolder silFolder = (SILFolder) null;
+            ref SILFolder local163 = ref silFolder;
+            int num16 = flag30 ? 1 : 0;
+            Expression = folderEngine.FolderPathToID(ref local162, ref local163, bIncludeHash: num16 != 0);
+            goto label_613;
+          }
+          goto default;
+        case 3936669143:
+          if (Operators.CompareString(str2, "folderlistallfortype", false) == 0)
+          {
+            Expression = this.siGlobs.objEngine.folderEngine.FolderListAllForType(this.siGlobs.Arg01);
+            goto label_613;
+          }
+          goto default;
+        case 3951444689:
+          if (Operators.CompareString(str2, "usercertimport", false) == 0)
+          {
+            Expression = Conversions.ToString(this.siGlobs.objEngine.userEngine.UserCertImportFromString(this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01), this.siGlobs.Arg02));
+            goto label_613;
+          }
+          goto default;
+        case 3960308480:
+          if (Operators.CompareString(str2, "clientcertcheck", false) == 0)
+          {
+            Expression = this.HandleFTPClientCertCheck(this.siGlobs.LoginName, this.siGlobs.Arg02, this.siGlobs.Arg03, this.siGlobs.Arg04, this.siGlobs.OrgID);
+            goto label_613;
+          }
+          goto default;
+        case 3999410474:
+          if (Operators.CompareString(str2, "filemove", false) == 0)
+          {
+            SILUtility.SplitFolderIDAndPathHash(this.siGlobs.Arg02, ref FolderID1, ref PathHash);
+            string s = FolderID1;
+            int num17 = new int();
+            ref int local = ref num17;
+            if (int.TryParse(s, out local))
+            {
+              Expression = Conversions.ToString(this.siGlobs.objEngine.fileEngine.FileMove(this.siGlobs.Arg01, int.Parse(FolderID1), PathHash, this.siGlobs.Arg03, this.siGlobs.Arg04));
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, FolderID1);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 4061675305:
+          if (Operators.CompareString(str2, "signonfailure", false) == 0)
+          {
+            string loginName = this.siGlobs.LoginName;
+            string str54 = Conversions.ToString(this.siGlobs.objUser.DiscoverInstID(loginName, "0", ref str1));
+            if (Operators.CompareString(str54, "0", false) == 0)
+              str54 = Conversions.ToString(this.siGlobs.objEngine.orgEngine.InstDefaultID());
+            if (Operators.CompareString(this.siGlobs.Arg01, "0", false) == 0)
+            {
+              if (Operators.CompareString(this.siGlobs.LogInsecureFTPFailedSignons, "1", false) == 0)
+              {
+                this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.Signon, str54, loginName, "", "", "", "", "", "", this.siGlobs.Arg02, 2417, "FTP", "", "", "", "Insecure FTP is not enabled", "", "", "", 0.0, "", "", "", "", 0);
+                this.siGlobs.objUser.LogAccessFail(loginName, Conversions.ToInteger(str54), this.siGlobs.Arg02);
+                goto label_613;
+              }
+              goto label_613;
+            }
+            this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.Signon, str54, loginName, "", "", "", "", "", "", this.siGlobs.Arg02, 2417, "FTP", "", "", "", "Insecure FTP is not enabled for this IP", "", "", "", 0.0, "", "", "", "", 0);
+            this.siGlobs.objUser.LogAccessFail(loginName, Conversions.ToInteger(str54), this.siGlobs.Arg02);
+            goto label_613;
+          }
+          goto default;
+        case 4069647081:
+          if (Operators.CompareString(str2, "useradd", false) == 0)
+          {
+            if (Operators.CompareString(this.siGlobs.Arg05, "", false) == 0)
+              this.siGlobs.Arg05 = this.siGlobs.Arg01;
+            string defaultHomeFolderPath = this.siGlobs.Arg11;
+            if (Operators.CompareString(defaultHomeFolderPath, string.Empty, false) == 0)
+              defaultHomeFolderPath = this.siGlobs.objUser.InstDefaultHomeFolderPath;
+            IUserEngine userEngine = this.siGlobs.objEngine.userEngine;
+            string MyLoginName = this.siGlobs.Arg01;
+            ref string local164 = ref defaultHomeFolderPath;
+            string Pass1 = SILUtility.XHTMLUnClean(this.siGlobs.Arg02);
+            string Pass2 = SILUtility.XHTMLUnClean(this.siGlobs.Arg03);
+            string MustChangePassword = this.siGlobs.Arg09;
+            string MyInstID = this.siGlobs.Arg04;
+            string RealName = this.siGlobs.Arg05;
+            string Email = this.siGlobs.Arg06;
+            int integer = Conversions.ToInteger(this.siGlobs.Arg07);
+            string Notes = this.siGlobs.Arg08;
+            string LangCode = this.siGlobs.Arg10;
+            string HomeFolderPath = defaultHomeFolderPath;
+            string str55 = "";
+            ref string local165 = ref str55;
+            string str56 = "";
+            ref string local166 = ref str56;
+            string str57 = "";
+            ref string local167 = ref str57;
+            bool flag31 = false;
+            ref bool local168 = ref flag31;
+            string str58 = "";
+            ref string local169 = ref str58;
+            bool flag32 = false;
+            ref bool local170 = ref flag32;
+            bool flag33 = false;
+            ref bool local171 = ref flag33;
+            string str59 = "";
+            ref string local172 = ref str59;
+            string str60 = "";
+            ref string local173 = ref str60;
+            Expression = Conversions.ToString(userEngine.UserAdd(MyLoginName, ref local164, Pass1, Pass2, MustChangePassword, (object) MyInstID, RealName, Email, "1", integer, Notes, LangCode, HomeFolderPath, ref local165, ref local166, ref local167, ref local168, ref local169, ref local170, ref local171, ExistingHomeFolderPath: ref local172, SuggestedHomeFolderPath: ref local173));
+            goto label_613;
+          }
+          goto default;
+        case 4125450049:
+          if (Operators.CompareString(str2, "usergrouplist", false) == 0)
+          {
+            IUserGroupEngine userGroupEngine = this.siGlobs.objEngine.userGroupEngine;
+            ref string local174 = ref this.siGlobs.Arg01;
+            ref string local175 = ref this.siGlobs.Arg02;
+            ref string local176 = ref this.siGlobs.Arg03;
+            ref string local177 = ref this.siGlobs.Arg04;
+            string str61 = "";
+            ref string local178 = ref str61;
+            string str62 = "all";
+            ref string local179 = ref str62;
+            ref string local180 = ref this.siGlobs.Arg05;
+            Expression = userGroupEngine.UserGroupListXml(ref local174, ref local175, ref local176, ref local177, ref local178, ref local179, ref local180);
+            goto label_613;
+          }
+          goto default;
+        case 4177473284:
+          if (Operators.CompareString(str2, "msglisttrash", false) == 0)
+          {
+            IEnumerable<string> array3 = (IEnumerable<string>) this.siGlobs.objUtility.DelimitedString2ArrayList(this.siGlobs.Arg01, ",").ToArray(typeof (string));
+            IEnumerable<string> array4 = (IEnumerable<string>) this.siGlobs.objUtility.DelimitedString2ArrayList(this.siGlobs.Arg02, ",").ToArray(typeof (string));
+            Expression = Conversions.ToString(this.siGlobs.objEngine.msgEngine.MsgINLISTTrash(ref array3, ref array4));
+            goto label_613;
+          }
+          goto default;
+        case 4213233721:
+          if (Operators.CompareString(str2, "bundledownload", false) == 0)
+          {
+            string[] strArray = new string[1];
+            bool flag34 = false;
+            if (Operators.CompareString(this.siGlobs.Arg01, "", false) != 0)
+            {
+              int arrSize;
+              if (this.ParseXMLList(this.siGlobs.Arg01, ref strArray, ref arrSize))
+                flag34 = true;
+              else if (this.ParseXMLList(SILUtility.XHTMLUnClean(this.siGlobs.Arg01), ref strArray, ref arrSize))
+              {
+                flag34 = true;
+              }
+              else
+              {
+                this.ErrorCode = 200;
+                this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60005);
+              }
+              if (flag34)
+              {
+                xmlDocument1 = this.BundleDownloadMachine(ref strArray, arrSize, this.siGlobs.Arg02);
+                if (this.siGlobs.objEngine.ErrorCode == 0)
+                  flag1 = true;
+              }
+            }
+            this.siGlobs.objDebug.Log(40, "END BUNDLEDOWNLOAD CASE");
+            goto label_613;
+          }
+          goto default;
+        case 4234078718:
+          if (Operators.CompareString(str2, "msglist", false) == 0)
+          {
+            string str63 = Conversions.ToString(this.FixUndefinedArg(this.siGlobs.Arg02));
+            if (Operators.CompareString(str63, "", false) != 0)
+            {
+              string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(str63);
+              if (Operators.CompareString(username, "", false) != 0)
+                str63 = username;
+            }
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01, MailboxOwner: str63);
+            if (folder != null && folder.IsMailbox() && this.siGlobs.objUser.MayXUser(folder.Owner, this.siGlobs.objUser.InstID, "viewmsgs", 10))
+            {
+              IMsgEngine msgEngine = this.siGlobs.objEngine.msgEngine;
+              // ISSUE: variable of a reference type
+              int& local181;
+              // ISSUE: explicit reference operation
+              string str64 = Conversions.ToString(^(local181 = ref folder.ID));
+              ref string local182 = ref str64;
+              string str65 = "";
+              ref string local183 = ref str65;
+              string str66 = "";
+              ref string local184 = ref str66;
+              string owner = folder.Owner;
+              string str67 = msgEngine.MsgList(ref local182, ref local183, ref local184, owner, true, true);
+              local181 = Conversions.ToInteger(str64);
+              Expression = str67;
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60041, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        case 4239692471:
+          if (Operators.CompareString(str2, "useraddressbooklist", false) == 0)
+          {
+            string username = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+            string Left = this.siGlobs.objEngine.userEngine.UserListAddressBook(ref username);
+            Expression = Conversions.ToString(Operators.CompareString(Left, string.Empty, false) != 0 ? (object) Left : (object) false);
+            goto label_613;
+          }
+          goto default;
+        case 4263183150:
+          if (Operators.CompareString(str2, "folderlistsubfolders", false) == 0)
+          {
+            SILFolder folder = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+            if (folder != null)
+            {
+              IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+              ref SILFolder local185 = ref folder;
+              string str68 = "all";
+              ref string local186 = ref str68;
+              Expression = folderEngine.SubFolderListSummaryXml(ref local185, ref local186);
+              goto label_613;
+            }
+            this.ErrorCode = 2850;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60008, this.siGlobs.Arg01);
+            Expression = Conversions.ToString(false);
+            goto label_613;
+          }
+          goto default;
+        default:
+          this.ErrorCode = 2320;
+          this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60021, this.siGlobs.Transaction);
+          goto label_613;
+      }
+      SILFolder folder3 = this.siGlobs.objEngine.folderEngine.FolderPathToFolder(ref this.siGlobs.Arg01);
+      Expression = folder3 == null ? string.Empty : this.siGlobs.objEngine.folderEngine.FolderGetDetailsXml(ref folder3);
+      goto label_613;
+label_494:
+      Expression = Conversions.ToString(this.siGlobs.objUser.LogSignon(this.siGlobs.objUser.Username));
+      if (Conversions.ToBoolean(Expression))
+      {
+        if (this.siGlobs.objUser.IsRequiredChangePassword())
+          this.siGlobs.objEngine.userEngine.UserSetMustChangePassword(this.siGlobs.objUser.Username, true);
+        bool includeAdHoc = !SILUtility.InList<int>(interfaceCode, 2, 3, 4);
+        Expression = this.siGlobs.objUser.ReturnUserInfoXML(SILUtility.StrToBool(this.siGlobs.Arg01), SILUtility.StrToBool(this.siGlobs.Arg02), SILUtility.StrToBool(this.siGlobs.Arg03), includeAdHoc);
+        goto label_613;
+      }
+      goto label_613;
+label_539:
+      string username6 = this.siGlobs.objEngine.userEngine.UserLoginNameToUsername(this.siGlobs.Arg01);
+      if (Operators.CompareString(username6, "", false) != 0 && this.siGlobs.objUser.MayXUser(username6, this.siGlobs.objUser.InstID, "sendas", 10))
+      {
+        IUserEngine userEngine = this.siGlobs.objEngine.userEngine;
+        string SendAsUser = username6;
+        ref string local187 = ref this.siGlobs.Arg02;
+        string str69 = "Name";
+        ref string local188 = ref str69;
+        string str70 = "asc";
+        ref string local189 = ref str70;
+        string str71 = "all";
+        ref string local190 = ref str71;
+        Expression = userEngine.UserListUserAddressBookXML(SendAsUser, ref local187, ref local188, ref local189, ref local190);
+      }
+      else
+      {
+        this.ErrorCode = 2850;
+        this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60026);
+        Expression = Conversions.ToString(false);
+      }
+    }
+label_613:
+    if (this.ErrorCode == 0)
+    {
+      this.ErrorCode = this.siGlobs.objEngine.ErrorCode;
+      this.ErrorDescription = this.siGlobs.objEngine.ErrorDescription;
+    }
+    if (this.ErrorCode == 0)
+    {
+      this.ErrorCode = this.siGlobs.objUser.ErrorCode;
+      this.ErrorDescription = this.siGlobs.objUser.ErrorDescription;
+    }
+    string outerXml;
+    if (!flag1)
+    {
+      this.siGlobs.objDebug.Log(60, "ProcessXMLRequest: Starting response build");
+      this.siGlobs.objDebug.Log(60, "ProcessXMLRequest: Initializing stringbuilder to size " + Conversions.ToString(checked (Strings.Len(Expression) + 500)));
+      StringBuilder stringBuilder = new StringBuilder(checked (Strings.Len(Expression) + 500));
+      stringBuilder.Append($"<?xml version=\"1.0\" encoding=\"{this.OutputEncoding.WebName}\"?>\r\n");
+      stringBuilder.Append("<siLockResponse>");
+      stringBuilder.Append($"<ErrorCode>{Conversions.ToString(this.ErrorCode)}</ErrorCode>");
+      stringBuilder.Append($"<ErrorDescription>{this.ErrorDescription}</ErrorDescription>");
+      stringBuilder.Append("<Payload>");
+      stringBuilder.Append(Expression);
+      stringBuilder.Append("</Payload>");
+      stringBuilder.Append("</siLockResponse>");
+      this.siGlobs.objDebug.Log(60, "ProcessXMLRequest: Total response length: " + Conversions.ToString(Strings.Len(stringBuilder.ToString())));
+      outerXml = stringBuilder.ToString();
+    }
+    else
+      outerXml = xmlDocument1.OuterXml;
+    return outerXml;
+  }
+
+  public XmlDocument MakeXMLReplySkeleton(string MyErrCode, ref string MyErrDesc)
+  {
+    XmlDocument xmlDocument = new XmlDocument();
+    XmlNode xmlDeclaration = (XmlNode) xmlDocument.CreateXmlDeclaration("1.0", this.OutputEncoding.WebName, (string) null);
+    xmlDocument.InsertBefore(xmlDeclaration, (XmlNode) xmlDocument.DocumentElement);
+    XmlElement element1 = xmlDocument.CreateElement("siLockResponse");
+    xmlDocument.AppendChild((XmlNode) element1);
+    XmlElement element2 = xmlDocument.CreateElement("ErrorCode");
+    element2.InnerText = MyErrCode;
+    element1.AppendChild((XmlNode) element2);
+    XmlElement element3 = xmlDocument.CreateElement("ErrorDescription");
+    element3.InnerText = MyErrDesc;
+    element1.AppendChild((XmlNode) element3);
+    return xmlDocument;
+  }
+
+  public string MakeEmptyXMLReply(string MyErrCode, string MyErrDesc)
+  {
+    StringBuilder stringBuilder = new StringBuilder();
+    stringBuilder.Append($"<?xml version=\"1.0\" encoding=\"{this.OutputEncoding.WebName}\"?>\r\n");
+    stringBuilder.Append("<siLockResponse>");
+    stringBuilder.Append($"<ErrorCode>{MyErrCode}</ErrorCode>");
+    stringBuilder.Append($"<ErrorDescription>{SILUtility.XHTMLClean(MyErrDesc)}</ErrorDescription>");
+    stringBuilder.Append("</siLockResponse>");
+    return stringBuilder.ToString();
+  }
+
+  public XmlDocument BundleDownloadMachine(ref string[] FileID, int FileIDSize, string MyFormat)
+  {
+    this.siGlobs.objDebug.Log(40, "BundleDownloadMachine: Start, FileIDSize=" + Conversions.ToString(FileIDSize));
+    string empty1 = string.Empty;
+    string empty2 = string.Empty;
+    Conversions.ToDouble(MyFormat);
+    int logLevel = !this.siGlobs.objEngine.fileEngine.FileINLISTReadBuffer(FileID, FileIDSize, ref MyFormat, ref this.siGlobs.AgentBrand, ref this.siGlobs.AgentVersion, ref this.RemoteIP, ref empty1) ? 20 : 40;
+    this.siGlobs.objDebug.Log(40, "BundleDownloadMachine: Done with FileINLISTReadBuffer");
+    string MyErrCode = Conversions.ToString(this.siGlobs.objEngine.ErrorCode);
+    SILEngine objEngine;
+    string errorDescription = (objEngine = this.siGlobs.objEngine).ErrorDescription;
+    ref string local = ref errorDescription;
+    XmlDocument xmlDocument1 = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+    objEngine.ErrorDescription = errorDescription;
+    XmlDocument xmlDocument2 = xmlDocument1;
+    this.siGlobs.objDebug.Log(40, "BundleDownloadMachine: Done with MakeXMLReplySkeleton; siGlobs.objEngine.ErrorCode=" + Conversions.ToString(this.siGlobs.objEngine.ErrorCode));
+    if (this.siGlobs.objEngine.ErrorCode == 0)
+    {
+      XmlElement documentElement = xmlDocument2.DocumentElement;
+      XmlElement element1 = xmlDocument2.CreateElement("Payload");
+      XmlElement newChild = element1;
+      documentElement.AppendChild((XmlNode) newChild);
+      XmlElement element2 = xmlDocument2.CreateElement("FileContents");
+      element2.SetAttribute("xmlns:dt", "urn:schemas-microsoft-com:datatypes");
+      element2.SetAttribute("dt", "urn:schemas-microsoft-com:datatypes", "bin.base64");
+      element2.InnerText = SILUtility.MakeBase64String(empty1);
+      element1.AppendChild((XmlNode) element2);
+    }
+    this.siGlobs.objDebug.Log(logLevel, "BundleDownloadMachine: End");
+    return xmlDocument2;
+  }
+
+  public XmlDocument FileDownloadMachine(string FileID, ref string MyFormat)
+  {
+    string empty1 = string.Empty;
+    string empty2 = string.Empty;
+    bool bBinary = 0.0 + Conversions.ToDouble(MyFormat) == 31.0;
+    bool Audit = true;
+    SILFile silFile = new SILFile();
+    silFile.RepopGivenFile(this.siGlobs, FileID);
+    Encoding charset = this.siGlobs.objUtility.MiscBitFieldToCharset(silFile.MiscBitField);
+    this.siGlobs.objEngine.fileEngine.FileReadRaw(FileID, ref this.siGlobs.AgentBrand, ref this.siGlobs.AgentVersion, ref this.RemoteIP, ref empty2, ref bBinary, charset, ref empty1, Audit);
+    string MyErrCode = Conversions.ToString(this.siGlobs.objEngine.ErrorCode);
+    SILEngine objEngine;
+    string errorDescription = (objEngine = this.siGlobs.objEngine).ErrorDescription;
+    ref string local = ref errorDescription;
+    XmlDocument xmlDocument1 = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+    objEngine.ErrorDescription = errorDescription;
+    XmlDocument xmlDocument2 = xmlDocument1;
+    if (this.siGlobs.objEngine.ErrorCode == 0)
+    {
+      XmlElement documentElement = xmlDocument2.DocumentElement;
+      XmlElement element1 = xmlDocument2.CreateElement("Payload");
+      XmlElement newChild = element1;
+      documentElement.AppendChild((XmlNode) newChild);
+      XmlElement element2 = xmlDocument2.CreateElement("FileContents");
+      element2.SetAttribute("xmlns:dt", "urn:schemas-microsoft-com:datatypes");
+      element2.SetAttribute("dt", "urn:schemas-microsoft-com:datatypes", "bin.base64");
+      element2.InnerText = SILUtility.MakeBase64String(empty1);
+      element1.AppendChild((XmlNode) element2);
+    }
+    return xmlDocument2;
+  }
+
+  public string FileGetDetailsMachine(string FileID)
+  {
+    SILDictionary<string, string> silDictionary = (SILDictionary<string, string>) null;
+    string detailsMachine = "";
+    bool flag = false;
+    if (this.siGlobs.objEngine.fileEngine.FileGetDetailsHashtable(FileID, ref silDictionary))
+    {
+      flag = true;
+      detailsMachine = SILUtility.MakeTag("File", (object) this.siGlobs.objUtility.HashTable2XML(ref silDictionary));
+    }
+    if (!flag)
+    {
+      this.ErrorCode = 2058;
+      this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60023, FileID);
+      detailsMachine = "";
+    }
+    this.siGlobs.objDebug.Log(60, $"FileGetDetailsMachine ret '{detailsMachine}'");
+    return detailsMachine;
+  }
+
+  private bool InterfaceIsAllowed(int interfaceCode)
+  {
+    bool flag;
+    if (SILUtility.InList<int>(interfaceCode, 3, 4))
+    {
+      if (!this.siGlobs.objUser.IsIPLocal(this.siGlobs.objUser.IPAddress))
+      {
+        this.siGlobs.objDebug.Log(30, $"MachineMain: Rejecting non-local IP {this.siGlobs.objUser.IPAddress} for FTPS or SSH interface");
+        flag = false;
+      }
+      else if (!this.siGlobs.objUtility.FeatureIsValid(9))
+      {
+        flag = false;
+      }
+      else
+      {
+        int result = 0;
+        string str = this.siGlobs.objSession.GetValue("MyInstID");
+        if (!string.IsNullOrEmpty(str) && str.Equals(this.siGlobs.OrgID))
+          int.TryParse(this.siGlobs.objSession.GetValue("MyInstMessageUI"), out result);
+        if (result == 0)
+          int.TryParse(this.siGlobs.objEngine.orgEngine.InstGetField(Conversions.ToInteger(this.siGlobs.OrgID), InstitutionTableField.MessageUI), out result);
+        flag = SILOrganization.HasFileFolderUi(result) || SILOrganization.HasFolderSharingUi(result);
+      }
+    }
+    else
+      flag = true;
+    return flag;
+  }
+
+  private bool AccessAllowedForEstablishedSession(int sessionInterfaceCode, string transaction)
+  {
+    bool flag;
+    if (sessionInterfaceCode == 0)
+    {
+      string[] strArray = new string[1]{ "msgsavebody" };
+      if (!SILUtility.InList<string>(transaction, strArray))
+      {
+        this.siGlobs.objDebug.Log(30, $"{nameof (AccessAllowedForEstablishedSession)}: access denied for established human interface session");
+        flag = false;
+        goto label_4;
+      }
+    }
+    flag = true;
+label_4:
+    return flag;
+  }
+
+  public void MachineMain()
+  {
+    string str1 = string.Empty;
+    try
+    {
+      double processCpuSecs = this.siGlobs.objSNIUtil.GetProcessCPUSecs();
+      string str2 = this.siGlobs.MyRequest.ServerVariables.Get("PATH_INFO");
+      string str3 = str2.Substring(checked (str2.LastIndexOf("/") + 1));
+      this.siGlobs.objDebug.Log(50, $"-------------------- {str3} starting -------------");
+      this.siGlobs.objUtility.SetCultureToEnglish();
+      this.siGlobs.GetIncomingMachineVariables();
+      string str4 = Strings.LCase(this.siGlobs.Transaction);
+      if (Operators.CompareString(str4, "wakeup", false) == 0)
+      {
+        this.siGlobs.InitVariables(false);
+      }
+      else
+      {
+        this.siGlobs.InitVariables();
+        this.siGlobs.LoadArgumentsFromSessionIfNeeded();
+      }
+      this.siGlobs.SetHTTPToNoCaching();
+      this.ErrorCode = 0;
+      this.ErrorDescription = "";
+      this.siGlobs.AspName = "Machine:";
+      this.siGlobs.objSession.SetValue("MyCallingPage", (object) str3);
+      this.RemoteIP = this.siGlobs.objUser.IPAddress;
+      this.siGlobs.objUser.ComputeIpAddress();
+      if (Operators.CompareString(str4, "signon", false) == 0 & this.siGlobs.InterfaceType() == SILSessionStub.DMZ_Interfaces.FTPSSL)
+        this.siGlobs.objSession.SetValue("MyInstID", (object) string.Empty);
+      this.siGlobs.GetOrgID();
+      string langCode = this.siGlobs.GetLangCode();
+      if (Operators.CompareString(langCode, string.Empty, false) != 0)
+        this.siGlobs.objI11N.SetLang(langCode);
+      this.siGlobs.objDebug.Log(60, "MachineMain: DMZInterface=" + Conversions.ToString((int) this.siGlobs.InterfaceType()));
+      int num1 = -1;
+      int num2;
+      switch (this.siGlobs.InterfaceType())
+      {
+        case SILSessionStub.DMZ_Interfaces.FTPSSH:
+          num2 = 4;
+          break;
+        case SILSessionStub.DMZ_Interfaces.FTPSSL:
+          num2 = 3;
+          break;
+        default:
+          num2 = 1;
+          if (Operators.CompareString(str4, "msgsavebody", false) == 0)
+          {
+            num1 = 0;
+            break;
+          }
+          break;
+      }
+      bool flag1;
+      if (this.ProcessPreAuthXMLRequest(str3, langCode))
+      {
+        if (string.IsNullOrEmpty(this.siGlobs.objSession.GetValue("MyUsername")))
+          this.siGlobs.objSession.Abandon();
+        flag1 = true;
+      }
+      else if (!this.InterfaceIsAllowed(num2))
+      {
+        this.ErrorCode = 2417;
+        this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60039);
+        this.objXMLDoc = this.MakeXMLReplySkeleton(Conversions.ToString(this.ErrorCode), ref this.ErrorDescription);
+        flag1 = true;
+        this.siGlobs.objSession.Abandon();
+      }
+      else if (SILUtility.InList<string>(str4, "clientcertcheck", "usercheck", "signonfailure"))
+      {
+        if (!this.siGlobs.objUser.IsIPLocal(this.siGlobs.objUser.IPAddress))
+        {
+          this.siGlobs.objDebug.Log(30, $"MachineMain: Attempted access by remote address: {this.siGlobs.objUser.IPAddress}");
+          this.ErrorCode = 2976;
+          this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60032);
+          this.objXMLDoc = this.MakeXMLReplySkeleton(Conversions.ToString(this.ErrorCode), ref this.ErrorDescription);
+          flag1 = true;
+        }
+      }
+      else if (SILUtility.InList<string>(str4, "signon", "samlsignon", "guestsignon"))
+      {
+        if (num2 == 3 & Operators.CompareString(this.siGlobs.Arg01, "FTP", false) == 0)
+          num2 = 2;
+        bool flag2 = Operators.CompareString(this.siGlobs.Transaction, "guestsignon", false) == 0;
+        string str5 = string.Empty;
+        string Password = string.Empty;
+        if (flag2)
+        {
+          str5 = this.siGlobs.Arg01;
+          Password = this.siGlobs.Arg02;
+        }
+        else if (Operators.CompareString(this.siGlobs.Arg06, string.Empty, false) != 0 && SILUtility.isValidEmail(this.siGlobs.LoginName, false))
+        {
+          str5 = this.siGlobs.objEngine.msgEngine.MsgGetGuestAccessCodeFromEmailMsgID(this.siGlobs.LoginName, this.siGlobs.Arg06);
+          if (Operators.CompareString(str5, string.Empty, false) != 0)
+          {
+            flag2 = true;
+            Password = this.siGlobs.Password;
+          }
+        }
+        if (flag2)
+        {
+          this.siGlobs.Transaction = "guestsignon";
+          SILGuestPackageInfo guestPackageInfo = new SILGuestPackageInfo(ref this.siGlobs);
+          this.siGlobs.objUser.InstID = System.Convert.ToInt32(this.siGlobs.OrgID);
+          if (this.siGlobs.objUser.IsGuestAllowedAtHost())
+          {
+            this.siGlobs.objUser.SetIPAddressIfTrusted(this.siGlobs.IPAddressExplicitFromUser);
+            if (guestPackageInfo.LoadPackageInfoFromAccessCode(str5))
+            {
+              if (Operators.CompareString(this.siGlobs.objEngine.msgEngine.MsgMakeGuestFileValidationCode(str5, Password), guestPackageInfo.ValidationCode, false) == 0)
+              {
+                this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.GuestPackageAuthentication, this.siGlobs.OrgID, $"{"Guest"}:{guestPackageInfo.EmailAddr}", "", "", guestPackageInfo.PkgID, "", "", "", this.siGlobs.objUser.IPAddress, 0, "", "", "", "", "", "", "", "", 0.0, "", "", "", "", 0);
+                this.siGlobs.objUser.ActAsGuestInInst(Conversions.ToInteger(this.siGlobs.OrgID), guestPackageInfo.EmailAddr, true);
+                this.siGlobs.objUser.InsertSession(1, guestAccessCode: str5);
+                guestPackageInfo.SaveToSession();
+              }
+              else
+              {
+                this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.GuestPackageAuthentication, this.siGlobs.OrgID, "Anonymous", "", "", guestPackageInfo.PkgID, "", "", "", this.siGlobs.objUser.IPAddress, 2025, "", "", "", "", "Incorrect password.", "", "", "", 0.0, "", "", "", "", 0);
+                this.siGlobs.objUser.LogAccessFail("Anonymous", Conversions.ToInteger(this.siGlobs.OrgID), this.siGlobs.objUser.IPAddress);
+                string MyErrCode = Conversions.ToString(2025);
+                string msg = this.siGlobs.objI11N.GetMsg(60047);
+                ref string local = ref msg;
+                this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+                flag1 = true;
+              }
+            }
+            else
+            {
+              this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.GuestPackageAuthentication, this.siGlobs.OrgID, "Anonymous", "", "", "", "", "", "", this.siGlobs.objUser.IPAddress, 2025, "", "", "", "", "Invalid package access code.", "", "", "", 0.0, "", "", "", "", 0);
+              this.siGlobs.objUser.LogAccessFail("Anonymous", Conversions.ToInteger(this.siGlobs.OrgID), this.siGlobs.objUser.IPAddress);
+              string MyErrCode = Conversions.ToString(2025);
+              string msg = this.siGlobs.objI11N.GetMsg(60047);
+              ref string local = ref msg;
+              this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+              flag1 = true;
+            }
+          }
+          else
+          {
+            this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.GuestPackageAuthentication, this.siGlobs.OrgID, "Anonymous", "", "", "", "", "", "", this.siGlobs.objUser.IPAddress, 2976, "", "", "", "", this.siGlobs.objUser.ErrorDescription, "", "", "", 0.0, "", "", "", "", 0);
+            this.siGlobs.objUser.LogAccessFail("Anonymous", Conversions.ToInteger(this.siGlobs.OrgID), this.siGlobs.objUser.IPAddress);
+            string MyErrCode = Conversions.ToString(2025);
+            string msg = this.siGlobs.objI11N.GetMsg(60047);
+            ref string local = ref msg;
+            this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+            flag1 = true;
+          }
+        }
+        else
+        {
+          IAuthenticator authenticator = (IAuthenticator) null;
+          string str6;
+          if (Operators.CompareString(this.siGlobs.PasswordChangeCode, "", false) != 0)
+            authenticator = (IAuthenticator) new PasswordChangeAuthenticator(ref this.siGlobs, this.siGlobs.OrgID, this.siGlobs.PasswordChangeCode);
+          else if (Operators.CompareString(str4, "samlsignon", false) == 0)
+          {
+            try
+            {
+              XmlDocument xmlDocument = Compression.Xml.InflateXmlDocumentFromBase64String(this.siGlobs.Arg01);
+              if (!string.IsNullOrEmpty(this.siGlobs.Arg02))
+              {
+                this.siGlobs.OrgIDFromRequest = this.siGlobs.Arg02;
+                this.siGlobs.GetOrgID();
+              }
+              this.siGlobs.objUser.GetInstInfo(int.Parse(this.siGlobs.OrgID), false);
+              SILGlobals siGlobs = this.siGlobs;
+              XmlElement documentElement = xmlDocument.DocumentElement;
+              bool flag3 = false;
+              ref bool local = ref flag3;
+              authenticator = (IAuthenticator) new SAMLAuthenticator(siGlobs, (object) documentElement, ref local);
+            }
+            catch (Exception ex)
+            {
+              ProjectData.SetProjectError(ex);
+              Exception exception = ex;
+              this.siGlobs.objDebug.Log(30, "Invalid SAML assertion XML in samlsignon transaction");
+              this.siGlobs.objDebug.LogException(Conversions.ToString(30), exception);
+              string MyErrCode = Conversions.ToString(2850);
+              str6 = "Invalid SAML assertion XML";
+              ref string local = ref str6;
+              this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+              flag1 = true;
+              ProjectData.ClearProjectError();
+            }
+          }
+          if (!flag1)
+          {
+            if (authenticator != null ? this.siGlobs.objUser.SignonWithAuthenticator(authenticator, false, this.siGlobs.OrgID, string.Empty, num2, num1) : this.siGlobs.objUser.SignonWithCredentials(this.siGlobs.LoginName, this.siGlobs.Password, false, this.siGlobs.OrgID, string.Empty, num2, num1))
+            {
+              this.siGlobs.objSession.SetValue("MyUsername", (object) this.siGlobs.objUser.Username);
+              this.siGlobs.objSession.SecureSession(this.siGlobs.objUser.InstID, this.siGlobs.objUser.Username);
+            }
+            else if (this.siGlobs.objUser.ErrorCode == 2415)
+            {
+              if (!this.siGlobs.objUtility.CurrentPageChecksClientCert(str3))
+              {
+                this.siGlobs.objDebug.Log(60, "MachineMain: Redirecting to machinecc.aspx for client cert check");
+                this.siGlobs.objSession.SetValue("MyInstID", (object) this.siGlobs.OrgID);
+                this.siGlobs.SaveArgumentsToSessionForRedirect();
+                this.siGlobs.CleanupVariables();
+                this.siGlobs.MyResponse.Redirect(str2.Replace("machine.aspx", "machinecc.aspx"));
+              }
+              else
+              {
+                string MyErrCode = Conversions.ToString(this.siGlobs.objUser.ErrorCode);
+                str6 = this.siGlobs.objI11N.GetMsg(20214);
+                ref string local = ref str6;
+                this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+              }
+              flag1 = true;
+            }
+            else if (this.siGlobs.objUser.ErrorCode == 2974)
+            {
+              string MyErrCode = Conversions.ToString(this.siGlobs.objUser.ErrorCode);
+              str6 = this.siGlobs.objI11N.GetMsg(20005);
+              ref string local = ref str6;
+              this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+              flag1 = true;
+            }
+            else if (this.siGlobs.objUser.ErrorCode == 2027)
+            {
+              string str7 = new SQLBasicBuilder(this.siGlobs.objWrap, SqlTable.Institutions).AddColumnsToSelect("AllowPassChangeRequests").AddAndColumnEqualsToWhere<string>("ID", this.siGlobs.OrgID, true).SelectQueryValue();
+              if (Operators.CompareString(this.siGlobs.Arg11, "newuser", false) == 0 && !SILUtility.StrToBool(str7))
+              {
+                string MyErrCode = Conversions.ToString(this.siGlobs.objUser.ErrorCode);
+                str6 = this.siGlobs.objI11N.GetMsg(20249);
+                ref string local = ref str6;
+                this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+              }
+              else
+              {
+                string MyErrCode = Conversions.ToString(this.siGlobs.objUser.ErrorCode);
+                str6 = this.siGlobs.objI11N.GetMsg(20200);
+                ref string local = ref str6;
+                this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+              }
+            }
+            else if (this.siGlobs.objUser.ErrorCode == 2977)
+            {
+              string MyErrCode = Conversions.ToString(this.siGlobs.objUser.ErrorCode);
+              SILCurrentUser objUser;
+              str6 = (objUser = this.siGlobs.objUser).ErrorDescription;
+              ref string local = ref str6;
+              XmlDocument xmlDocument = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+              objUser.ErrorDescription = str6;
+              this.objXMLDoc = xmlDocument;
+              flag1 = true;
+            }
+            else if (this.siGlobs.objUtility.CurrentPageChecksClientCert(str3))
+            {
+              string MyErrCode = Conversions.ToString(this.siGlobs.objUser.ErrorCode);
+              str6 = this.siGlobs.objI11N.GetMsg(20214);
+              ref string local = ref str6;
+              this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+              flag1 = true;
+            }
+            else
+            {
+              string MyErrCode = Conversions.ToString(2025);
+              str6 = this.siGlobs.objI11N.GetMsg(20006);
+              ref string local = ref str6;
+              this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+              flag1 = true;
+            }
+            if (Operators.CompareString(this.siGlobs.PasswordChangeCode, "", false) != 0)
+              this.siGlobs.objEngine.userEngine.UserDeletePasswordChangeConfirmation(this.siGlobs.PasswordChangeCode);
+          }
+        }
+      }
+      else
+      {
+        string empty1 = string.Empty;
+        string empty2 = string.Empty;
+        string str8 = string.Empty;
+        bool IgnoreSessionVars = false;
+        string str9 = this.siGlobs.objUser.LookupActiveSession(this.siGlobs.objSession.GetValue("MyUsername"), this.siGlobs.objSession.SessionId, ref empty1, ref empty2);
+        if (Operators.CompareString(str9, "Anonymous", false) != 0 & Operators.CompareString(str9, "", false) != 0)
+        {
+          this.siGlobs.objDebug.Log(60, $"MachineMain: Found username in session! Username: {str9} Session: {this.siGlobs.objSession.SessionId}");
+          if (num2 == 3)
+            num1 = 2;
+          int result = 1;
+          int.TryParse(this.siGlobs.objSession.GetValue("MyInterfaceCode"), out result);
+          if (!this.AccessAllowedForEstablishedSession(result, str4))
+          {
+            string MyErrCode = Conversions.ToString(2417);
+            string msg = this.siGlobs.objI11N.GetMsg(60026);
+            ref string local = ref msg;
+            this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+            flag1 = true;
+          }
+          else if (Operators.CompareString(str9, "Guest", false) == 0)
+          {
+            if (SILUtility.InList<int>(num2, 1))
+            {
+              if (Operators.CompareString(empty1, string.Empty, false) == 0)
+              {
+                empty1 = this.siGlobs.objSession.GetValue("MyInstID");
+                str8 = this.siGlobs.objSession.GetValue("MyEmail");
+              }
+              else
+              {
+                SILGuestPackageInfo guestPackageInfo = new SILGuestPackageInfo(ref this.siGlobs);
+                if (guestPackageInfo.LoadPackageInfoFromAccessCode(empty2) && Operators.CompareString(guestPackageInfo.InstID, empty1, false) == 0)
+                {
+                  IgnoreSessionVars = true;
+                  str8 = guestPackageInfo.EmailAddr;
+                  guestPackageInfo.SaveToSession();
+                }
+                else
+                {
+                  this.siGlobs.objDebug.Log(30, "machine: Invalid guest access code");
+                  string MyErrCode = Conversions.ToString(2520);
+                  string msg = this.siGlobs.objI11N.GetMsg(60026);
+                  ref string local = ref msg;
+                  this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+                  flag1 = true;
+                }
+              }
+              if (Operators.CompareString(str8, string.Empty, false) != 0)
+              {
+                this.siGlobs.objDebug.Log(60, $"machine OK: Guest user in org {empty1}");
+                this.siGlobs.objUser.ActAsGuestInInst(Conversions.ToInteger(empty1), str8, IgnoreSessionVars);
+                this.siGlobs.objUser.UpdateSession();
+              }
+            }
+            else
+            {
+              string MyErrCode = Conversions.ToString(2520);
+              string msg = this.siGlobs.objI11N.GetMsg(60026);
+              ref string local = ref msg;
+              this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+              flag1 = true;
+            }
+          }
+          else if (!this.siGlobs.objUser.ActAs(str9, InterfaceCode: num2, AlternateInterfaceCode: num1))
+          {
+            string MyErrCode = Conversions.ToString(2520);
+            string msg = this.siGlobs.objI11N.GetMsg(60026);
+            ref string local = ref msg;
+            this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+            flag1 = true;
+          }
+          else
+          {
+            this.siGlobs.objUser.SetIPAddress(this.siGlobs.objSession.GetValue("MyIPAddress"));
+            this.siGlobs.objUser.UpdateSession();
+          }
+        }
+        else if (this.siGlobs.objUser.SignonWithCredentials(this.siGlobs.LoginName, this.siGlobs.Password, false, this.siGlobs.OrgID, string.Empty, num2, num1, this.siGlobs.Challenge))
+        {
+          this.siGlobs.objSession.SetValue("MyUsername", (object) this.siGlobs.objUser.Username);
+          this.siGlobs.objSession.SecureSession(this.siGlobs.objUser.InstID, this.siGlobs.objUser.Username);
+        }
+        else if (this.siGlobs.objUser.ErrorCode == 2415)
+        {
+          if (!this.siGlobs.objUtility.CurrentPageChecksClientCert(str3))
+          {
+            this.siGlobs.objDebug.Log(60, "MachineMain: Redirecting to machinecc.aspx for client cert check");
+            this.siGlobs.SaveArgumentsToSessionForRedirect();
+            this.siGlobs.CleanupVariables();
+            this.siGlobs.MyResponse.Redirect(str2.Replace("machine.aspx", "machinecc.aspx"));
+          }
+          else
+          {
+            string MyErrCode = Conversions.ToString(this.siGlobs.objUser.ErrorCode);
+            string msg = this.siGlobs.objI11N.GetMsg(20214);
+            ref string local = ref msg;
+            this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+          }
+          flag1 = true;
+        }
+        else if (this.siGlobs.objUser.ErrorCode == 2974)
+        {
+          string MyErrCode = Conversions.ToString(this.siGlobs.objUser.ErrorCode);
+          string msg = this.siGlobs.objI11N.GetMsg(20005);
+          ref string local = ref msg;
+          this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+          flag1 = true;
+        }
+        else if (this.siGlobs.objUser.ErrorCode == 2977)
+        {
+          string MyErrCode = Conversions.ToString(this.siGlobs.objUser.ErrorCode);
+          SILCurrentUser objUser;
+          string errorDescription = (objUser = this.siGlobs.objUser).ErrorDescription;
+          ref string local = ref errorDescription;
+          XmlDocument xmlDocument = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+          objUser.ErrorDescription = errorDescription;
+          this.objXMLDoc = xmlDocument;
+          flag1 = true;
+        }
+        else if (this.siGlobs.objUtility.CurrentPageChecksClientCert(str3))
+        {
+          string MyErrCode = Conversions.ToString(this.siGlobs.objUser.ErrorCode);
+          string msg = this.siGlobs.objI11N.GetMsg(20214);
+          ref string local = ref msg;
+          this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+          flag1 = true;
+        }
+        else
+        {
+          string MyErrCode = Conversions.ToString(2025);
+          string msg = this.siGlobs.objI11N.GetMsg(20006);
+          ref string local = ref msg;
+          this.objXMLDoc = this.MakeXMLReplySkeleton(MyErrCode, ref local);
+          flag1 = true;
+        }
+      }
+      if (!this.siGlobs.objUser.IsIPLocal(this.siGlobs.objUser.ExtractSystemTrustedClientIpFromIpList(this.siGlobs.MyRequest.ServerVariables["REMOTE_ADDR"])))
+      {
+        this.CertKey = (object) this.siGlobs.MyRequest.ServerVariables["CERT_KEYSIZE"];
+        if (Operators.ConditionalCompareObjectEqual(this.CertKey, (object) "", false))
+          this.CertKey = (object) 0;
+        if (Conversions.ToInteger(this.CertKey) < this.siGlobs.objUser.InstMinCertKey)
+        {
+          this.siGlobs.objDebug.Log(30, Conversions.ToString(Operators.ConcatenateObject(Operators.ConcatenateObject(Operators.ConcatenateObject((object) (this.siGlobs.AspName + "CertKey Failed: Is "), this.CertKey), (object) ", Needed "), (object) this.siGlobs.objUser.InstMinCertKey)));
+          this.ErrorCode = 4100;
+          this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60024);
+          this.objXMLDoc = this.MakeXMLReplySkeleton(Conversions.ToString(this.ErrorCode), ref this.ErrorDescription);
+          flag1 = true;
+        }
+        else
+          this.siGlobs.objDebug.Log(60, Conversions.ToString(Operators.ConcatenateObject(Operators.ConcatenateObject(Operators.ConcatenateObject((object) (this.siGlobs.AspName + "CertKey Okay: Is "), this.CertKey), (object) ", Needed "), (object) this.siGlobs.objUser.InstMinCertKey)));
+      }
+      if (!flag1)
+      {
+        if (!SILUtility.InList<string>(this.siGlobs.Transaction, "signon", "signoff", "folderlistshort", "userchangepassword", "makerandompassword") && this.siGlobs.objUser.IsRequiredChangePassword())
+        {
+          if (!SILUtility.IntToBool(this.siGlobs.objUser.MustChangePassword))
+            this.siGlobs.objEngine.userEngine.UserSetMustChangePassword(this.siGlobs.objUser.Username, true);
+          this.siGlobs.objDebug.Log(60, this.siGlobs.AspName + "MustChangePassword TRUE");
+          this.ErrorCode = 2020;
+          this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60025);
+          this.objXMLDoc = this.MakeXMLReplySkeleton(Conversions.ToString(this.ErrorCode), ref this.ErrorDescription);
+          flag1 = true;
+        }
+      }
+      str1 = flag1 ? this.objXMLDoc.OuterXml : this.ProcessXMLRequest(num2);
+      this.siGlobs.objDebug.Log(60, "MachineMain: XMLOut length: " + Conversions.ToString(str1.Length));
+      if (this.siGlobs.objDebug.GetDebug() > 40)
+        this.siGlobs.objDebug.Log(50, "machine.aspx returning " + Strings.Left(str1, 250));
+      if (Operators.CompareString("wakeup", str4, false) != 0)
+        this.siGlobs.objDebug.Log(50, $"==machine.aspx trans {this.siGlobs.Transaction} took {Conversions.ToString(this.siGlobs.objSNIUtil.GetProcessCPUSecs() - processCpuSecs)} CPU secs");
+    }
+    catch (ThreadAbortException ex)
+    {
+      ProjectData.SetProjectError((Exception) ex);
+      this.siGlobs.CleanupVariables();
+      ProjectData.ClearProjectError();
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      Exception exception = ex;
+      this.ErrorCode = 100;
+      this.ErrorDescription = Operators.CompareString(this.siGlobs.ShowSystemErrorMessages, "1", false) != 0 ? "An exception has occurred." : $"{exception.Message}: {exception.StackTrace}";
+      this.siGlobs.objDebug.Log(10, "SILMachine: Caught exception: " + exception.Message);
+      this.siGlobs.objDebug.Log(10, "SILMachine: Exception stack trace: \r\n" + exception.StackTrace);
+      str1 = this.MakeEmptyXMLReply(Conversions.ToString(this.ErrorCode), this.ErrorDescription);
+      ProjectData.ClearProjectError();
+    }
+    finally
+    {
+      try
+      {
+        if (this.siGlobs.objUser.InstMinCertKey > 0)
+        {
+          if (Array.IndexOf<string>(this.siGlobs.MyResponse.Cookies.AllKeys, "ASP.NET_SessionId") >= 0)
+            this.siGlobs.MyResponse.Cookies.Get("ASP.NET_SessionId").Secure = true;
+        }
+      }
+      catch (Exception ex)
+      {
+        ProjectData.SetProjectError(ex);
+        Exception exception = ex;
+        this.siGlobs.objDebug.Log(10, "SILMachine: Caught exception attempting to mark ASP.NET session cookie as Secure: " + exception.Message);
+        this.siGlobs.objDebug.Log(10, "SILMachine: Exception stack trace: \r\n" + exception.StackTrace);
+        ProjectData.ClearProjectError();
+      }
+    }
+    this.siGlobs.CleanupVariables();
+    this._XMLResult = str1;
+  }
+
+  public void MachineMain(
+    ref HttpRequest parmRequest,
+    ref HttpResponse parmResponse,
+    ref HttpSessionState parmSession,
+    ref HttpApplicationState parmApplicationState)
+  {
+    this.siGlobs = new SILGlobals();
+    this.siGlobs.InitGlobals(ref parmRequest, ref parmResponse, ref parmSession, ref parmApplicationState);
+    this.MachineMain();
+  }
+}
