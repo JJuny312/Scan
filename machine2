@@ -1,0 +1,1016 @@
+// Decompiled with JetBrains decompiler
+// Type: MOVEit.DMZ.WebApp.SILMachine2
+// Assembly: midmz, Version=17.1.0.32, Culture=neutral, PublicKeyToken=null
+// MVID: 19A679F4-C903-44F5-B74E-24E9B3BF5DA6
+// Assembly location: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\9a11d1d0\5debd404\assembly\dl3\e1ee3793\0082a404_1055dc01\midmz.dll
+
+using Microsoft.VisualBasic;
+using Microsoft.VisualBasic.CompilerServices;
+using MOVEit.DMZ.Application.Contracts.FileSystem;
+using MOVEit.DMZ.ClassLib;
+using MOVEit.DMZ.Core;
+using MOVEit.DMZ.Core.Session;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Web;
+using System.Web.SessionState;
+
+#nullable disable
+namespace MOVEit.DMZ.WebApp;
+
+public class SILMachine2
+{
+  private SILGlobals siGlobs;
+  private SILHttpSessionWrapper httpSession;
+  private SILLargeXfer objLargeXfer;
+  private int ErrorCode;
+  private string ErrorDescription;
+  private string InputTransaction;
+  private string InputOriginalFilename;
+  private string InputFileID;
+  private string InputFolderID;
+  private string InputFileSize;
+  private string InputPartialID;
+  private string InputPartialPath;
+  private string InputPackageID;
+  private string InputLicAgentBrand;
+  private string InputAgentBrand;
+  private string InputAgentVersion;
+  private string InputUploadComment;
+  private string InputOSBrand;
+  private string InputOSVersion;
+  private string InputErrorDescription;
+  private string InputErrorCode;
+  private string InputIPAddress;
+  private string InputTimeBegun;
+  private string InputTimeEnded;
+  private string InputTimeElapsed;
+  private string InputLoginName;
+  private string InputPassword;
+  private string InputChallenge;
+  private string InputLangCode;
+  private string InputFolderPath;
+  private string InputNotificationID;
+  private string InputHashOK;
+  private string InputUntrusted;
+  private string InputRelativePath;
+  private string InputHash;
+  private string InputHashSha512;
+  private string InputResumeInPlace;
+  private string InputFileIDToDelete;
+  private string InputCScanName;
+  private string InputCScanEngine;
+  private string InputCScanISTag;
+  private string InputCScanError;
+  private string InputCScan2Name;
+  private string InputCScan2Engine;
+  private string InputCScan2ISTag;
+  private string InputCScan2Error;
+  private string InputVirusChecked;
+  private string InputDLPChecked;
+  private string InputCSRFToken;
+  private string InputClientType;
+  private string InputDLPViolation;
+  private double InputDurationSecs;
+  private string InputMailboxOwner;
+  private string InputDLRecID;
+  private string InputAll;
+  private string ReplyFileID;
+  private string ReplyInstID;
+  private string ReplyFilePath;
+  private string ReplyDebug;
+  private string ReplyNotificationID;
+  private string ReplyUsername;
+  private string ReplyCheckVirus;
+  private string ReplyOriginalFilename;
+  private string ReplyLoginName;
+  private string ReplyPartialPath;
+  private string ReplyPartialID;
+  private string ReplyFolderID;
+  private string ReplyFolderPath;
+  private int ReplyFolderType;
+  private long ReplyFileSize;
+  private string ReplyHash;
+  private string ReplyHashSha512;
+  private string ReplyUploadComment;
+  private string ReplyDLPViolation;
+  private string ReplyMailboxOwner;
+  private string ReplyLogID;
+  private string ReplyIPAddressTrusted;
+  private DataFilePath DataFilePath;
+  private bool ReplyIntegrityVerified;
+  public const string SIHDR_PARTIALFILEID = "X-siLock-PartialFileID";
+  public const string SIHDR_PARTIALFILEPATH = "X-siLock-PartialFilePath";
+
+  private bool LookupSession()
+  {
+    bool flag1 = false;
+    string empty1 = string.Empty;
+    string empty2 = string.Empty;
+    string str1 = string.Empty;
+    bool IgnoreSessionVars = false;
+    string str2 = this.siGlobs.objUser.LookupActiveSession(this.siGlobs.objSession.GetValue("MyUsername"), this.siGlobs.objSession.SessionId, ref empty1, ref empty2);
+    this.siGlobs.objDebug.Log(60, $"mach2: {Conversions.ToString(this.siGlobs.objSession.ItemCount)} items in session. Username={str2} SessionID={this.siGlobs.objSession.SessionId}");
+    bool flag2;
+    if (Operators.CompareString(str2, string.Empty, false) == 0)
+    {
+      flag2 = false;
+    }
+    else
+    {
+      string str3 = this.siGlobs.objSession.GetValue("MyInstID");
+      if (Operators.CompareString(str3, string.Empty, false) == 0)
+      {
+        if (Operators.CompareString(empty1, string.Empty, false) == 0)
+        {
+          try
+          {
+            str3 = this.siGlobs.MyRequest.Cookies["siLockLongTermInstID"].Value;
+          }
+          catch (Exception ex)
+          {
+            ProjectData.SetProjectError(ex);
+            ProjectData.ClearProjectError();
+          }
+        }
+        else
+          str3 = empty1;
+      }
+      SILCurrentUser objUser = this.siGlobs.objUser;
+      objUser.IPAddress = this.InputIPAddress;
+      if (Operators.CompareString(str2, "Anonymous", false) != 0)
+      {
+        this.siGlobs.objDebug.Log(60, "LookupSession: DMZInterface=" + Conversions.ToString((int) this.siGlobs.InterfaceType()));
+        int AlternateInterfaceCode = -1;
+        int InterfaceCode;
+        switch (this.siGlobs.InterfaceType())
+        {
+          case SILSessionStub.DMZ_Interfaces.Web:
+            InterfaceCode = 0;
+            break;
+          case SILSessionStub.DMZ_Interfaces.FTPSSH:
+            InterfaceCode = 4;
+            break;
+          case SILSessionStub.DMZ_Interfaces.FTPSSL:
+            InterfaceCode = 3;
+            AlternateInterfaceCode = 2;
+            break;
+          default:
+            InterfaceCode = 1;
+            break;
+        }
+        if (Operators.CompareString(str2, "Guest", false) == 0)
+        {
+          if (SILUtility.InList<int>(InterfaceCode, 0, 1))
+          {
+            if (Operators.CompareString(empty1, string.Empty, false) == 0)
+            {
+              empty1 = this.siGlobs.objSession.GetValue("MyInstID");
+              str1 = this.siGlobs.objSession.GetValue("MyEmail");
+            }
+            else
+            {
+              SILGuestPackageInfo guestPackageInfo = new SILGuestPackageInfo(ref this.siGlobs);
+              if (guestPackageInfo.LoadPackageInfoFromAccessCode(empty2) && Operators.CompareString(guestPackageInfo.InstID, empty1, false) == 0)
+              {
+                IgnoreSessionVars = true;
+                str1 = guestPackageInfo.EmailAddr;
+                guestPackageInfo.SaveToSession();
+              }
+              else
+              {
+                this.ErrorCode = 2520;
+                this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60026);
+                this.siGlobs.objDebug.Log(30, "machine2: Invalid guest access code");
+              }
+            }
+            if (Operators.CompareString(str1, string.Empty, false) != 0)
+            {
+              this.siGlobs.objDebug.Log(60, "machine2 OK: Guest user in org " + empty1);
+              this.siGlobs.objUser.ActAsGuestInInst(Conversions.ToInteger(empty1), str1, IgnoreSessionVars);
+              flag1 = true;
+            }
+          }
+          else
+          {
+            this.ErrorCode = 2520;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60026);
+          }
+        }
+        else
+        {
+          flag1 = objUser.ActAs(str2, InterfaceCode: InterfaceCode, AlternateInterfaceCode: AlternateInterfaceCode);
+          if (!flag1)
+          {
+            this.ErrorCode = 2520;
+            this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60026);
+          }
+          if (objUser.SysAdmin && Versioned.IsNumeric((object) str3) & Operators.CompareString(str3, "0", false) != 0)
+          {
+            if (objUser.BecomeInstAdmin(Conversions.ToInteger(str3), false, false))
+              this.siGlobs.objDebug.Log(60, "SysAdmin acting in Inst #" + str3);
+            else
+              this.siGlobs.objDebug.Log(60, "SysAdmin FAILED to act in Inst #" + str3);
+          }
+        }
+      }
+      else if (Operators.CompareString(str3, "", false) != 0)
+      {
+        this.siGlobs.objUser.ActAsAnonymousInInst(Conversions.ToInteger(str3));
+        flag1 = true;
+      }
+      if (Strings.Len(this.siGlobs.objUser.Username) == 0)
+        flag1 = false;
+      if (flag1)
+      {
+        this.siGlobs.objUser.UpdateSession();
+        this.ReplyInstID = Conversions.ToString(this.siGlobs.objUser.InstID);
+        this.siGlobs.objDebug.Log(50, $"machine2: Logged on as {this.siGlobs.objUser.Username} in inst {this.ReplyInstID}");
+      }
+      flag2 = flag1;
+    }
+    return flag2;
+  }
+
+  private static string GetHeaderValue(NameValueCollection headerCollection, string headerName)
+  {
+    string header = headerCollection[headerName];
+    return string.IsNullOrEmpty(header) ? string.Empty : StringUtility.MimeDecodeString(header);
+  }
+
+  private string GetHeaderValForSQL(NameValueCollection headerCollection, string headerName)
+  {
+    SILUtility objUtility = this.siGlobs.objUtility;
+    string headerValue = SILMachine2.GetHeaderValue(headerCollection, headerName);
+    ref string local = ref headerValue;
+    return objUtility.CleanForSQL(ref local);
+  }
+
+  private string GetCleanHeaderValue(NameValueCollection headerCollection, string headerName)
+  {
+    return SILUtility.XHTMLClean(this.GetHeaderValForSQL(headerCollection, headerName));
+  }
+
+  public string ConvertCommentFromEncoded(string InComment)
+  {
+    return Strings.InStr(InComment, "\\") <= 0 ? InComment : Strings.Replace(Strings.Replace(InComment, "\\!r", "\r"), "\\!n", "\n");
+  }
+
+  public string ConvertCommentToEncoded(string InComment)
+  {
+    return !(Strings.InStr(InComment, "\r") > 0 | Strings.InStr(InComment, "\n") > 0) ? InComment : Strings.Replace(Strings.Replace(InComment, "\r", "\\!r"), "\n", "\\!n");
+  }
+
+  private bool CrackInput(NameValueCollection headers)
+  {
+    int num = 1;
+    this.InputTransaction = this.GetCleanHeaderValue(headers, "X-siLock-Transaction");
+    this.InputLoginName = this.GetCleanHeaderValue(headers, "X-siLock-Username");
+    this.InputPassword = this.GetCleanHeaderValue(headers, "X-siLock-Password");
+    this.InputChallenge = this.GetCleanHeaderValue(headers, "X-siLock-Challenge");
+    this.InputOriginalFilename = SILMachine2.GetHeaderValue(headers, "X-siLock-OriginalFilename");
+    if (this.InputOriginalFilename.StartsWith("\"") && this.InputOriginalFilename.EndsWith("\""))
+      this.InputOriginalFilename = Strings.Mid(this.InputOriginalFilename, 2, checked (Strings.Len(this.InputOriginalFilename) - 2));
+    this.InputOriginalFilename = SILUtility.XHTMLClean(this.InputOriginalFilename);
+    this.InputUploadComment = SILUtility.XHTMLClean(this.ConvertCommentFromEncoded(SILMachine2.GetHeaderValue(headers, "X-siLock-UploadComment")));
+    this.InputFolderID = this.GetCleanHeaderValue(headers, "X-siLock-FolderID");
+    this.InputAgentBrand = SILUtility.XHTMLClean(this.siGlobs.objUtility.SplitAgentString(SILMachine2.GetHeaderValue(headers, "X-siLock-AgentBrand"), ref this.InputLicAgentBrand));
+    this.InputLicAgentBrand = SILUtility.XHTMLClean(this.siGlobs.objUtility.CleanForSQL(ref this.InputLicAgentBrand));
+    this.InputAgentVersion = this.GetCleanHeaderValue(headers, "X-siLock-AgentVersion");
+    this.InputFileID = this.GetCleanHeaderValue(headers, "X-siLock-FileID");
+    this.InputPartialID = this.GetCleanHeaderValue(headers, "X-siLock-PartialFileID");
+    this.InputFileSize = this.GetCleanHeaderValue(headers, "X-siLock-FileSize");
+    this.InputPackageID = this.GetCleanHeaderValue(headers, "X-siLock-PackageID");
+    this.InputIPAddress = this.GetCleanHeaderValue(headers, "X-siLock-IPAddress");
+    this.InputErrorDescription = SILUtility.XHTMLClean(SILMachine2.GetHeaderValue(headers, "X-siLock-ErrorDescription"));
+    this.InputErrorCode = this.GetCleanHeaderValue(headers, "X-siLock-ErrorCode");
+    this.InputTimeBegun = this.GetCleanHeaderValue(headers, "X-siLock-TimeBegun");
+    this.InputTimeEnded = this.GetCleanHeaderValue(headers, "X-siLock-TimeEnded");
+    this.InputTimeElapsed = this.GetCleanHeaderValue(headers, "X-siLock-TimeElapsed");
+    this.InputNotificationID = this.GetCleanHeaderValue(headers, "X-siLock-NotificationID");
+    this.InputHash = this.GetCleanHeaderValue(headers, "X-siLock-Hash");
+    this.InputHashSha512 = this.GetCleanHeaderValue(headers, "X-siLock-Sha512-Hash");
+    this.InputHashOK = this.GetCleanHeaderValue(headers, "X-siLock-HashOK");
+    this.InputUntrusted = this.GetCleanHeaderValue(headers, "X-siLock-Untrusted");
+    this.InputLangCode = this.GetCleanHeaderValue(headers, "X-siLock-LangCode");
+    this.InputRelativePath = this.GetCleanHeaderValue(headers, "X-siLock-RelativePath");
+    this.InputFolderPath = this.GetCleanHeaderValue(headers, "X-siLock-FolderPath");
+    this.InputResumeInPlace = this.GetCleanHeaderValue(headers, "X-siLock-ResumeInPlace");
+    this.InputFileIDToDelete = this.GetCleanHeaderValue(headers, "X-siLock-FileIDToDelete");
+    this.InputDLRecID = this.GetCleanHeaderValue(headers, "X-siLock-LogRecID");
+    this.InputMailboxOwner = this.GetCleanHeaderValue(headers, "X-siLock-MailboxOwner");
+    this.InputCScanName = this.GetCleanHeaderValue(headers, "X-siLock-CS-Name");
+    this.InputCScanEngine = this.GetCleanHeaderValue(headers, "X-siLock-CS-Engine");
+    this.InputCScanISTag = this.GetCleanHeaderValue(headers, "X-siLock-CS-ISTag");
+    this.InputCScan2Name = this.GetCleanHeaderValue(headers, "X-siLock-CS2-Name");
+    this.InputCScan2Engine = this.GetCleanHeaderValue(headers, "X-siLock-CS2-Engine");
+    this.InputCScan2ISTag = this.GetCleanHeaderValue(headers, "X-siLock-CS2-ISTag");
+    this.InputVirusChecked = this.GetCleanHeaderValue(headers, "X-siLock-VirusChecked");
+    this.InputDLPChecked = this.GetCleanHeaderValue(headers, "X-siLock-DLPChecked");
+    this.InputCSRFToken = this.GetCleanHeaderValue(headers, "X-siLock-CSRFToken");
+    this.InputClientType = this.GetCleanHeaderValue(headers, "X-siLock-ClientType");
+    this.InputDLPViolation = this.GetCleanHeaderValue(headers, "X-siLock-DLPViolation");
+    this.InputCScanError = this.GetCleanHeaderValue(headers, "X-siLock-CS-Error");
+    this.InputCScan2Error = this.GetCleanHeaderValue(headers, "X-siLock-CS2-Error");
+    string cleanHeaderValue = this.GetCleanHeaderValue(headers, "X-siLock-Duration");
+    if (Strings.Len(cleanHeaderValue) > 0)
+      this.InputDurationSecs = Conversions.ToDouble(cleanHeaderValue);
+    if (string.IsNullOrEmpty(this.InputLangCode))
+      this.InputLangCode = this.siGlobs.GetLangCode();
+    else if (!this.siGlobs.objEngine.sysEngine.IsValidSystemLanguage(ref this.InputLangCode))
+    {
+      this.siGlobs.objDebug.Log(30, $"SILMachine2.CrackInput: Ignoring invalid language code '{this.InputLangCode}'");
+      this.InputLangCode = string.Empty;
+    }
+    if (Strings.Len(this.InputAgentBrand) != 0)
+      return num != 0;
+    SILUtility objUtility = this.siGlobs.objUtility;
+    ref string local1 = ref this.InputAgentBrand;
+    ref string local2 = ref this.InputAgentVersion;
+    ref string local3 = ref this.InputOSBrand;
+    ref string local4 = ref this.InputOSVersion;
+    bool flag = false;
+    ref bool local5 = ref flag;
+    objUtility.DetectBrowser("", ref local1, ref local2, ref local3, ref local4, ref local5);
+    if (Strings.Len(this.InputLicAgentBrand) != 0)
+      return num != 0;
+    this.InputLicAgentBrand = this.InputAgentBrand;
+    return num != 0;
+  }
+
+  public string ComputeCScanID(string CScanEngine, string CScanISTag)
+  {
+    string Expression = CScanEngine;
+    if (Strings.Len(Expression) > 0)
+      Expression += " ";
+    return Expression + CScanISTag;
+  }
+
+  private void DoLogoff()
+  {
+    this.siGlobs.objSession.Abandon();
+    this.siGlobs.objDebug.Log(60, "machine2 abandoning Session " + this.siGlobs.objSession.SessionId);
+  }
+
+  private bool TransactionOKToForceSignonWithoutPW(string Trans)
+  {
+    bool forceSignonWithoutPw = false;
+    if (Operators.CompareString(Trans, "large_upload_end_good", false) == 0 || Operators.CompareString(Trans, "large_upload_end_failed", false) == 0 || Operators.CompareString(Trans, "large_download_end_good", false) == 0 || Operators.CompareString(Trans, "large_download_end_failed", false) == 0 || Operators.CompareString(Trans, "large_download_hash_good", false) == 0 || Operators.CompareString(Trans, "large_download_hash_failed", false) == 0)
+      forceSignonWithoutPw = true;
+    return forceSignonWithoutPw;
+  }
+
+  private bool TransactionCanGetUsernameFromNotificationID(string Trans)
+  {
+    bool fromNotificationId = false;
+    if (Operators.CompareString(Trans, "large_download_hash_good", false) == 0 || Operators.CompareString(Trans, "large_download_hash_failed", false) == 0)
+      fromNotificationId = true;
+    return fromNotificationId;
+  }
+
+  private bool CheckFileID(string FileID)
+  {
+    bool flag = true;
+    if (Operators.CompareString(FileID, "", false) == 0)
+    {
+      this.ErrorCode = 2058;
+      this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60028);
+      flag = false;
+    }
+    return flag;
+  }
+
+  private void CopyErrorFromEngineToLargeXfer()
+  {
+    this.objLargeXfer.ErrorCode = this.siGlobs.objEngine.ErrorCode;
+    this.objLargeXfer.ErrorDescription = this.siGlobs.objEngine.ErrorDescription;
+  }
+
+  private void DoTransaction()
+  {
+    bool flag1 = false;
+    string inputFolderId = this.InputFolderID;
+    string inputTransaction = this.InputTransaction;
+    bool flag2;
+    // ISSUE: reference to a compiler-generated method
+    switch (\u003CPrivateImplementationDetails\u003E.ComputeStringHash(inputTransaction))
+    {
+      case 144077364:
+        if (Operators.CompareString(inputTransaction, "log_list_downloads", false) == 0)
+        {
+          this.siGlobs.objEngine.fileEngine.FileLogListDownloads(Conversions.ToInteger(this.InputErrorCode), this.InputErrorDescription);
+          break;
+        }
+        goto default;
+      case 245569130:
+        if (Operators.CompareString(inputTransaction, "large_upload_check_ok", false) == 0)
+        {
+          bool flag3 = true;
+          if (Operators.CompareString(this.InputRelativePath, "", false) != 0)
+          {
+            flag3 = this.siGlobs.objEngine.folderEngine.FolderRelativePathToID(this.InputFolderID, this.InputRelativePath, true, ref inputFolderId, ref this.ReplyFolderPath);
+            if (flag3)
+              this.ReplyFolderID = inputFolderId;
+            else
+              this.CopyErrorFromEngineToLargeXfer();
+          }
+          if (flag3)
+          {
+            DataFilePath FilePath = (DataFilePath) null;
+            flag2 = this.objLargeXfer.StartLargeFileUpload(inputFolderId, true, this.InputOriginalFilename, Conversions.ToLong(this.InputFileSize), this.InputTimeBegun, this.InputAgentBrand, this.InputAgentVersion, this.siGlobs.objUser.IPAddress, this.InputFileID, ref this.ReplyFileID, ref this.ReplyFilePath, ref FilePath, ref this.ReplyPartialID, ref this.ReplyPartialPath, ref this.ReplyFolderPath, ref this.ReplyCheckVirus, ref this.ReplyFolderType);
+            break;
+          }
+          break;
+        }
+        goto default;
+      case 315349631:
+        if (Operators.CompareString(inputTransaction, "large_upload_start", false) == 0)
+        {
+          bool flag4 = true;
+          if (Operators.CompareString(this.InputRelativePath, "", false) != 0 | Operators.CompareString(inputFolderId, "0", false) != 0)
+          {
+            flag4 = this.siGlobs.objEngine.folderEngine.FolderRelativePathToID(this.InputFolderID, this.InputRelativePath, true, ref inputFolderId, ref this.ReplyFolderPath);
+            if (flag4)
+              this.ReplyFolderID = inputFolderId;
+            else
+              this.CopyErrorFromEngineToLargeXfer();
+          }
+          if (flag4)
+          {
+            this.httpSession.SetSessionTimeoutToLong();
+            DataFilePath FilePath = (DataFilePath) null;
+            flag2 = this.objLargeXfer.StartLargeFileUpload(inputFolderId, false, this.InputOriginalFilename, Conversions.ToLong(this.InputFileSize), this.InputTimeBegun, this.InputAgentBrand, this.InputAgentVersion, this.siGlobs.objUser.IPAddress, this.InputFileID, ref this.ReplyFileID, ref this.ReplyFilePath, ref FilePath, ref this.ReplyPartialID, ref this.ReplyPartialPath, ref this.ReplyFolderPath, ref this.ReplyCheckVirus, ref this.ReplyFolderType);
+            break;
+          }
+          break;
+        }
+        goto default;
+      case 699074131:
+        if (Operators.CompareString(inputTransaction, "file_hash_check", false) == 0)
+        {
+          flag1 = true;
+          this.siGlobs.objEngine.fileUploadDownloadEngine.ValidateDownload(this.InputFileID, Conversions.ToLong(this.InputDLRecID), this.InputHash, this.InputHashSha512, this.InputAgentBrand, this.InputAgentVersion);
+          break;
+        }
+        goto default;
+      case 825767166:
+        if (Operators.CompareString(inputTransaction, "large_download_hash_good", false) == 0)
+        {
+          flag2 = this.siGlobs.objEngine.fileEngine.FileHandleDownloadNotification(this.InputNotificationID, this.InputFileID, true, Operators.CompareString(this.InputUntrusted, "1", false) == 0) != 0;
+          break;
+        }
+        goto default;
+      case 963011170:
+        if (Operators.CompareString(inputTransaction, "session_getvars", false) == 0)
+        {
+          SILDictionary<string, string> sessionVarsAsColl = this.httpSession.GetAllSessionVarsAsColl();
+          int num = 0;
+          try
+          {
+            foreach (string key in sessionVarsAsColl.Values)
+            {
+              checked { ++num; }
+              string HeaderName = "X-siLock-SessVar" + Conversions.ToString(num);
+              this.AddNonBlankHeader(ref HeaderName, $"{key}: {sessionVarsAsColl[key]}");
+            }
+            break;
+          }
+          finally
+          {
+            Dictionary<string, string>.ValueCollection.Enumerator enumerator;
+            enumerator.Dispose();
+          }
+        }
+        else
+          goto default;
+      case 1080313561:
+        if (Operators.CompareString(inputTransaction, "large_download_end_good", false) == 0)
+        {
+          flag2 = this.objLargeXfer.EndLargeFileDownload(this.InputFileID, this.InputFolderID, this.InputAgentBrand, this.InputAgentVersion, "", true, this.InputNotificationID, this.InputDurationSecs, this.InputMailboxOwner, ref this.ReplyLogID);
+          this.httpSession.SetSessionTimeoutToStandard();
+          break;
+        }
+        goto default;
+      case 1240467194:
+        if (Operators.CompareString(inputTransaction, "large_download_hash_failed", false) == 0)
+        {
+          flag2 = this.siGlobs.objEngine.fileEngine.FileHandleDownloadNotification(this.InputNotificationID, this.InputFileID, false, Operators.CompareString(this.InputUntrusted, "1", false) == 0) != 0;
+          break;
+        }
+        goto default;
+      case 2202159593:
+        if (Operators.CompareString(inputTransaction, "large_download_end_failed", false) == 0)
+        {
+          flag2 = this.objLargeXfer.AbortLargeFileDownload(this.InputFileID, this.InputFolderID, this.InputAgentBrand, this.InputAgentVersion, this.InputErrorDescription, true, this.InputMailboxOwner, this.InputErrorCode);
+          this.httpSession.SetSessionTimeoutToStandard();
+          break;
+        }
+        goto default;
+      case 2988958630:
+        if (Operators.CompareString(inputTransaction, "large_download_start", false) == 0)
+        {
+          if (this.CheckFileID(this.InputFileID))
+          {
+            SILLargeXfer objLargeXfer = this.objLargeXfer;
+            string inputFileId = this.InputFileID;
+            string inputFolderPath = this.InputFolderPath;
+            string inputAgentBrand = this.InputAgentBrand;
+            string inputAgentVersion = this.InputAgentVersion;
+            string ipAddress = this.siGlobs.objUser.IPAddress;
+            string inputMailboxOwner = this.InputMailboxOwner;
+            // ISSUE: variable of a reference type
+            string& local1;
+            // ISSUE: explicit reference operation
+            int integer = Conversions.ToInteger(^(local1 = ref this.ReplyFolderID));
+            ref int local2 = ref integer;
+            ref string local3 = ref this.ReplyFolderPath;
+            ref string local4 = ref this.ReplyFilePath;
+            ref DataFilePath local5 = ref this.DataFilePath;
+            ref string local6 = ref this.ReplyOriginalFilename;
+            ref string local7 = ref this.ReplyNotificationID;
+            ref string local8 = ref this.ReplyHash;
+            ref string local9 = ref this.ReplyHashSha512;
+            ref string local10 = ref this.ReplyUploadComment;
+            ref string local11 = ref this.ReplyMailboxOwner;
+            ref int local12 = ref this.ReplyFolderType;
+            ref long local13 = ref this.ReplyFileSize;
+            int num = objLargeXfer.StartLargeFileDownload(inputFileId, inputFolderPath, inputAgentBrand, inputAgentVersion, ipAddress, inputMailboxOwner, ref local2, ref local3, ref local4, ref local5, ref local6, ref local7, ref local8, ref local9, ref local10, ref local11, ref local12, ref local13) ? 1 : 0;
+            local1 = Conversions.ToString(integer);
+            flag2 = num != 0;
+            this.ReplyUploadComment = this.ConvertCommentToEncoded(this.ReplyUploadComment);
+          }
+          this.httpSession.SetSessionTimeoutToLong();
+          break;
+        }
+        goto default;
+      case 3222700606:
+        if (Operators.CompareString(inputTransaction, "large_upload_end_good", false) == 0)
+        {
+          bool bHashOK = false;
+          if (Operators.CompareString("1", this.InputHashOK, false) == 0)
+            bHashOK = true;
+          bool bResumeInPlace = false;
+          if (Operators.CompareString("1", this.InputResumeInPlace, false) == 0)
+            bResumeInPlace = true;
+          bool bVirusChecked = false;
+          if (Operators.CompareString("1", this.InputVirusChecked, false) == 0)
+            bVirusChecked = true;
+          bool bDLPChecked = false;
+          if (Operators.CompareString("1", this.InputDLPChecked, false) == 0)
+            bDLPChecked = true;
+          bool flag5 = this.objLargeXfer.EndLargeFileUpload(this.InputFileID, this.InputFolderID, Conversions.ToLong(this.InputFileSize), this.InputPackageID, this.InputTimeEnded, this.InputTimeElapsed, this.InputOriginalFilename, this.InputUploadComment, this.InputHash, this.InputHashSha512, bHashOK, this.InputPartialID, this.InputDurationSecs, bResumeInPlace, this.InputFileIDToDelete, bVirusChecked, bDLPChecked, this.InputCScanName, this.ComputeCScanID(this.InputCScanEngine, this.InputCScanISTag), this.InputCScanError, this.InputCScan2Name, this.ComputeCScanID(this.InputCScan2Engine, this.InputCScan2ISTag), this.InputCScan2Error, ref this.InputDLPViolation);
+          if (bHashOK && flag5)
+            this.ReplyIntegrityVerified = true;
+          this.httpSession.SetSessionTimeoutToStandard();
+          this.ReplyDLPViolation = this.InputDLPViolation;
+          break;
+        }
+        goto default;
+      case 3424662218:
+        if (Operators.CompareString(inputTransaction, "ip_trusted_ask", false) == 0)
+        {
+          if (this.siGlobs.objUser.IsIPTrusted(this.InputIPAddress))
+          {
+            this.objLargeXfer.ErrorCode = 0;
+            break;
+          }
+          this.objLargeXfer.ErrorCode = 2976;
+          this.objLargeXfer.ErrorDescription = this.siGlobs.objUser.ErrorDescription;
+          break;
+        }
+        goto default;
+      case 3907276463:
+        if (Operators.CompareString(inputTransaction, "folder_add_by_path", false) == 0)
+        {
+          flag1 = true;
+          IFolderEngine folderEngine = this.siGlobs.objEngine.folderEngine;
+          string inputFolderPath = this.InputFolderPath;
+          List<string> stringList1 = (List<string>) null;
+          ref List<string> local14 = ref stringList1;
+          List<string> stringList2 = (List<string>) null;
+          ref List<string> local15 = ref stringList2;
+          this.ReplyFolderID = folderEngine.FolderAddByPath(inputFolderPath, FolderIDList: ref local14, FolderTypeList: ref local15);
+          break;
+        }
+        goto default;
+      case 4104253242:
+        if (Operators.CompareString(inputTransaction, "large_upload_end_failed", false) == 0)
+        {
+          bool bResumeInPlace = false;
+          if (Operators.CompareString("1", this.InputResumeInPlace, false) == 0)
+            bResumeInPlace = true;
+          flag2 = this.objLargeXfer.AbortLargeFileUpload(this.InputFileID, this.InputFolderID, this.InputOriginalFilename, this.InputErrorCode, this.InputErrorDescription, this.InputPartialID, bResumeInPlace, this.InputFileIDToDelete, this.InputCScanName);
+          this.httpSession.SetSessionTimeoutToStandard();
+          break;
+        }
+        goto default;
+      default:
+        this.httpSession.SetSessionTimeoutToStandard();
+        this.ErrorCode = 2320;
+        this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60021, this.InputTransaction);
+        break;
+    }
+    if (flag1)
+    {
+      this.ErrorCode = this.siGlobs.objEngine.ErrorCode;
+      this.ErrorDescription = this.siGlobs.objEngine.ErrorDescription;
+    }
+    else
+    {
+      if (!(2320 != this.ErrorCode & 2058 != this.ErrorCode))
+        return;
+      this.ErrorCode = this.objLargeXfer.ErrorCode;
+      this.ErrorDescription = this.objLargeXfer.ErrorDescription;
+    }
+  }
+
+  private void AddNonBlankHeader(ref string HeaderName, string HeaderValue)
+  {
+    if (Operators.CompareString(HeaderValue, "", false) == 0)
+      return;
+    HttpResponseBase response = this.siGlobs.MyResponse;
+    string name = HeaderName;
+    SILUtility objUtility = this.siGlobs.objUtility;
+    ref string local1 = ref HeaderValue;
+    bool flag = false;
+    ref bool local2 = ref flag;
+    string str = StringUtility.MimeEncodeString(objUtility.CRLFClean(ref local1, ref local2));
+    response.AddHeader(name, str);
+    if (Operators.CompareString(HeaderName, "X-siLock-UploadComment", false) == 0)
+      HeaderValue = "(suppressed)";
+    this.siGlobs.objDebug.Log(60, $"  machine2 resp: {HeaderName}: {HeaderValue}");
+  }
+
+  public void ClearHTTPReplyVars()
+  {
+    this.ReplyFileID = "";
+    this.ReplyFolderID = (string) null;
+    this.ReplyFilePath = "";
+    this.ReplyOriginalFilename = "";
+    this.ReplyInstID = "";
+    this.ReplyNotificationID = "";
+    this.ReplyPartialID = "";
+    this.ReplyUsername = "";
+    this.ReplyLoginName = "";
+    this.ReplyHash = "";
+    this.ReplyHashSha512 = "";
+    this.ReplyUploadComment = "";
+    this.ReplyDLPViolation = (string) null;
+    this.ReplyMailboxOwner = "";
+    this.ReplyFolderType = 0;
+    this.ReplyIntegrityVerified = false;
+  }
+
+  private void SetHTTPReplyHeaders()
+  {
+    this.siGlobs.MyResponse.ContentType = "text/plain";
+    string HeaderName1 = "X-siLock-ErrorCode";
+    this.AddNonBlankHeader(ref HeaderName1, Conversions.ToString(this.ErrorCode));
+    string HeaderName2 = "X-siLock-ErrorDescription";
+    this.AddNonBlankHeader(ref HeaderName2, SILUtility.XHTMLUnClean(this.ErrorDescription));
+    string HeaderName3 = "X-siLock-FileID";
+    this.AddNonBlankHeader(ref HeaderName3, this.ReplyFileID);
+    string HeaderName4 = "X-siLock-FolderID";
+    this.AddNonBlankHeader(ref HeaderName4, this.ReplyFolderID);
+    string HeaderName5 = "X-siLock-FolderPath";
+    this.AddNonBlankHeader(ref HeaderName5, this.ReplyFolderPath);
+    string HeaderName6 = "X-siLock-FolderType";
+    this.AddNonBlankHeader(ref HeaderName6, Conversions.ToString(this.ReplyFolderType));
+    string HeaderName7 = "X-siLock-FilePath";
+    this.AddNonBlankHeader(ref HeaderName7, this.ReplyFilePath);
+    string HeaderName8 = "X-siLock-OriginalFilename";
+    this.AddNonBlankHeader(ref HeaderName8, this.ReplyOriginalFilename);
+    string HeaderName9 = "X-siLock-InstID";
+    this.AddNonBlankHeader(ref HeaderName9, this.ReplyInstID);
+    string HeaderName10 = "X-siLock-NotificationID";
+    this.AddNonBlankHeader(ref HeaderName10, this.ReplyNotificationID);
+    string HeaderName11 = "X-siLock-PartialFileID";
+    this.AddNonBlankHeader(ref HeaderName11, this.ReplyPartialID);
+    string HeaderName12 = "X-siLock-PartialFilePath";
+    this.AddNonBlankHeader(ref HeaderName12, this.ReplyPartialPath);
+    string HeaderName13 = "X-siLock-Username";
+    this.AddNonBlankHeader(ref HeaderName13, this.ReplyUsername);
+    string HeaderName14 = "X-siLock-LoginName";
+    this.AddNonBlankHeader(ref HeaderName14, this.ReplyLoginName);
+    string HeaderName15 = "X-siLock-RealName";
+    this.AddNonBlankHeader(ref HeaderName15, this.siGlobs.objUser.Realname);
+    string HeaderName16 = "X-siLock-Hash";
+    this.AddNonBlankHeader(ref HeaderName16, this.ReplyHash);
+    string HeaderName17 = "X-siLock-Sha512-Hash";
+    this.AddNonBlankHeader(ref HeaderName17, this.ReplyHashSha512);
+    string HeaderName18 = "X-siLock-UploadComment";
+    this.AddNonBlankHeader(ref HeaderName18, this.ReplyUploadComment);
+    string HeaderName19 = "X-siLock-DLPViolation";
+    this.AddNonBlankHeader(ref HeaderName19, this.ReplyDLPViolation);
+    string HeaderName20 = "X-siLock-MailboxOwner";
+    this.AddNonBlankHeader(ref HeaderName20, this.ReplyMailboxOwner);
+    string HeaderName21 = "X-siLock-LogRecID";
+    this.AddNonBlankHeader(ref HeaderName21, this.ReplyLogID);
+    string HeaderName22 = "X-siLock-IntegrityVerified";
+    this.AddNonBlankHeader(ref HeaderName22, Conversions.ToString(this.ReplyIntegrityVerified));
+    string inputTransaction = this.InputTransaction;
+    if (Operators.CompareString(inputTransaction, "large_upload_start", false) != 0 && Operators.CompareString(inputTransaction, "large_upload_check_ok", false) != 0)
+    {
+      if (Operators.CompareString(inputTransaction, "large_download_start", false) != 0)
+        return;
+      string HeaderName23 = "X-siLock-FileSize";
+      this.AddNonBlankHeader(ref HeaderName23, this.ReplyFileSize.ToString());
+      string HeaderName24 = "X-siLock-MultipartFile";
+      this.AddNonBlankHeader(ref HeaderName24, SILUtility.BoolToStr(this.DataFilePath is MultiPartDataFilePath));
+    }
+    else
+    {
+      CScanSettings settings = (CScanSettings) null;
+      if (!this.siGlobs.objEngine.CheckWhetherToScanFile(this.InputFileSize, ref settings))
+        return;
+      string HeaderName25 = "X-siLock-CheckVirus";
+      this.AddNonBlankHeader(ref HeaderName25, "1");
+      string HeaderName26 = "X-siLock-CS-URL";
+      this.AddNonBlankHeader(ref HeaderName26, settings.ServerURL);
+      string HeaderName27 = "X-siLock-CS-Name";
+      this.AddNonBlankHeader(ref HeaderName27, settings.CSName);
+      string HeaderName28 = "X-siLock-CS-ChunkSizeKB";
+      this.AddNonBlankHeader(ref HeaderName28, Conversions.ToString(settings.ChunkSizeKB));
+      string HeaderName29 = "X-siLock-CS-DoPreview";
+      this.AddNonBlankHeader(ref HeaderName29, SILUtility.BoolToStr(settings.DoPreview));
+      string HeaderName30 = "X-siLock-CS-AVDLP";
+      this.AddNonBlankHeader(ref HeaderName30, Conversions.ToString(settings.AVDLP));
+      string HeaderName31 = "X-siLock-CS-Tries";
+      this.AddNonBlankHeader(ref HeaderName31, Conversions.ToString(settings.MaxAttempts));
+      string HeaderName32 = "X-siLock-CS-ConnTimeoutSecs";
+      this.AddNonBlankHeader(ref HeaderName32, Conversions.ToString(settings.ConnTimeoutSecs));
+      string HeaderName33 = "X-siLock-CS-SendTimeoutSecs";
+      this.AddNonBlankHeader(ref HeaderName33, Conversions.ToString(settings.SendTimeoutSecs));
+      HeaderName33 = "X-siLock-CS-RecvTimeoutSecs";
+      this.AddNonBlankHeader(ref HeaderName33, Conversions.ToString(settings.RecvTimeoutSecs));
+      HeaderName33 = "X-siLock-CS-Allow204";
+      this.AddNonBlankHeader(ref HeaderName33, SILUtility.BoolToStr(settings.Allow204));
+      HeaderName33 = "X-siLock-CS-MaxFileSize";
+      this.AddNonBlankHeader(ref HeaderName33, Conversions.ToString(checked (1048576L /*0x100000*/ * settings.MaxFileMB)));
+      HeaderName33 = "X-siLock-CS-BlockOnError";
+      this.AddNonBlankHeader(ref HeaderName33, Conversions.ToString(Interaction.IIf(settings.AVDLP == 1, (object) this.siGlobs.objUser.InstDLPBlockOnError, (object) this.siGlobs.objUser.InstAVBlockOnError)));
+      HeaderName33 = "X-siLock-CS-IgnoreCertErrors";
+      this.AddNonBlankHeader(ref HeaderName33, SILUtility.BoolToStr(settings.IgnoreCertErrors));
+      if (settings.AVDLP != 0)
+        return;
+      settings = SILGlobals.GetCScanSettings(this.siGlobs.objEngine.sysEngine, false, true);
+      if ((-(settings.Enabled ? 1 : 0) & this.siGlobs.objUser.InstDLPEnable) == 0)
+        return;
+      HeaderName33 = "X-siLock-CS2-URL";
+      this.AddNonBlankHeader(ref HeaderName33, settings.ServerURL);
+      HeaderName33 = "X-siLock-CS2-Name";
+      this.AddNonBlankHeader(ref HeaderName33, settings.CSName);
+      HeaderName33 = "X-siLock-CS2-ChunkSizeKB";
+      this.AddNonBlankHeader(ref HeaderName33, Conversions.ToString(settings.ChunkSizeKB));
+      HeaderName33 = "X-siLock-CS2-DoPreview";
+      this.AddNonBlankHeader(ref HeaderName33, SILUtility.BoolToStr(settings.DoPreview));
+      HeaderName33 = "X-siLock-CS2-AVDLP";
+      this.AddNonBlankHeader(ref HeaderName33, Conversions.ToString(settings.AVDLP));
+      HeaderName33 = "X-siLock-CS2-Tries";
+      this.AddNonBlankHeader(ref HeaderName33, Conversions.ToString(settings.MaxAttempts));
+      HeaderName33 = "X-siLock-CS2-ConnTimeoutSecs";
+      this.AddNonBlankHeader(ref HeaderName33, Conversions.ToString(settings.ConnTimeoutSecs));
+      HeaderName33 = "X-siLock-CS2-SendTimeoutSecs";
+      this.AddNonBlankHeader(ref HeaderName33, Conversions.ToString(settings.SendTimeoutSecs));
+      HeaderName33 = "X-siLock-CS2-RecvTimeoutSecs";
+      this.AddNonBlankHeader(ref HeaderName33, Conversions.ToString(settings.RecvTimeoutSecs));
+      HeaderName33 = "X-siLock-CS2-Allow204";
+      this.AddNonBlankHeader(ref HeaderName33, SILUtility.BoolToStr(settings.Allow204));
+      HeaderName33 = "X-siLock-CS2-MaxFileSize";
+      this.AddNonBlankHeader(ref HeaderName33, Conversions.ToString(checked (1048576L /*0x100000*/ * settings.MaxFileMB)));
+      HeaderName33 = "X-siLock-CS2-BlockOnError";
+      this.AddNonBlankHeader(ref HeaderName33, Conversions.ToString(this.siGlobs.objUser.InstDLPBlockOnError));
+      HeaderName33 = "X-siLock-CS2-IgnoreCertErrors";
+      this.AddNonBlankHeader(ref HeaderName33, SILUtility.BoolToStr(settings.IgnoreCertErrors));
+    }
+  }
+
+  private static string RemovePasswordHeader(NameValueCollection headers)
+  {
+    StringBuilder stringBuilder1 = new StringBuilder();
+    try
+    {
+      foreach (object key in headers.Keys)
+      {
+        object objectValue1 = RuntimeHelpers.GetObjectValue(key);
+        if (Operators.ConditionalCompareObjectEqual(objectValue1, (object) "X-siLock-Password", false))
+          stringBuilder1.AppendLine($"{RuntimeHelpers.GetObjectValue(objectValue1)}: (suppressed)");
+        else if (Operators.ConditionalCompareObjectEqual(objectValue1, (object) "X-siLock-UploadComment", false))
+        {
+          stringBuilder1.AppendLine($"{RuntimeHelpers.GetObjectValue(objectValue1)}: (suppressed)");
+        }
+        else
+        {
+          StringBuilder stringBuilder2 = stringBuilder1;
+          object objectValue2 = RuntimeHelpers.GetObjectValue(objectValue1);
+          object[] objArray;
+          bool[] flagArray;
+          object obj = NewLateBinding.LateGet((object) headers, (Type) null, "Item", objArray = new object[1]
+          {
+            objectValue1
+          }, (string[]) null, (Type[]) null, flagArray = new bool[1]
+          {
+            true
+          });
+          if (flagArray[0])
+            RuntimeHelpers.GetObjectValue(objArray[0]);
+          object objectValue3 = RuntimeHelpers.GetObjectValue(obj);
+          string str = $"{objectValue2}: {objectValue3}";
+          stringBuilder2.AppendLine(str);
+        }
+      }
+    }
+    finally
+    {
+      IEnumerator enumerator;
+      if (enumerator is IDisposable)
+        (enumerator as IDisposable).Dispose();
+    }
+    return stringBuilder1.ToString();
+  }
+
+  public bool CheckCSRFTokenIfNec()
+  {
+    bool flag = false;
+    if (Operators.CompareString(this.InputClientType, "nowiz", false) == 0)
+    {
+      if (Operators.CompareString(this.InputTransaction, "large_upload_start", false) == 0 || Operators.CompareString(this.InputTransaction, "large_upload_end_good", false) == 0)
+      {
+        if (this.siGlobs.objUtility.ValidateGivenCsrfToken(this.InputCSRFToken))
+          flag = true;
+      }
+      else
+        flag = true;
+    }
+    else
+      flag = true;
+    return flag;
+  }
+
+  public void HandleIPAddressCheckSystem()
+  {
+    this.siGlobs.objUser.InstID = 0;
+    if (this.siGlobs.objUser.IsIPTrusted(this.InputIPAddress))
+    {
+      this.ErrorCode = 0;
+    }
+    else
+    {
+      this.ErrorCode = 2976;
+      this.ErrorDescription = this.siGlobs.objUser.ErrorDescription;
+    }
+  }
+
+  public void Machine2Main()
+  {
+    try
+    {
+      this.siGlobs.objUtility.SetCultureToEnglish();
+      if (this.objLargeXfer == null)
+      {
+        this.siGlobs.InitVariables();
+        this.objLargeXfer = new SILLargeXfer(ref this.siGlobs);
+      }
+      this.siGlobs.objDebug.Log(50, "-------------------- machine2.aspx starting -------------");
+      if (!this.siGlobs.objUser.IsIPLocal(this.siGlobs.objUser.IPAddress))
+      {
+        this.siGlobs.objDebug.Log(30, $"Machine2Main: Attempted access by remote address: {this.siGlobs.objUser.IPAddress}");
+        this.ErrorCode = 2976;
+        this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60032);
+      }
+      else
+      {
+        NameValueCollection headers = this.siGlobs.MyRequest.Headers;
+        this.siGlobs.objDebug.Log(60, $"SILMachine2 got headers: '{SILMachine2.RemovePasswordHeader(headers)}'");
+        string empty = string.Empty;
+        if (!this.siGlobs.objUtility.FeatureIsValid(1, ref empty))
+        {
+          this.ErrorCode = 3400;
+          this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60004, empty);
+        }
+        else if (this.CrackInput(headers))
+        {
+          this.siGlobs.objDebug.Log(50, "SILMachine2 transaction: " + this.InputTransaction);
+          if (Operators.CompareString(this.InputTransaction, "ip_trusted_ask_system", false) == 0)
+          {
+            this.HandleIPAddressCheckSystem();
+          }
+          else
+          {
+            this.siGlobs.AgentBrand = this.InputAgentBrand;
+            this.siGlobs.LicAgentBrand = this.InputLicAgentBrand;
+            this.siGlobs.AgentVersion = this.InputAgentVersion;
+            if (Operators.CompareString(this.InputIPAddress, "", false) != 0)
+              this.siGlobs.objUser.SetIPAddress(this.InputIPAddress);
+            bool flag1 = false;
+            if (!this.LookupSession())
+            {
+              bool flag2 = true;
+              if (Operators.CompareString(this.InputLoginName, "", false) == 0 && this.TransactionCanGetUsernameFromNotificationID(this.InputTransaction))
+              {
+                if (SILGlobals.NotificationHash.ContainsKey((object) this.InputNotificationID))
+                {
+                  string notificationValue = this.siGlobs.objUtility.GetUsernameFromNotificationValue(Conversions.ToString(SILGlobals.NotificationHash[(object) this.InputNotificationID]));
+                  this.siGlobs.objDebug.Log(40, $"No username provided to machine2, and no session; obtained username '{notificationValue}' from notification");
+                  if (Operators.CompareString(notificationValue, "", false) != 0)
+                    this.InputLoginName = this.siGlobs.objEngine.userEngine.UserGetLoginName(notificationValue);
+                }
+                else
+                  this.siGlobs.objDebug.Log(30, "No username provided to machine2, and no session, and can't get username from notification");
+              }
+              if (flag2 & Operators.CompareString(this.InputLoginName, "", false) != 0 && this.TransactionOKToForceSignonWithoutPW(this.InputTransaction))
+              {
+                this.siGlobs.objDebug.Log(40, $"No session: machine2 forcing signon of {this.InputLoginName} for {this.InputTransaction}");
+                if (this.siGlobs.objUser.ForceSignonQuiet(this.InputLoginName))
+                {
+                  flag2 = false;
+                  flag1 = true;
+                }
+                else
+                {
+                  this.ErrorCode = 2010;
+                  this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60001);
+                  this.siGlobs.objDebug.Log(30, this.ErrorDescription);
+                  goto label_34;
+                }
+              }
+              if (flag2)
+              {
+                this.ErrorCode = 3200;
+                this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60027);
+                this.siGlobs.objDebug.Log(30, this.ErrorDescription);
+                goto label_34;
+              }
+            }
+            else
+            {
+              this.ReplyUsername = this.siGlobs.objUser.Username;
+              this.ReplyLoginName = this.siGlobs.objUser.LoginName;
+              this.siGlobs.objUser.SetIPAddress(this.siGlobs.objSession.GetValue("MyIPAddress"));
+            }
+            if (Operators.CompareString(this.InputLangCode, "", false) != 0)
+              this.siGlobs.objI11N.SetLang(this.InputLangCode);
+            if (Operators.CompareString(this.siGlobs.objUser.Username, "Anonymous", false) != 0 && SILUtility.IntToBool(this.siGlobs.objUser.MustChangePassword) && !SILUtility.IntToBool(this.siGlobs.objUser.ExemptFromPasswordAging) && (this.siGlobs.objUser.InstAuthMethod == 0 || this.siGlobs.objUser.InstAuthMethod == 10 && (this.siGlobs.objUser.AuthMethod == 20 || this.siGlobs.objUser.AuthMethod == 0 && this.siGlobs.objUser.AuthSourceID == 0)))
+            {
+              this.siGlobs.objDebug.Log(60, "SILMachine2: MustChangePassword TRUE");
+              this.ErrorCode = 2020;
+              this.ErrorDescription = this.siGlobs.objI11N.GetMsg(60025);
+            }
+            else
+            {
+              if (!this.CheckCSRFTokenIfNec())
+              {
+                this.ErrorCode = 3602;
+                this.ErrorDescription = this.siGlobs.objI11N.GetMsg(20271);
+              }
+              else
+                this.DoTransaction();
+              if (flag1)
+                this.DoLogoff();
+            }
+          }
+        }
+      }
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      Exception exception = ex;
+      this.ErrorCode = 100;
+      this.ErrorDescription = exception.Message;
+      this.siGlobs.objDebug.Log(20, "Exception in Machine2: " + exception.ToString());
+      ProjectData.ClearProjectError();
+    }
+label_34:
+    this.SetHTTPReplyHeaders();
+    this.siGlobs.objDebug.Log(50, "--- machine2 exiting");
+    this.siGlobs.CleanupVariables();
+  }
+
+  public void Machine2Main(
+    ref HttpRequest parmRequest,
+    ref HttpResponse parmResponse,
+    ref HttpSessionState parmSession,
+    ref HttpApplicationState parmApplicationState)
+  {
+    this.siGlobs = new SILGlobals();
+    this.httpSession = new SILHttpSessionWrapper(ref this.siGlobs, ref parmSession);
+    SILGlobals siGlobs = this.siGlobs;
+    ref HttpRequest local1 = ref parmRequest;
+    ref HttpResponse local2 = ref parmResponse;
+    // ISSUE: variable of a reference type
+    SILHttpSessionWrapper& local3;
+    // ISSUE: explicit reference operation
+    ISession session = (ISession) ^(local3 = ref this.httpSession);
+    ref ISession local4 = ref session;
+    ref HttpApplicationState local5 = ref parmApplicationState;
+    siGlobs.InitGlobals(ref local1, ref local2, ref local4, ref local5);
+    local3 = (SILHttpSessionWrapper) session;
+    this.siGlobs.SetHTTPToNoCaching();
+    this.Machine2Main();
+  }
+}
