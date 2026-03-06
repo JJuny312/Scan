@@ -1,0 +1,869 @@
+// Decompiled with JetBrains decompiler
+// Type: MOVEit.DMZ.WebApp.SILGuestAccess
+// Assembly: midmz, Version=17.1.0.32, Culture=neutral, PublicKeyToken=null
+// MVID: 19A679F4-C903-44F5-B74E-24E9B3BF5DA6
+// Assembly location: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\9a11d1d0\5debd404\assembly\dl3\e1ee3793\0082a404_1055dc01\midmz.dll
+
+using Microsoft.VisualBasic;
+using Microsoft.VisualBasic.CompilerServices;
+using MOVEit.DMZ.Application.Contracts.Packages;
+using MOVEit.DMZ.Application.Contracts.Users.Enum;
+using MOVEit.DMZ.ClassLib;
+using MOVEit.DMZ.ClassLib.Dto;
+using MOVEit.DMZ.Core;
+using MOVEit.DMZ.Core.Session;
+using MOVEit.DMZ.Crosscutting.Contracts;
+using MOVEit.DMZ.WebApp.Features;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading;
+using System.Web;
+using System.Web.SessionState;
+using System.Xml;
+
+#nullable disable
+namespace MOVEit.DMZ.WebApp;
+
+public class SILGuestAccess
+{
+  private SILGlobals siGlobs;
+  private SILHttpSessionWrapper httpSession;
+  private bool m_foundactivesession;
+  private bool m_sessionfromdb;
+  private string m_sessioninstid;
+  private string m_accesscode;
+  private string m_validationcode;
+  private SILGuestPackageInfo m_pkginfo;
+  private SILGuestPackageInfo m_temppkginfo;
+  private bool m_pkgsent;
+  private bool m_gotoselfprovisiondone;
+  private string m_nextform;
+  private bool m_isreply;
+  private string m_onloadcode;
+  private string m_header;
+  private string m_status;
+  private string m_content;
+  private IFeatureDiscoveryService _features;
+
+  public SILGuestAccess()
+  {
+    this.siGlobs = (SILGlobals) null;
+    this.m_foundactivesession = false;
+    this.m_sessionfromdb = false;
+    this.m_sessioninstid = string.Empty;
+    this.m_accesscode = string.Empty;
+    this.m_validationcode = string.Empty;
+    this.m_pkgsent = false;
+    this.m_gotoselfprovisiondone = false;
+    this.m_nextform = string.Empty;
+    this.m_isreply = false;
+    this.m_onloadcode = string.Empty;
+    this.m_header = string.Empty;
+    this.m_status = string.Empty;
+    this.m_content = string.Empty;
+  }
+
+  public string GetHTML(
+    ref HttpRequest parmRequest,
+    ref HttpResponse parmResponse,
+    ref HttpSessionState parmSession,
+    ref HttpApplicationState parmApplicationState)
+  {
+    string empty1 = string.Empty;
+    string str1 = string.Empty;
+    bool flag1 = false;
+    string html;
+    try
+    {
+      this._features = (IFeatureDiscoveryService) new MOVEit.DMZ.Crosscutting.FeatureDiscoveryService.FeatureDiscoveryService();
+      this.siGlobs = new SILGlobals();
+      this.httpSession = new SILHttpSessionWrapper(ref this.siGlobs, ref parmSession);
+      SILGlobals siGlobs = this.siGlobs;
+      ref HttpRequest local1 = ref parmRequest;
+      ref HttpResponse local2 = ref parmResponse;
+      // ISSUE: variable of a reference type
+      SILHttpSessionWrapper& local3;
+      // ISSUE: explicit reference operation
+      ISession session = (ISession) ^(local3 = ref this.httpSession);
+      ref ISession local4 = ref session;
+      ref HttpApplicationState local5 = ref parmApplicationState;
+      siGlobs.InitGlobals(ref local1, ref local2, ref local4, ref local5);
+      local3 = (SILHttpSessionWrapper) session;
+      this.siGlobs.InitVariables();
+      this.siGlobs.objUser.EnableTimeZoneConversion();
+      this.siGlobs.objUtility.XSLPath = SystemSettings.XSLPathRoot;
+      this.siGlobs.objDebug.Log(50, "---------------------- guestaccess.aspx starting ------------------------");
+      this.siGlobs.objDebug.Log(60, "Session ID: " + this.siGlobs.objSession.SessionId);
+      if (Operators.CompareString(this.siGlobs.objSession.GetValue("MyPermission"), string.Empty, false) != 0 && int.Parse(this.siGlobs.objSession.GetValue("MyPermission")) >= 6)
+      {
+        this.siGlobs.objDebug.Log(20, "Found existing registered user session; clearing for guest use....");
+        this.siGlobs.objUser.RemoveSession();
+      }
+      this.m_pkginfo = new SILGuestPackageInfo(ref this.siGlobs);
+      this.m_temppkginfo = new SILGuestPackageInfo(ref this.siGlobs);
+      this.siGlobs.GetIncomingVariables();
+      bool flag2 = SILUtility.StrToBool(this.siGlobs.FromSignon) | string.IsNullOrEmpty(this.siGlobs.Arg06);
+      this.m_pkginfo.LoadFromSession();
+      this.siGlobs.GetOrgID(this.m_pkginfo.InstID);
+      string langCode = this.siGlobs.GetLangCode();
+      if (!string.IsNullOrWhiteSpace(langCode))
+        this.siGlobs.objI11N.SetLang(langCode);
+      string empty2 = string.Empty;
+      try
+      {
+        string empty3 = this.siGlobs.objSession.GetValue("MyUsername");
+        string empty4 = string.Empty;
+        string empty5 = string.Empty;
+        if (Operators.CompareString(empty3, "Guest", false) == 0 && Operators.CompareString(this.m_pkginfo.AccessCode, string.Empty, false) == 0)
+          empty3 = string.Empty;
+        string username = this.siGlobs.objUser.LookupActiveSession(empty3, this.siGlobs.objSession.SessionId, ref empty4, ref empty5);
+        if (Operators.CompareString(username, "Guest", false) == 0)
+        {
+          if (Operators.CompareString(empty4, string.Empty, false) == 0)
+          {
+            this.m_foundactivesession = true;
+            this.m_sessioninstid = this.siGlobs.OrgID;
+            this.m_accesscode = this.m_pkginfo.AccessCode;
+            this.m_validationcode = this.m_pkginfo.ValidationCode;
+          }
+          else
+          {
+            this.siGlobs.OrgID = empty4;
+            if (Operators.CompareString(empty5, string.Empty, false) == 0 || !this.m_temppkginfo.LoadPackageInfoFromAccessCode(empty5))
+              this.siGlobs.objUser.RemoveSession();
+            else if (Operators.CompareString(this.m_temppkginfo.InstID, empty4, false) != 0)
+            {
+              this.siGlobs.OrgID = this.m_temppkginfo.InstID;
+              this.m_temppkginfo = new SILGuestPackageInfo(ref this.siGlobs);
+              this.siGlobs.objUser.RemoveSession();
+            }
+            else
+            {
+              this.m_foundactivesession = true;
+              this.m_sessionfromdb = true;
+              this.m_sessioninstid = this.siGlobs.OrgID;
+              this.m_accesscode = this.m_temppkginfo.AccessCode;
+              this.m_validationcode = this.m_temppkginfo.ValidationCode;
+            }
+          }
+        }
+        else if (Operators.CompareString(username, "Anonymous", false) != 0 && Operators.CompareString(username, "", false) != 0)
+        {
+          this.siGlobs.objDebug.Log(20, "Found existing registered user session; clearing for guest use....");
+          this.siGlobs.objUser.RemoveSession();
+        }
+        if (Operators.CompareString(this.siGlobs.Transaction.ToLower(), "signoff", false) == 0)
+        {
+          if (this.m_pkginfo.IsSelfProvisioned || this.m_temppkginfo.IsSelfProvisioned)
+            this.m_gotoselfprovisiondone = true;
+          else
+            this.SetInfoStatus(this.siGlobs.objI11N.GetMsg(29000));
+          this.siGlobs.objUser.RemoveSession();
+          this.ClearVariables();
+        }
+        if (this.m_foundactivesession && Operators.CompareString(this.siGlobs.Transaction.ToLower(), "msgpassword", false) != 0 && (Operators.CompareString(this.siGlobs.Arg06, string.Empty, false) == 0 || Operators.CompareString(this.siGlobs.Arg06, this.m_accesscode, false) == 0))
+        {
+          if (this.m_sessionfromdb)
+          {
+            this.m_pkginfo.CopyFromPackageInfo(ref this.m_temppkginfo);
+            this.m_pkginfo.SaveToSession();
+          }
+          this.siGlobs.objUser.ActAsGuestInInst(Conversions.ToInteger(this.siGlobs.OrgID), this.m_pkginfo.EmailAddr, this.m_sessionfromdb);
+          this.siGlobs.objUser.UpdateSession();
+        }
+        else
+        {
+          this.siGlobs.objUser.ActAsAnonymousInInst(Conversions.ToInteger(this.siGlobs.OrgID));
+          this.siGlobs.objSession.SetValue("MyUsername", (object) "Anonymous");
+          if (Operators.CompareString(this.siGlobs.MyRequest.RequestType.ToUpper(), "POST", false) == 0 && Operators.CompareString(this.siGlobs.Transaction, "secmsgpost", false) == 0 && Operators.CompareString(this.siGlobs.Arg05, "sendauto", false) == 0)
+          {
+            IMsgEngine msgEngine = this.siGlobs.objEngine.msgEngine;
+            string str2 = SILUtility.XHTMLClean(this.siGlobs.Arg09);
+            ref string local6 = ref str2;
+            if (msgEngine.MsgValidateRecentAttach(ref local6))
+            {
+              string accessCode = SILUtility.XHTMLClean(this.siGlobs.MyRequest.Form.Get("curaccesscode"));
+              if (this.LoginWithTokenWhenSessionIsExpired(ref username, ref empty4, ref accessCode))
+              {
+                flag1 = true;
+                this.m_sessioninstid = this.siGlobs.OrgID;
+                this.m_validationcode = this.m_pkginfo.ValidationCode;
+                this.siGlobs.Arg02 = this.m_pkginfo.AccessCode;
+                this.siGlobs.Arg06 = this.m_pkginfo.PkgID;
+                this.m_pkginfo.SaveToSession();
+              }
+            }
+          }
+          if (flag2)
+          {
+            empty2 = this.siGlobs.Arg06;
+            this.siGlobs.Arg06 = this.siGlobs.Arg02;
+          }
+          if (!this.CheckIfAllowedAtHost())
+          {
+            this.SetWarningStatus(this.siGlobs.objI11N.GetMsg(29001));
+            this.m_accesscode = string.Empty;
+            this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.GuestPackageAuthentication, this.siGlobs.OrgID, "Anonymous", "", "", "", "", "", "", this.siGlobs.objUser.IPAddress, 2976, "", "", "", "", this.siGlobs.objUser.ErrorDescription, "", "", "", 0.0, "", "", "", "", 0);
+            this.siGlobs.objUser.LogAccessFail("Anonymous", Conversions.ToInteger(this.siGlobs.OrgID), this.siGlobs.objUser.IPAddress);
+            throw new Exception("Not allowed to access this host");
+          }
+          this.m_accesscode = this.siGlobs.Arg06;
+          if (Operators.CompareString(this.m_accesscode, string.Empty, false) == 0)
+            throw new Exception("No access code specified");
+          if (Operators.CompareString(this.m_accesscode, this.m_pkginfo.AccessCode, false) != 0)
+          {
+            if (!this.m_temppkginfo.LoadPackageInfoFromAccessCode(this.m_accesscode))
+            {
+              this.SetWarningStatus(this.siGlobs.objI11N.GetMsg(29001));
+              this.m_accesscode = string.Empty;
+              this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.GuestPackageAuthentication, this.siGlobs.OrgID, "Anonymous", "", "", "", "", "", "", this.siGlobs.objUser.IPAddress, 2025, "", "", "", "", "Invalid package access code.", "", "", "", 0.0, "", "", "", "", 0);
+              this.siGlobs.objUser.LogAccessFail("Anonymous", Conversions.ToInteger(this.siGlobs.OrgID), this.siGlobs.objUser.IPAddress);
+              throw new Exception("Invalid package access code");
+            }
+            if (Operators.CompareString(this.m_temppkginfo.InstID, this.siGlobs.OrgID, false) != 0)
+            {
+              this.siGlobs.OrgID = this.m_temppkginfo.InstID;
+              this.siGlobs.objUser.ActAsAnonymousInInst(Conversions.ToInteger(this.siGlobs.OrgID));
+            }
+            this.m_pkginfo.CopyFromPackageInfo(ref this.m_temppkginfo);
+          }
+          if (!this.CheckIfAllowedAtHost())
+          {
+            this.SetWarningStatus(this.siGlobs.objI11N.GetMsg(29002));
+            this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.GuestPackageAuthentication, this.siGlobs.OrgID, "Anonymous", "", "", "", "", "", "", this.siGlobs.objUser.IPAddress, 2976, "", "", "", "", this.siGlobs.objUser.ErrorDescription, "", "", "", 0.0, "", "", "", "", 0);
+            this.siGlobs.objUser.LogAccessFail("Anonymous", Conversions.ToInteger(this.siGlobs.OrgID), this.siGlobs.objUser.IPAddress);
+            throw new Exception("Not allowed to access this host");
+          }
+          if (!flag1)
+            this.m_validationcode = string.Empty;
+          if (Operators.CompareString(this.siGlobs.Transaction.ToLower(), "msgpassword", false) == 0)
+          {
+            this.m_validationcode = this.siGlobs.Arg07;
+            if (Operators.CompareString(this.m_validationcode, this.m_pkginfo.ValidationCode, false) == 0)
+              this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.GuestPackageAuthentication, this.siGlobs.OrgID, $"{"Guest"}:{this.m_pkginfo.EmailAddr}", "", "", this.m_pkginfo.PkgID, "", "", "", this.siGlobs.objUser.IPAddress, 0, "", "", "", "", "", "", "", "", 0.0, "", "", "", "", 0);
+            else if (Operators.CompareString(this.m_validationcode, string.Empty, false) == 0)
+            {
+              if (Operators.CompareString(this.siGlobs.objEngine.msgEngine.MsgMakeGuestFileValidationCode(this.m_accesscode, this.siGlobs.Arg01), this.m_pkginfo.ValidationCode, false) != 0)
+              {
+                this.SetWarningStatus(this.siGlobs.objI11N.GetMsg(29002));
+                this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.GuestPackageAuthentication, this.siGlobs.OrgID, "Anonymous", "", "", this.m_pkginfo.PkgID, "", "", "", this.siGlobs.objUser.IPAddress, 2025, "", "", "", "", "Incorrect password.", "", "", "", 0.0, "", "", "", "", 0);
+                this.siGlobs.objUser.LogAccessFail("Anonymous", Conversions.ToInteger(this.siGlobs.OrgID), this.siGlobs.objUser.IPAddress);
+                throw new Exception("Incorrect password");
+              }
+              this.m_validationcode = this.m_pkginfo.ValidationCode;
+              this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.GuestPackageAuthentication, this.siGlobs.OrgID, $"{"Guest"}:{this.m_pkginfo.EmailAddr}", "", "", this.m_pkginfo.PkgID, "", "", "", this.siGlobs.objUser.IPAddress, 0, "", "", "", "", "", "", "", "", 0.0, "", "", "", "", 0);
+            }
+            else
+            {
+              this.m_validationcode = string.Empty;
+              this.SetWarningStatus(this.siGlobs.objI11N.GetMsg(29002));
+              this.siGlobs.objEngine.LogAuditLong((System.Enum) AuditLogActions.Security.GuestPackageAuthentication, this.siGlobs.OrgID, "Anonymous", "", "", this.m_pkginfo.PkgID, "", "", "", this.siGlobs.objUser.IPAddress, 2025, "", "", "", "", "Incorrect validation code.", "", "", "", 0.0, "", "", "", "", 0);
+              this.siGlobs.objUser.LogAccessFail("Anonymous", Conversions.ToInteger(this.siGlobs.OrgID), this.siGlobs.objUser.IPAddress);
+              throw new Exception("Incorrect validation code");
+            }
+            if (this.m_foundactivesession)
+              this.siGlobs.objUser.RemoveSession();
+            this.siGlobs.objUser.ActAsGuestInInst(Conversions.ToInteger(this.siGlobs.OrgID), this.m_pkginfo.EmailAddr, true);
+            this.siGlobs.objUser.InsertSession(0, guestAccessCode: this.m_accesscode);
+            if (!this.httpSession.ReIssueNewSessionID())
+              this.siGlobs.objDebug.Log(20, "GuestAccess: failed to re-issue new session ID upon successful signon. Using old session ID instead.");
+          }
+        }
+      }
+      catch (Exception ex)
+      {
+        ProjectData.SetProjectError(ex);
+        this.siGlobs.objDebug.Log(30, "SILGuestAccess.GetHTML: " + ex.Message);
+        ProjectData.ClearProjectError();
+      }
+      finally
+      {
+        if (flag2 && Operators.CompareString(this.m_validationcode, string.Empty, false) == 0 || Operators.CompareString(this.siGlobs.Transaction.ToLower(), "signoff", false) == 0)
+        {
+          string url = $"{$"{this.siGlobs.MyRequest.ServerVariables.Get("PATH_INFO").Replace("guestaccess.aspx", "human.aspx")}?OrgID={this.siGlobs.OrgID}"}&Language={this.siGlobs.objI11N.GetLang()}";
+          if (Operators.CompareString(this.siGlobs.LoginName, string.Empty, false) != 0)
+            url = $"{url}&Username={HttpUtility.UrlEncode(this.siGlobs.LoginName)}";
+          if (Operators.CompareString(this.siGlobs.Arg12, string.Empty, false) != 0)
+            url = $"{url}&Arg12={this.siGlobs.Arg12}";
+          if (Operators.CompareString(this.siGlobs.Transaction.ToLower(), "msgpassword", false) == 0 && Operators.CompareString(empty2, string.Empty, false) != 0)
+            url = $"{url}&Arg06={empty2}";
+          this.siGlobs.objDebug.Log(30, "GuestAccess_GetHTML: Redirecting to human.aspx");
+          this.siGlobs.CleanupVariables();
+          this.siGlobs.MyResponse.Redirect(url);
+        }
+        else
+          this.m_nextform = Operators.CompareString(this.m_accesscode, string.Empty, false) != 0 ? (Operators.CompareString(this.m_validationcode, string.Empty, false) != 0 ? (Operators.CompareString(this.siGlobs.Arg12, string.Empty, false) == 0 || Operators.CompareString(this.siGlobs.Arg12, "message", false) == 0 ? "pkgview" : this.siGlobs.Arg12) : "promptpassword") : "promptaccesscode";
+        this.siGlobs.objDebug.Log(60, "SILGuestAccess.GetHTML: Input access code: " + this.m_accesscode);
+        this.siGlobs.objDebug.Log(60, Conversions.ToString(Operators.ConcatenateObject((object) "SILGuestAccess.GetHTML: Input validation code: ", Interaction.IIf(Operators.CompareString(this.m_validationcode, string.Empty, false) == 0, (object) string.Empty, (object) "(suppressed)"))));
+        this.siGlobs.objDebug.Log(60, "SILGuestAccess.GetHTML: Nextform: " + this.m_nextform);
+      }
+      this.siGlobs.FormattingLocale = string.IsNullOrEmpty(this.siGlobs.objUser.Org.FormattingLocaleCode) ? CultureInfo.CurrentCulture : CultureInfo.GetCultureInfo(this.siGlobs.objUser.Org.FormattingLocaleCode);
+      this.PerformAction();
+      this.DisplayFreshData();
+      this.MakeHeader();
+      str1 = this.MakePageHTML();
+    }
+    catch (ThreadAbortException ex)
+    {
+      ProjectData.SetProjectError((Exception) ex);
+      this.siGlobs.CleanupVariables();
+      ProjectData.ClearProjectError();
+    }
+    catch (Exception ex1)
+    {
+      ProjectData.SetProjectError(ex1);
+      Exception exception1 = ex1;
+      this.siGlobs.objDebug.LogException("SILGuestAccess.GetHTML", exception1);
+      try
+      {
+        str1 = this.siGlobs.objUtility.MakeExceptionPage(exception1);
+      }
+      catch (Exception ex2)
+      {
+        ProjectData.SetProjectError(ex2);
+        Exception exception2 = ex2;
+        this.siGlobs.objDebug.Log(10, "SILGuestAccess: Caught exception attempting to generate an error report");
+        this.siGlobs.objDebug.LogException("SILGuestAccess.GetHTML", exception2);
+        html = "A serious error occurred while trying to generate an error report. Please contact technical support for assistance.";
+        ProjectData.ClearProjectError();
+        goto label_82;
+      }
+      ProjectData.ClearProjectError();
+    }
+    if (Conversions.ToDouble(this.siGlobs.OrgID) != 0.0)
+    {
+      this.siGlobs.objDebug.Log(60, "Setting long-term COOKIE to hold Inst #" + this.siGlobs.OrgID);
+      this.siGlobs.objUtility.SetCookie("siLockLongTermInstID", this.siGlobs.OrgID, true, DateTime.MinValue);
+    }
+    this.siGlobs.objDebug.Log(60, "Setting COOKIE MIDMZLang to " + this.siGlobs.objI11N.GetLang());
+    this.siGlobs.objUtility.SetCookie("MIDMZLang", this.siGlobs.objI11N.GetLang(), true, DateTime.MinValue);
+    if (flag1)
+    {
+      this.siGlobs.objUser.ActAsAnonymousInInst(this.siGlobs.objUser.InstID);
+      this.siGlobs.objUser.RemoveSession();
+    }
+    else
+      this.m_pkginfo.SaveToSession();
+    this.siGlobs.CleanupVariables();
+    this.siGlobs.SetHTTPToNoCaching();
+    this.siGlobs.SetHTTPSecurityHeaders();
+    html = str1.Replace(Encoding.UTF8.GetString(new byte[2]
+    {
+      (byte) 194,
+      (byte) 160 /*0xA0*/
+    }), "&nbsp;");
+label_82:
+    return html;
+  }
+
+  private void SetStatus(string statustype, string msg)
+  {
+    string inputXml = SILUtility.MakeTag("root", (object) SILUtility.MakeTag("Severity", (object) statustype), (object) SILUtility.MakeCDataTag("Message", msg));
+    this.m_status = this.siGlobs.objUtility.XMerge(ref inputXml, "status25.xsl");
+  }
+
+  private void SetInfoStatus(string msg) => this.SetStatus("Info", msg);
+
+  private void SetWarningStatus(string msg) => this.SetStatus("Warning", msg);
+
+  private bool CheckIfAllowedAtHost() => this.siGlobs.objUser.IsGuestAllowedAtHost();
+
+  private string MakeStandards()
+  {
+    string pathInfo = this.siGlobs.MyRequest.ServerVariables.Get("PATH_INFO");
+    long num = SILUtility.MakeRandomRValue();
+    string pathFromPathInfo = SILUtility.GetBasePathFromPathInfo(pathInfo);
+    return SILUtility.MakeTag("Target", (object) $"{pathInfo}?r={num}") + SILUtility.MakeTag("BasePath", (object) pathFromPathInfo) + SILUtility.MakeTag("Browser", (object) this.siGlobs.AgentBrand) + SILUtility.MakeTag("BrowserVersion", (object) this.siGlobs.AgentVersion) + SILUtility.MakeTag("AccessCode", (object) this.m_accesscode) + SILUtility.MakeTag("ValidationCode", (object) this.m_validationcode) + SILUtility.MakeTag("ScriptStyleNonce", (object) this.siGlobs.Nonce) + SILUtility.MakeTag("LocalDoc", (object) RegUtility.GetSILRegValueDef("LocalDoc", "0"));
+  }
+
+  private string MakePassThrough()
+  {
+    return SILUtility.MakeTag("PassThrough", (object) this.siGlobs.MakeArgumentXML());
+  }
+
+  private string MakeFeatures() => this._features.GetAllFeaturesXml().OuterXml;
+
+  private void PerformAction()
+  {
+    if (Operators.CompareString(this.siGlobs.Transaction, "", false) != 0 && Operators.CompareString(this.siGlobs.Transaction, "dummy", false) != 0 && Operators.CompareString(this.siGlobs.Transaction, "msgpassword", false) != 0 && Operators.CompareString(this.siGlobs.Transaction, "signoff", false) != 0 && !this.siGlobs.objUtility.ValidateCsrfToken())
+    {
+      this.siGlobs.objDebug.Log(50, "Invalid CsrfToken value; will not run the transaction.");
+      this.SetWarningStatus(this.siGlobs.objI11N.GetMsg(20271));
+    }
+    else if (this.siGlobs.objUser.IsAnonymous() && Operators.CompareString(this.siGlobs.Transaction, "", false) != 0 && Operators.CompareString(this.siGlobs.Transaction.ToLower(), "signoff", false) != 0 && Operators.CompareString(this.siGlobs.Transaction.ToLower(), "dummy", false) != 0 && Operators.CompareString(this.siGlobs.Transaction.ToLower(), "msgpassword", false) != 0)
+    {
+      this.SetWarningStatus(this.siGlobs.objI11N.GetMsg(29003));
+      this.siGlobs.ClearArguments();
+      if (Operators.CompareString(this.m_nextform.ToLower(), "promptpassword", false) == 0)
+        return;
+      this.m_nextform = "promptaccesscode";
+    }
+    else
+    {
+      string lower1 = this.siGlobs.Transaction.ToLower();
+      if (Operators.CompareString(lower1, "msgpassword", false) != 0)
+      {
+        if (Operators.CompareString(lower1, "secmsgreply", false) != 0)
+        {
+          if (Operators.CompareString(lower1, "secmsgpost", false) != 0)
+            return;
+          string opt10 = this.siGlobs.Opt10;
+          if (opt10.Length > 1)
+          {
+            this.siGlobs.Arg09 = SILUtility.DelimitAppend(ref this.siGlobs.Arg09, opt10, ",");
+            if (Operators.CompareString(this.siGlobs.Opt11, string.Empty, false) == 0)
+              this.SetInfoStatus(this.siGlobs.objI11N.GetMsg(20016));
+            else
+              this.SetWarningStatus(this.siGlobs.Opt11);
+          }
+          else if (this.siGlobs.Opt11.Length > 0)
+            this.SetWarningStatus(this.siGlobs.Opt11);
+          CleanedMessage Body = new CleanedMessage(this.siGlobs.Arg04);
+          this.siGlobs.Arg04 = Body.Value;
+          if (Body.IsChanged)
+          {
+            this.SetWarningStatus(this.siGlobs.objI11N.GetMsg(29004));
+            this.siGlobs.Arg05 = "edit";
+          }
+          string lower2 = this.siGlobs.Arg05.ToLower();
+          if (Operators.CompareString(lower2, "edit", false) != 0)
+          {
+            if (Operators.CompareString(lower2, "removeattch", false) != 0)
+            {
+              if (Operators.CompareString(lower2, "send", false) != 0 && Operators.CompareString(lower2, "sendauto", false) != 0)
+              {
+                if (Operators.CompareString(lower2, "cancel", false) != 0)
+                  return;
+                this.siGlobs.objEngine.msgEngine.MsgRemoveAllAttachments(ref this.siGlobs.Arg09);
+                this.siGlobs.Arg01 = string.Empty;
+                this.siGlobs.Arg04 = string.Empty;
+                this.siGlobs.Arg09 = string.Empty;
+              }
+              else
+              {
+                int parsedValue = 0;
+                if (!this.ValidateClassificationTypeId(this.siGlobs.Opt04, ref parsedValue))
+                {
+                  this.SetWarningStatus(this.siGlobs.objI11N.GetMsg(20309));
+                  this.m_nextform = "pkgcompose";
+                }
+                else
+                {
+                  this.siGlobs.Arg05 = "send";
+                  string str = this.siGlobs.objEngine.msgEngine.MsgPostForGuest(ref this.m_pkginfo, ref this.siGlobs.Arg01, ref Body, ref this.siGlobs.Arg09, ref this.siGlobs.Arg08, ref this.siGlobs.Opt19, parsedValue);
+                  if (Operators.CompareString(str, "0", false) == 0)
+                  {
+                    this.SetWarningStatus(this.siGlobs.objEngine.ErrorDescription);
+                    if (this.siGlobs.objEngine.ErrorCode == 4405)
+                    {
+                      this.m_nextform = "pkgview";
+                      this.siGlobs.Arg01 = string.Empty;
+                      this.siGlobs.Arg04 = string.Empty;
+                      this.siGlobs.Arg09 = string.Empty;
+                    }
+                    else
+                      this.m_nextform = "pkgcompose";
+                  }
+                  else
+                  {
+                    this.m_pkgsent = true;
+                    if (this.m_pkginfo.IsSelfProvisioned)
+                    {
+                      new SqlUpdateBuilder(this.siGlobs.objWrap, SqlTable.GuestFileAccess).AddColumnValue("Viewed", (object) 1, true).AddAndColumnEqualsToWhere("AccessCode", (object) this.m_accesscode, true).Execute();
+                      this.m_gotoselfprovisiondone = true;
+                      this.siGlobs.objUser.RemoveSession();
+                      this.ClearVariables();
+                    }
+                    else
+                    {
+                      this.SetInfoStatus(this.siGlobs.objI11N.GetMsg(20060, str));
+                      this.m_nextform = "pkgview";
+                      this.siGlobs.Arg01 = string.Empty;
+                      this.siGlobs.Arg04 = string.Empty;
+                      this.siGlobs.Arg09 = string.Empty;
+                    }
+                  }
+                }
+              }
+            }
+            else
+            {
+              if (Operators.CompareString(this.siGlobs.Opt06, string.Empty, false) != 0)
+              {
+                this.siGlobs.objEngine.msgEngine.MsgRemoveAttachment(this.siGlobs.Opt06, ref this.siGlobs.Arg09);
+                this.SetInfoStatus(this.siGlobs.objI11N.GetMsg(20013));
+              }
+              this.m_nextform = "pkgcompose";
+            }
+          }
+          else
+            this.m_nextform = "pkgcompose";
+        }
+        else
+          this.m_nextform = "pkgreply";
+      }
+      else
+        this.siGlobs.Arg01 = string.Empty;
+    }
+  }
+
+  private void DisplayFreshData()
+  {
+    if (this.m_gotoselfprovisiondone)
+      this.m_content = this.MakePageSelfProvisionDone();
+    else if (this.siGlobs.objUser.IsAnonymous() && Operators.CompareString(this.m_nextform.ToLower(), "promptaccesscode", false) != 0 && Operators.CompareString(this.m_nextform.ToLower(), "promptpassword", false) != 0)
+    {
+      this.siGlobs.ClearArguments();
+      this.m_content = this.MakePagePromptAccessCode();
+    }
+    else
+    {
+      if (this.m_pkginfo.IsSelfProvisioned && (Operators.CompareString(this.m_nextform.ToLower(), "pkgview", false) == 0 || Operators.CompareString(this.m_nextform.ToLower(), "pkgreply", false) == 0))
+        this.m_nextform = "pkgcompose";
+      string lower = this.m_nextform.ToLower();
+      if (Operators.CompareString(lower, "promptaccesscode", false) != 0)
+      {
+        if (Operators.CompareString(lower, "promptpassword", false) != 0)
+        {
+          if (Operators.CompareString(lower, "pkgview", false) != 0)
+          {
+            if (Operators.CompareString(lower, "pkgreply", false) != 0)
+            {
+              if (Operators.CompareString(lower, "pkgcompose", false) == 0)
+              {
+                this.CheckForArgInSession("MyArgs_Arg01");
+                this.CheckForArgInSession("MyArgs_Arg04");
+                this.CheckForArgInSession("MyArgs_Arg08");
+                this.CheckForArgInSession("MyArgs_Arg09");
+                this.siGlobs.Arg01 = SILUtility.XHTMLUnClean(this.siGlobs.Arg01);
+                this.siGlobs.Arg08 = SILUtility.XHTMLUnClean(this.siGlobs.Arg08);
+                if (Operators.CompareString(this.siGlobs.Arg08, "", false) == 0)
+                  this.siGlobs.Arg08 = this.m_pkginfo.EmailAddr;
+                this.m_content = this.MakePagePackageCompose();
+              }
+              else
+              {
+                this.SetWarningStatus(this.siGlobs.objI11N.GetMsg(20270));
+                this.m_content = this.MakePagePackageView();
+              }
+            }
+            else
+            {
+              IMsgEngine msgEngine1 = this.siGlobs.objEngine.msgEngine;
+              ref string local1 = ref this.m_pkginfo.PkgID;
+              bool flag = false;
+              ref bool local2 = ref flag;
+              XmlDocument doc = msgEngine1.MsgGetDoc(ref local1, ref local2);
+              if (Conversions.ToDouble(this.siGlobs.objEngine.msgEngine.MsgGetNoReplyAllFromDoc(ref doc)) != 2.0)
+              {
+                this.siGlobs.Arg01 = SILUtility.XHTMLUnClean(this.siGlobs.objEngine.msgEngine.MsgGetSubject(ref this.m_pkginfo.PkgID));
+                SILGlobals siGlobs = this.siGlobs;
+                IMsgEngine msgEngine2 = this.siGlobs.objEngine.msgEngine;
+                ref string local3 = ref this.m_pkginfo.PkgID;
+                string bodyFromDoc = this.siGlobs.objEngine.msgEngine.MsgGetBodyFromDoc(ref doc);
+                ref string local4 = ref bodyFromDoc;
+                string str = msgEngine2.MsgMakeForwardReplyBody(ref local3, ref local4);
+                siGlobs.Arg04 = str;
+                this.siGlobs.Arg08 = this.m_pkginfo.EmailAddr;
+                if (!this.siGlobs.Arg01.StartsWith("Re:"))
+                  this.siGlobs.Arg01 = "Re: " + this.siGlobs.Arg01;
+                this.m_isreply = true;
+                if (Operators.CompareString(this.siGlobs.Opt07, "", false) == 0 || !SILUtility.BitIsSet((long) this.siGlobs.objUser.InstPackageFlags, 1L))
+                  this.siGlobs.Opt07 = SILUtility.BoolToStr(SILUtility.BitIsSet((long) this.siGlobs.objUser.InstPackageFlags, 0L));
+                this.m_content = this.MakePagePackageCompose();
+              }
+              else
+              {
+                this.SetWarningStatus(this.siGlobs.objI11N.GetMsg(20269));
+                this.m_content = this.MakePagePackageView();
+              }
+            }
+          }
+          else
+            this.m_content = this.MakePagePackageView();
+        }
+        else
+          this.m_content = this.MakePagePromptPassword();
+      }
+      else
+        this.m_content = this.MakePagePromptAccessCode();
+    }
+  }
+
+  private void MakeHeader()
+  {
+    bool flag = this.m_foundactivesession && this.siGlobs.objUser.IsAnonymous() && Operators.CompareString(this.siGlobs.OrgID, this.m_sessioninstid, false) == 0;
+    if (flag)
+      this.siGlobs.objUser.Permission = (UserPermissionType) 5;
+    string inputXml = SILUtility.MakeTag("root", (object) this.MakeStandards(), (object) this.siGlobs.objUser.XMLIdentity());
+    if (flag)
+      this.siGlobs.objUser.Permission = UserPermissionType.Anonymous;
+    this.m_header = this.siGlobs.objUtility.XMerge(ref inputXml, "guestheader.xsl");
+  }
+
+  private string MakePageHTML()
+  {
+    string inputXml = SILUtility.MakeTag("root", (object) this.MakeStandards(), (object) this.siGlobs.objUser.XMLIdentity(), (object) SILUtility.MakeTag("LayoutWidth", (object) this.siGlobs.objUser.InstLayoutWidth), (object) SILUtility.MakeTag("Language", (object) this.siGlobs.objI11N.GetLang().Replace("_", "-")), (object) SILUtility.MakeTag("LanguageDirection", SILCurrentUser.IsRTL(this.siGlobs.objI11N.GetLang()) ? (object) "rtl" : (object) "ltr"), (object) SILUtility.MakeTag("LayoutAlignment", (object) this.siGlobs.objUser.InstLayoutAlignment), (object) SILUtility.MakeTag("LayoutAlignment", (object) this.siGlobs.objUser.InstLayoutAlignment), (object) SILUtility.MakeCDataTag("BodyOnLoadCode", this.GetOnLoadCode()), (object) SILUtility.MakeCDataTag("Header", this.m_header), (object) SILUtility.MakeCDataTag("Status", this.m_status), (object) SILUtility.MakeCDataTag("Content", this.m_content));
+    return this.siGlobs.objUtility.XMerge(ref inputXml, "guestaccessmain.xsl");
+  }
+
+  private string GetOnLoadCode()
+  {
+    string OldThing1 = string.Empty;
+    try
+    {
+      OldThing1 = SILUtility.DelimitAppend(ref OldThing1, "if(top!=self)top.location.href=location.href", ";");
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      ProjectData.ClearProjectError();
+    }
+    string OldThing2 = SILUtility.DelimitAppend(ref OldThing1, "try{ pageLoaded=true; } catch(e) {}", ";");
+    if (Operators.CompareString(this.m_onloadcode, string.Empty, false) != 0)
+      OldThing2 = SILUtility.DelimitAppend(ref OldThing2, this.m_onloadcode, ";");
+    return OldThing2;
+  }
+
+  private string MakePagePackageCompose()
+  {
+    if (Operators.CompareString(this.siGlobs.Transaction, "secmsgpost", false) != 0)
+      this.siGlobs.Arg04 = CleanedMessage.GetCleanedValue(this.siGlobs.Arg04);
+    if (Operators.CompareString(this.siGlobs.Opt12, "1", false) == 0)
+    {
+      this.siGlobs.objDebug.Log(60, "MakePagePackageCompose: coming from the WYSIWYG editor");
+      this.siGlobs.Arg04 = Strings.Replace(this.siGlobs.Arg04, "\r\n", " ");
+      this.siGlobs.Arg04 = Strings.Replace(this.siGlobs.Arg04, "\r", string.Empty);
+      this.siGlobs.Arg04 = Strings.Replace(this.siGlobs.Arg04, "\n", string.Empty);
+    }
+    this.siGlobs.Arg04 = Strings.Replace(this.siGlobs.Arg04, "\r\n", "<br/>");
+    this.siGlobs.Arg04 = Strings.Replace(this.siGlobs.Arg04, "\r", "<br/>");
+    this.siGlobs.Arg04 = Strings.Replace(this.siGlobs.Arg04, "\n", "<br/>");
+    this.siGlobs.Arg04 = Strings.Replace(this.siGlobs.Arg04, "'", "\\'");
+    string empty = string.Empty;
+    string str1;
+    if (this.m_pkginfo.IsSelfProvisioned)
+      str1 = SILUtility.MakeTag("SelfProvisionEmail", (object) this.m_pkginfo.EmailAddr) + SILUtility.MakeTag("SelfProvisionRecips", (object) this.m_pkginfo.SelfProvisionedRecips);
+    else
+      str1 = this.siGlobs.objEngine.msgEngine.MsgGetMessageInfo(this.m_pkginfo.PkgID, skipPermCheck: true);
+    if (Operators.CompareString(this.siGlobs.Opt09, "", false) == 0 || !Versioned.IsNumeric((object) this.siGlobs.Opt09))
+      this.siGlobs.Opt09 = this.siGlobs.objEngine.fileEngine.FileMakeNewID();
+    string str2 = this.siGlobs.objEngine.msgEngine.MsgMakeAttachmentListXML(ref this.siGlobs.Arg09, tempPackageId: this.siGlobs.Opt09, guestAccessCode: this.m_pkginfo.AccessCode);
+    this.m_onloadcode = "try{ SetObjectHTMLAccount(); } catch(e) {}; try{ SetObjectHTMLAttach(); } catch(e) {}";
+    string inputXml = SILUtility.MakeTag("root", (object) this.MakeStandards(), (object) this.MakeFeatures(), (object) this.MakePassThrough(), (object) this.MakeFeatures(), (object) this.siGlobs.objUser.XMLIdentity(), (object) str1, (object) str2, (object) SILUtility.MakeTag("LanguageDirection", SILCurrentUser.IsRTL(this.siGlobs.objI11N.GetLang()) ? (object) "rtl" : (object) "ltr"), (object) SILUtility.MakeTag("TempPackageID", (object) this.siGlobs.Opt09), (object) SILUtility.MakeTag("url", (object) SILUtility.XHTMLClean(this.siGlobs.MyRequest.ServerVariables.Get("URL"))), (object) SILUtility.MakeTag("IsSelfProvisioned", Interaction.IIf(this.m_pkginfo.IsSelfProvisioned, (object) "1", (object) "0")), (object) SILUtility.MakeTag("PackageTypeAllowChange", Interaction.IIf(SILUtility.BitIsSet((long) this.siGlobs.objUser.InstPackageFlags, 1L), (object) "1", (object) "0")), (object) SILUtility.MakeTag("MaxAttachmentFileCount", (object) this.siGlobs.objUser.InstMaxAttachmentFileCount), (object) SILUtility.MakeTag("ClassificationRequired", Interaction.IIf(this.siGlobs.objEngine.orgEngine.IsClassificationFieldRequired(this.siGlobs.objUser.InstID), (object) "1", (object) "0")), (object) this.siGlobs.objEngine.orgEngine.GetClassificationTypesXml(), (object) SILUtility.MakeTag("ClassificationTypeID", (object) this.siGlobs.Opt04));
+    return this.siGlobs.objUtility.XMerge(ref inputXml, "guestpkgcompose.xsl");
+  }
+
+  private string MakePagePackageView()
+  {
+    this.siGlobs.Arg11 = "pkgview";
+    this.m_onloadcode = "try{ SetObjectHTMLAccount(); } catch(e) {}; try{ SetDownloadAttachmentsDivIfWizard(); } catch(e) {}";
+    string inputXml = SILUtility.MakeTag("root", (object) this.MakeStandards(), (object) this.MakeFeatures(), (object) this.siGlobs.objUser.XMLIdentity(), (object) this.siGlobs.objEngine.msgEngine.MsgGetMessageForGuestXml(this.m_accesscode));
+    string str;
+    if (this.siGlobs.objEngine.ErrorCode == 0)
+    {
+      str = this.siGlobs.objUtility.XMerge(ref inputXml, "guestpkgview.xsl");
+    }
+    else
+    {
+      this.SetWarningStatus(this.siGlobs.objEngine.ErrorDescription);
+      str = string.Empty;
+    }
+    return str;
+  }
+
+  private string MakePagePromptAccessCode()
+  {
+    this.m_onloadcode = "try{ FirstFieldFocus(); } catch(e) {}";
+    string inputXml = SILUtility.MakeTag("root", (object) this.MakeStandards(), (object) this.siGlobs.objUser.XMLIdentity());
+    return this.siGlobs.objUtility.XMerge(ref inputXml, "guestpromptaccesscode.xsl");
+  }
+
+  private string MakePagePromptPassword()
+  {
+    string Left = string.Empty;
+    string str;
+    if (!this.m_pkginfo.IsSelfProvisioned)
+    {
+      Left = this.siGlobs.objEngine.msgEngine.MsgGetMessageInfo(this.m_pkginfo.PkgID, skipPermCheck: true);
+      if (Operators.CompareString(Left, string.Empty, false) == 0)
+      {
+        this.SetWarningStatus(this.siGlobs.objEngine.ErrorDescription);
+        str = this.MakePagePromptAccessCode();
+        goto label_4;
+      }
+    }
+    this.m_onloadcode = "try{ FirstFieldFocus(); } catch(e) {}";
+    string inputXml = SILUtility.MakeTag("root", (object) this.MakeStandards(), (object) this.siGlobs.objUser.XMLIdentity(), (object) Left, (object) SILUtility.MakeTag("IsSelfProvisioned", Interaction.IIf(this.m_pkginfo.IsSelfProvisioned, (object) "1", (object) "0")));
+    str = this.siGlobs.objUtility.XMerge(ref inputXml, "guestpromptpassword.xsl");
+label_4:
+    return str;
+  }
+
+  private string MakePageSelfProvisionDone()
+  {
+    string inputXml = SILUtility.MakeTag("root", (object) this.MakeStandards(), (object) this.siGlobs.objUser.XMLIdentity(), (object) SILUtility.MakeTag("PackageSent", Interaction.IIf(this.m_pkgsent, (object) "1", (object) "0")), (object) SILUtility.MakeTag("GuestAccessSelfProvisionType", (object) this.siGlobs.objUser.InstGuestAccessSelfProvisionType), (object) SILUtility.MakeTag("HumanTarget", (object) $"human.aspx?r={SILUtility.MakeRandomRValue()}"));
+    return this.siGlobs.objUtility.XMerge(ref inputXml, "guestselfprovisiondone.xsl");
+  }
+
+  private void ClearVariables()
+  {
+    this.m_foundactivesession = false;
+    this.m_sessionfromdb = false;
+    this.m_sessioninstid = string.Empty;
+    this.m_accesscode = string.Empty;
+    this.m_validationcode = string.Empty;
+    this.m_pkginfo = new SILGuestPackageInfo(ref this.siGlobs);
+  }
+
+  private void CheckForArgInSession(string ArgName)
+  {
+    if (ArgName == null)
+      return;
+    string Expression = this.siGlobs.objSession.GetValue(ArgName);
+    if (Expression == null || Strings.Len(Expression) <= 0)
+      return;
+    string str = ArgName;
+    // ISSUE: reference to a compiler-generated method
+    switch (\u003CPrivateImplementationDetails\u003E.ComputeStringHash(str))
+    {
+      case 1764997062:
+        if (Operators.CompareString(str, "MyArgs_Arg09", false) != 0)
+          return;
+        this.siGlobs.Arg09 = Expression;
+        break;
+      case 1781774681:
+        if (Operators.CompareString(str, "MyArgs_Arg08", false) != 0)
+          return;
+        this.siGlobs.Arg08 = Expression;
+        break;
+      case 1815182824:
+        if (Operators.CompareString(str, "MyArgs_Arg10", false) != 0)
+          return;
+        this.siGlobs.Arg10 = Expression;
+        break;
+      case 1831960443:
+        if (Operators.CompareString(str, "MyArgs_Arg11", false) != 0)
+          return;
+        this.siGlobs.Arg11 = Expression;
+        break;
+      case 1848738062:
+        if (Operators.CompareString(str, "MyArgs_Arg12", false) != 0)
+          return;
+        this.siGlobs.Arg12 = Expression;
+        break;
+      case 1865662776:
+        if (Operators.CompareString(str, "MyArgs_Arg03", false) != 0)
+          return;
+        this.siGlobs.Arg03 = Expression;
+        break;
+      case 1882440395:
+        if (Operators.CompareString(str, "MyArgs_Arg02", false) != 0)
+          return;
+        this.siGlobs.Arg02 = Expression;
+        break;
+      case 1899218014:
+        if (Operators.CompareString(str, "MyArgs_Arg01", false) != 0)
+          return;
+        this.siGlobs.Arg01 = Expression;
+        break;
+      case 1932773252:
+        if (Operators.CompareString(str, "MyArgs_Arg07", false) != 0)
+          return;
+        this.siGlobs.Arg07 = Expression;
+        break;
+      case 1949550871:
+        if (Operators.CompareString(str, "MyArgs_Arg06", false) != 0)
+          return;
+        this.siGlobs.Arg06 = Expression;
+        break;
+      case 1966328490:
+        if (Operators.CompareString(str, "MyArgs_Arg05", false) != 0)
+          return;
+        this.siGlobs.Arg05 = Expression;
+        break;
+      case 1983106109:
+        if (Operators.CompareString(str, "MyArgs_Arg04", false) != 0)
+          return;
+        this.siGlobs.Arg04 = Expression;
+        break;
+      default:
+        return;
+    }
+    this.siGlobs.objSession.RemoveValue(ArgName);
+  }
+
+  private bool ValidateClassificationTypeId(string value, ref int parsedValue)
+  {
+    bool flag1;
+    if (!string.IsNullOrEmpty(value) && !int.TryParse(value, out parsedValue))
+    {
+      flag1 = false;
+    }
+    else
+    {
+      List<PackageClassificationType> classificationTypes = this.siGlobs.objEngine.orgEngine.GetClassificationTypes();
+      Func<PackageClassificationType, int> selector;
+      // ISSUE: reference to a compiler-generated field
+      if (SILGuestAccess._Closure\u0024__.\u0024I39\u002D0 != null)
+      {
+        // ISSUE: reference to a compiler-generated field
+        selector = SILGuestAccess._Closure\u0024__.\u0024I39\u002D0;
+      }
+      else
+      {
+        // ISSUE: reference to a compiler-generated field
+        SILGuestAccess._Closure\u0024__.\u0024I39\u002D0 = selector = (Func<PackageClassificationType, int>) ([SpecialName] (item) => item.Id);
+      }
+      bool flag2 = classificationTypes.Select<PackageClassificationType, int>(selector).Contains<int>(parsedValue);
+      if (this.siGlobs.objEngine.orgEngine.IsClassificationFieldRequired(this.siGlobs.objUser.InstID))
+      {
+        if (!flag2)
+        {
+          flag1 = false;
+          goto label_11;
+        }
+      }
+      else if (parsedValue != 0 & !flag2)
+      {
+        flag1 = false;
+        goto label_11;
+      }
+      flag1 = true;
+    }
+label_11:
+    return flag1;
+  }
+
+  private bool LoginWithTokenWhenSessionIsExpired(
+    ref string username,
+    ref string instId,
+    ref string accessCode)
+  {
+    object obj = (object) nameof (LoginWithTokenWhenSessionIsExpired);
+    bool flag;
+    if (this.siGlobs.objUtility.ValidateCsrfTokenGuest())
+    {
+      this.siGlobs.objUser.UpdateSession();
+      username = this.siGlobs.objUser.LookupActiveSession(username, this.siGlobs.objSession.SessionId, ref instId, ref accessCode);
+      if (this.m_pkginfo.LoadPackageInfoFromAccessCode(accessCode))
+      {
+        this.m_foundactivesession = true;
+        this.m_sessionfromdb = true;
+        this.siGlobs.objUser.ActAsGuestInInst(Conversions.ToInteger(this.siGlobs.OrgID), this.m_pkginfo.EmailAddr, this.m_sessionfromdb);
+        this.siGlobs.objDebug.Log(50, $"{RuntimeHelpers.GetObjectValue(obj)}: Signed user on for secmsgpost using CSRF token.");
+        flag = true;
+        goto label_5;
+      }
+    }
+    else
+      this.siGlobs.objDebug.Log(50, $"{RuntimeHelpers.GetObjectValue(obj)} failed to validate CSRF token. Acting as anonymous!");
+    flag = false;
+label_5:
+    return flag;
+  }
+}
