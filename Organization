@@ -1,0 +1,974 @@
+// Decompiled with JetBrains decompiler
+// Type: MOVEit.DMZ.ClassLib.SILOrganization
+// Assembly: MOVEit.DMZ.ClassLib, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: F53DB182-DFE7-4C1C-B257-1775EFE0EAF7
+// Assembly location: C:\Program Files\MOVEit\MOVEitTransfer\MOVEit.DMZ.ClassLib.dll
+
+using Microsoft.VisualBasic;
+using Microsoft.VisualBasic.CompilerServices;
+using MOVEit.DMZ.Application.Contracts.Engine;
+using MOVEit.DMZ.Application.Contracts.Settings.Security.UserAuth.Enum;
+using MOVEit.DMZ.Core;
+using MOVEit.DMZ.Core.Session;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading;
+
+#nullable disable
+namespace MOVEit.DMZ.ClassLib;
+
+public class SILOrganization : IOrganization
+{
+  public static readonly List<SILOrganization.SchemeInfo> Schemes;
+  public static readonly List<string> FormattingLocales = new List<string>()
+  {
+    string.Empty,
+    "zh-CN",
+    "zh-TW",
+    "en-GB",
+    "en-US",
+    "fr-FR",
+    "de-DE",
+    "ja-JP",
+    "es-ES",
+    "pl-PL",
+    "pt-BR",
+    "ar-001"
+  };
+  public string BaseURL;
+  public string MobileURL;
+  public int UseCustomHeader;
+  public string LogoLeft;
+  public string LogoRight;
+  public string LogoBackground;
+  public string MOTD;
+  public string MOTDStamp;
+  public string MOTDRealName;
+  public int SchemeID;
+  public string SchemeName;
+  public string SchemeFile;
+  public int HomeNameConv;
+  public string HistoryTime;
+  public string FormResponsePath;
+  public string TechPhone;
+  public string TechEmail;
+  public string TechName;
+  public string TechInfo;
+  public string FormResponseEmail;
+  public string SecBanner;
+  public string SecNotice;
+  public string SecNoticeStamp;
+  public string SecNoticeRealName;
+  public int SecNoticeRequired;
+  public int Messaging;
+  public int DefaultInst;
+  public int MinCertKey;
+  public int PassHistory;
+  public string WelcomeMessage;
+  public int ShowSkipLink;
+  public int ShowGMTOffset;
+  public int ShowMOVEitLink;
+  public int AuthMethod;
+  public int FailOnFirstAuthFailure;
+  public DateTime? KeyRotationReminder;
+  public int AllowHomeUpload;
+  public int AllowHomeXMaintenance;
+  public int AllowHomeSubfolderAdd;
+  public int NoUserXPassword;
+  public int TemporaryUsers;
+  public long TempUserOpts;
+  public int TempUserDomainMaskRule;
+  public string TempUserDomainMasks;
+  public int ReadWriteEqualsDelete;
+  public int DefaultFilelistSortOrder;
+  public int CertificateManagementEnabled;
+  public string CustomHelpLink;
+  public string CustomHelpName;
+  public string InformationLink;
+  public string InformationLinkName;
+  public string ContactLink;
+  public string ContactLinkName;
+  public int UserLockoutExpireTime;
+  public long EmailNoteFlags;
+  public int DefaultEmailFormat;
+  public int MessageLogsViewable;
+  public int AdminMsgAccess;
+  public int MessagesCleanType;
+  public string MessagesCleanTime;
+  public int ArchiveMessages;
+  public long HomeFolderRelationship;
+  public int QuotaWarningType;
+  public int QuotaWarningValue;
+  public int MaxAttachmentFileCount;
+  public int MsgQuotaWarningType;
+  public int MsgQuotaWarningValue;
+  public int DefUseOrigUploader;
+  public int AllowSelfAddressBooks;
+  public int AllowAttachments;
+  public double DefaultMaxAttchSize;
+  public string AttchFileMasks;
+  public int AttchFileMaskRule;
+  public string NoteSig;
+  public string LangOrgDefault;
+  public string LangsOrgAllowed;
+  public int ShowSelectLangPage;
+  public int MaxUsersInDropDown;
+  public int MaxFoldersInDropDown;
+  public int AllowPassChangeRequests;
+  public int PassChangeRequestMaxAge;
+  public int PassChangeRecaptchaRequired;
+  public int PassChangeSecurityQuestionsRequired;
+  public int IPSwitchingMask;
+  public string DefaultHomeFolderPath;
+  public string FormattingLocaleCode;
+  public string TimeZone;
+  public string RootFolderID;
+  public string MessagesFolderID;
+  public int DefaultHTTPCertRequired;
+  public int DefaultHTTPCertPlusPW;
+  public int DefaultFTPCertRequired;
+  public int DefaultFTPCertPlusPW;
+  public int DefaultSSHCertRequired;
+  public int DefaultSSHCertPlusPW;
+  public int DefaultMobileCacheCredsAllowed;
+  public int DefaultMobilePinRequired;
+  public int MobilePinLength;
+  public int HTTPUsernameIsCN;
+  public int FTPUsernameIsCN;
+  public int HTTPSingleSignOn;
+  public int HTTPSingleSignOnField;
+  public int HoldingTankTime;
+  public int AllowUsernameFromClientCert;
+  public int AllowSendToUnregRecip;
+  public int UnregRecipType;
+  public int UnregRecipAskForPass;
+  public int UnregRecipAutoSendPass;
+  public int UnregRecipSeparateCredentialsNotification;
+  public int UnregRecipDomainMaskRule;
+  public string UnregRecipDomainMasks;
+  public int UnregRecipLDAPEmailDomainMaskRule;
+  public string UnregRecipLDAPEmailDomainMasks;
+  public int GuestAccessAllowSelfProvision;
+  public int GuestAccessAllowSendMore;
+  public int GuestAccessSelfProvisionType;
+  public int GuestAccessDomainMaskRule;
+  public string GuestAccessDomainMasks;
+  public int GuestAccessSenderDomainMaskRule;
+  public string GuestAccessSenderDomainMasks;
+  public int GuestAccessRecipientCount;
+  public int GuestAccessAllowSendTemp;
+  public string GuestSelfProvisionCaptchaKeyPublic;
+  public string GuestSelfProvisionCaptchaKeyPrivate;
+  public int NotificationSendOnBehalf;
+  public string NotificationSendOnBehalfDomainMasks;
+  public int GuestAccessRecipMatchRule;
+  public int PackageFlags;
+  public int RequireUniqueFullNames;
+  public int GuestAdvOptions;
+  public int AllowCustomMsgExpiration;
+  public int DefaultUserCustomMsgExpiration;
+  public int EnforceMaxAttchDownloads;
+  public int AllowSetMaxDownloads;
+  public int DefaultOrgMaxDownloads;
+  public int MaxValueMaxDownloads;
+  public int NotificationDelay;
+  public int NotificationType;
+  public string SAMLSPAssertionConsumerBindings;
+  public int SAMLSPSingleLogoutBindings;
+  public SSOAuthModeEnum SSOAuthMode;
+  public int AVEnable;
+  public int AVBlockOnError;
+  public int DLPEnable;
+  public int DLPBlockOnError;
+  public int LayoutWidth;
+  public int LayoutWidthUnit;
+  public int LayoutAlignment;
+  public int MessageUI;
+  public int ArchiveLogs;
+  public int AllowShowSQLQuery;
+  public int MFARequiredClassTypes;
+  public int MFAAllowedTypes;
+  public int MFAEnableTrustDevice;
+  public long AnonDisplayProfileBits;
+  public int PreventFileViewInBrowser;
+  public int PreventChangeSignonLogging;
+  public int RestrictHostHeader;
+  public string SecNoticeAcceptance;
+  public int SecNoticeAcceptanceRequired;
+  public int AllowOrgAdminsPasswordReset;
+  public int HomeFolderAllowedSharingRelationship;
+  public int InAppNotificationsDisableNotifications;
+  public int InAppNotificationsDisableTelemetry;
+  public bool UseCustomNotifBranding;
+  private string rawMOTD;
+  private string rawWelcomeMessage;
+  private string rawSecBanner;
+  private string rawSecNotice;
+  private string rawCustomHelpName;
+  private string rawCustomHelpLink;
+  private string rawTechInfo;
+  private string rawTechName;
+  private string rawTechEmail;
+  private string rawTechPhone;
+  private string rawInformationLinkName;
+  private string rawInformationLink;
+  private string rawContactLinkName;
+  private string rawContactLink;
+  private string rawNoteSig;
+  private string rawSecNoticeAcceptance;
+
+  static SILOrganization()
+  {
+    SILOrganization.Schemes = new List<SILOrganization.SchemeInfo>()
+    {
+      new SILOrganization.SchemeInfo()
+      {
+        Id = 165,
+        Name = "MOVEit 2016",
+        StylesheetFile = "stylesheet_MOVEit_2016.css",
+        RTLStylesheetFile = "stylesheet_MOVEit_2016.rtl.css",
+        IsDefault = true
+      },
+      new SILOrganization.SchemeInfo()
+      {
+        Id = 164,
+        Name = "MOVEit 2014",
+        StylesheetFile = "stylesheet_MOVEit_2014.css"
+      },
+      new SILOrganization.SchemeInfo()
+      {
+        Id = 163,
+        Name = "MOVEit Gray",
+        StylesheetFile = "stylesheet_MOVEit_Gray.css"
+      }
+    };
+  }
+
+  public static string GetFormattingLocalesInfoXml()
+  {
+    DateTime dateTime = new DateTime(2018, 4, 26, 13, 45, 15);
+    StringBuilder Builder = new StringBuilder();
+    try
+    {
+      foreach (string formattingLocale in SILOrganization.FormattingLocales)
+      {
+        CultureInfo provider = string.IsNullOrEmpty(formattingLocale) ? Thread.CurrentThread.CurrentCulture : CultureInfo.GetCultureInfo(formattingLocale);
+        SILUtility.MakeTag(Builder, "Locale", (object) SILUtility.MakeTag("Code", (object) formattingLocale), (object) SILUtility.MakeTag("Description", (object) provider.EnglishName), (object) SILUtility.MakeTag("FormattedDateTime", (object) dateTime.ToString((IFormatProvider) provider)));
+      }
+    }
+    finally
+    {
+      List<string>.Enumerator enumerator;
+      enumerator.Dispose();
+    }
+    return SILUtility.MakeTag("FormattingLocales", (object) Builder.ToString());
+  }
+
+  public static SILOrganization.SchemeInfo GetDefaultScheme()
+  {
+    List<SILOrganization.SchemeInfo> schemes = SILOrganization.Schemes;
+    Func<SILOrganization.SchemeInfo, bool> predicate;
+    // ISSUE: reference to a compiler-generated field
+    if (SILOrganization._Closure\u0024__.\u0024I6\u002D0 != null)
+    {
+      // ISSUE: reference to a compiler-generated field
+      predicate = SILOrganization._Closure\u0024__.\u0024I6\u002D0;
+    }
+    else
+    {
+      // ISSUE: reference to a compiler-generated field
+      SILOrganization._Closure\u0024__.\u0024I6\u002D0 = predicate = (Func<SILOrganization.SchemeInfo, bool>) ([SpecialName] (s) => s.IsDefault);
+    }
+    return schemes.First<SILOrganization.SchemeInfo>(predicate);
+  }
+
+  public int ID { get; set; }
+
+  public string Name { get; set; }
+
+  public int PassLength { get; set; }
+
+  public int PassStrength { get; set; }
+
+  public int AllowSendPasswordByEmail { get; set; }
+
+  public bool ForceReload { get; set; }
+
+  public bool IsSSORequired()
+  {
+    if (this.SSOAuthMode == SSOAuthModeEnum.Invalid)
+      throw new SILException(20, $"Invalid SAML authentication mode for organization {this.ID}.");
+    return this.SSOAuthMode == SSOAuthModeEnum.Required;
+  }
+
+  public static bool HasFileFolderUi(int messageUiValue)
+  {
+    return SILUtility.InList<int>(messageUiValue, 3, 1, 4, 5);
+  }
+
+  public bool HasFileFolderUi() => SILOrganization.HasFileFolderUi(this.MessageUI);
+
+  public static bool HasAdHocUi(int messageUiValue)
+  {
+    return SILUtility.InList<int>(messageUiValue, 2, 3, 5);
+  }
+
+  public bool HasAdHocUi() => SILOrganization.HasAdHocUi(this.MessageUI);
+
+  public static bool HasFolderSharingUi(int messageUiValue)
+  {
+    return SILUtility.InList<int>(messageUiValue, 4, 5);
+  }
+
+  public bool HasFolderSharingUi() => SILOrganization.HasFolderSharingUi(this.MessageUI);
+
+  public static SILOrganization FromID(SILGlobals Globals, int OrgID, bool IgnoreSessionVars = false)
+  {
+    SILOrganization silOrganization = new SILOrganization();
+    return !silOrganization.RepopGivenInst(Globals, OrgID, IgnoreSessionVars) ? (SILOrganization) null : silOrganization;
+  }
+
+  public bool RepopGivenInst(SILGlobals Globals, int OrgID, bool IgnoreSessionVars = false)
+  {
+    this.ID = OrgID;
+    SQLBasicBuilder where = new SQLBasicBuilder(Globals.objWrap, SqlTable.Institutions).AddAllColumnsToSelect(SqlTable.Institutions).AddLeftJoin("schemes", "institutions.SchemeID=schemes.ID").AddAliasColumnToSelect("schemes", "Name", "SchemeName").AddAliasColumnToSelect("schemes", "Stylesheet", "SchemeStylesheet").AddLeftJoin("folders", "msgsfolder", $"institutions.ID=msgsfolder.InstID AND msgsfolder.FolderType={Globals.objWrap.P("FolderTypeDisc")}").WithParameter("FolderTypeDisc", (object) 22).AddAliasColumnToSelect("msgsfolder", "ID", "MessagesFolderID").AddAliasColumnToSelect("msgsfolder", "CleanType", "MessagesCleanType").AddAliasColumnToSelect("msgsfolder", "CleanTime", "MessagesCleanTime").AddLeftJoin("folders", "rootfolder", $"institutions.ID=rootfolder.InstID AND rootfolder.FolderType={Globals.objWrap.P("FolderTypeRoot")}").WithParameter("FolderTypeRoot", (object) 99).AddAliasColumnToSelect("rootfolder", "ID", "RootFolderID").AddAndColumnEqualsToWhere<int>(SqlTable.Institutions, "ID", OrgID, true);
+    return this.LoadParseRecSet(Globals, where, IgnoreSessionVars);
+  }
+
+  private bool LoadParseRecSet(SILGlobals Globals, SQLBasicBuilder sql, bool IgnoreSessionVars)
+  {
+    bool recSet = false;
+    bool flag1 = Globals.objUtility.FeatureIsValid(9);
+    bool flag2 = Globals.objUtility.FeatureIsValid(4);
+    bool Expression = Globals.objUtility.FeatureIsValid(14);
+    if (!IgnoreSessionVars && !string.IsNullOrEmpty(Globals.objSession.GetValue("MyInstName")))
+    {
+      ISession objSession = Globals.objSession;
+      this.Name = objSession.GetValue("MyInstName");
+      this.BaseURL = objSession.GetValue("MyInstBaseURL");
+      this.MobileURL = objSession.GetValue("MyInstMobileURL");
+      this.UseCustomHeader = Conversions.ToInteger(objSession.GetValue("MyInstUseCustomHeader"));
+      this.MOTDStamp = objSession.GetValue("MyInstMOTDStamp");
+      this.MOTDRealName = objSession.GetValue("MyInstMOTDRealName");
+      this.HomeNameConv = Conversions.ToInteger(objSession.GetValue("MyInstHomeNameConv"));
+      this.HistoryTime = objSession.GetValue("MyInstHistoryTime");
+      this.FormResponsePath = objSession.GetValue("MyInstFormResponsePath");
+      this.FormResponseEmail = objSession.GetValue("MyInstFormResponseEmail");
+      this.SecNoticeStamp = objSession.GetValue("MyInstSecNoticeStamp");
+      this.SecNoticeRealName = objSession.GetValue("MyInstSecNoticeRealName");
+      this.SecNoticeRequired = Conversions.ToInteger(objSession.GetValue("MyInstSecNoticeRequired"));
+      this.DefaultInst = Conversions.ToInteger(objSession.GetValue("MyInstDefaultInst"));
+      this.MinCertKey = Conversions.ToInteger(objSession.GetValue("MyInstMinCertKey"));
+      this.Messaging = Conversions.ToInteger(objSession.GetValue("MyInstMessaging"));
+      this.PassLength = Conversions.ToInteger(objSession.GetValue("MyInstPassLength"));
+      this.PassStrength = Conversions.ToInteger(objSession.GetValue("MyInstPassStrength"));
+      this.PassHistory = Conversions.ToInteger(objSession.GetValue("MyInstPassHistory"));
+      this.ShowSkipLink = Conversions.ToInteger(objSession.GetValue("MyInstShowSkipLink"));
+      this.ShowGMTOffset = Conversions.ToInteger(objSession.GetValue("MyInstShowGMTOffset"));
+      this.ShowMOVEitLink = Conversions.ToInteger(objSession.GetValue("MyInstShowMOVEitLink"));
+      this.AuthMethod = Conversions.ToInteger(objSession.GetValue("MyInstAuthMethod"));
+      this.FailOnFirstAuthFailure = Conversions.ToInteger(objSession.GetValue("MyInstFailOnFirstAuthFailure"));
+      this.KeyRotationReminder = (DateTime?) objSession.GetObject("MyInstKeyRotationReminder");
+      this.AllowHomeUpload = Conversions.ToInteger(objSession.GetValue("MyInstAllowHomeUpload"));
+      this.AllowHomeXMaintenance = Conversions.ToInteger(objSession.GetValue("MyInstAllowHomeXMaintenance"));
+      this.AllowHomeSubfolderAdd = Conversions.ToInteger(objSession.GetValue("MyInstAllowHomeSubfolderAdd"));
+      this.NoUserXPassword = Conversions.ToInteger(objSession.GetValue("MyInstNoUserXPassword"));
+      this.TemporaryUsers = Conversions.ToInteger(objSession.GetValue("MyInstTemporaryUsers"));
+      this.TempUserOpts = Conversions.ToLong(objSession.GetValue("MyInstTempUserOpts"));
+      this.TempUserDomainMaskRule = Conversions.ToInteger(objSession.GetValue("MyInstTempUserDomainMaskRule"));
+      this.TempUserDomainMasks = objSession.GetValue("MyInstTempUserDomainMasks");
+      this.ReadWriteEqualsDelete = Conversions.ToInteger(objSession.GetValue("MyInstReadWriteEqualsDelete"));
+      this.DefaultFilelistSortOrder = Conversions.ToInteger(objSession.GetValue("MyInstDefaultFilelistSortOrder"));
+      this.UserLockoutExpireTime = Conversions.ToInteger(objSession.GetValue("MyInstUserLockoutExpireTime"));
+      this.EmailNoteFlags = Conversions.ToLong(objSession.GetValue("MyInstEmailNoteFlags"));
+      this.DefaultEmailFormat = Conversions.ToInteger(objSession.GetValue("MyInstDefaultEmailFormat"));
+      this.MessageLogsViewable = Conversions.ToInteger(objSession.GetValue("MyInstMessageLogsViewable"));
+      this.AdminMsgAccess = Conversions.ToInteger(objSession.GetValue("MyInstAdminMsgAccess"));
+      this.MessagesCleanType = Conversions.ToInteger(objSession.GetValue("MyInstMessagesCleanType"));
+      this.MessagesCleanTime = objSession.GetValue("MyInstMessagesCleanTime");
+      this.ArchiveMessages = Conversions.ToInteger(objSession.GetValue("MyInstArchiveMessages"));
+      this.HomeFolderRelationship = Conversions.ToLong(objSession.GetValue("MyInstHomeFolderRelationship"));
+      this.QuotaWarningType = Conversions.ToInteger(objSession.GetValue("MyInstQuotaWarningType"));
+      this.QuotaWarningValue = Conversions.ToInteger(objSession.GetValue("MyInstQuotaWarningValue"));
+      this.MaxAttachmentFileCount = Conversions.ToInteger(objSession.GetValue("MyInstMaxAttachmentFileCount"));
+      this.MsgQuotaWarningType = Conversions.ToInteger(objSession.GetValue("MyInstMsgQuotaWarningType"));
+      this.MsgQuotaWarningValue = Conversions.ToInteger(objSession.GetValue("MyInstMsgQuotaWarningValue"));
+      this.DefUseOrigUploader = Conversions.ToInteger(objSession.GetValue("MyInstDefaultUseOrigUploader"));
+      this.AllowSelfAddressBooks = Conversions.ToInteger(objSession.GetValue("MyInstAllowSelfAddressBooks"));
+      this.AllowAttachments = Conversions.ToInteger(objSession.GetValue("MyInstAllowAttachments"));
+      this.DefaultMaxAttchSize = Conversions.ToDouble(objSession.GetValue("MyInstDefaultMaxAttchSize"));
+      this.AttchFileMasks = objSession.GetValue("MyInstAttchFileMasks");
+      this.AttchFileMaskRule = Conversions.ToInteger(objSession.GetValue("MyInstAttchFileMaskRule"));
+      this.LangOrgDefault = objSession.GetValue("MyInstLangOrgDefault");
+      this.LangsOrgAllowed = objSession.GetValue("MyInstLangsOrgAllowed");
+      this.ShowSelectLangPage = Conversions.ToInteger(objSession.GetValue("MyInstShowSelectLangPage"));
+      this.DefaultHTTPCertRequired = Conversions.ToInteger(objSession.GetValue("MyInstDefaultHTTPCertRequired"));
+      this.DefaultHTTPCertPlusPW = Conversions.ToInteger(objSession.GetValue("MyInstDefaultHTTPCertPlusPW"));
+      this.DefaultFTPCertRequired = Conversions.ToInteger(objSession.GetValue("MyInstDefaultFTPCertRequired"));
+      this.DefaultFTPCertPlusPW = Conversions.ToInteger(objSession.GetValue("MyInstDefaultFTPCertPlusPW"));
+      this.DefaultSSHCertRequired = Conversions.ToInteger(objSession.GetValue("MyInstDefaultSSHCertRequired"));
+      this.DefaultSSHCertPlusPW = Conversions.ToInteger(objSession.GetValue("MyInstDefaultSSHCertPlusPW"));
+      this.DefaultMobileCacheCredsAllowed = Conversions.ToInteger(objSession.GetValue("MyInstDefaultMobileCacheCredsAllowed"));
+      this.DefaultMobilePinRequired = Conversions.ToInteger(objSession.GetValue("MyInstDefaultMobilePinRequired"));
+      this.MobilePinLength = Conversions.ToInteger(objSession.GetValue("MyInstMobilePinLength"));
+      this.HTTPUsernameIsCN = Conversions.ToInteger(objSession.GetValue("MyInstHTTPUsernameIsCN"));
+      this.FTPUsernameIsCN = Conversions.ToInteger(objSession.GetValue("MyInstFTPUsernameIsCN"));
+      this.HTTPSingleSignOn = Conversions.ToInteger(objSession.GetValue("MyInstHTTPSingleSignOn"));
+      this.HTTPSingleSignOnField = Conversions.ToInteger(objSession.GetValue("MyInstHTTPSingleSignOnField"));
+      this.HoldingTankTime = Conversions.ToInteger(objSession.GetValue("MyInstHoldingTankTime"));
+      this.AllowUsernameFromClientCert = Conversions.ToInteger(objSession.GetValue("MyInstAllowUsernameFromClientCert"));
+      this.MaxUsersInDropDown = Conversions.ToInteger(objSession.GetValue("MyInstMaxUsersInDropDown"));
+      this.MaxFoldersInDropDown = Conversions.ToInteger(objSession.GetValue("MyInstMaxFoldersInDropDown"));
+      this.AllowSendPasswordByEmail = Conversions.ToInteger(objSession.GetValue("MyInstAllowSendPasswordByEmail"));
+      this.AllowPassChangeRequests = Conversions.ToInteger(objSession.GetValue("MyInstAllowPassChangeRequests"));
+      this.PassChangeRequestMaxAge = Conversions.ToInteger(objSession.GetValue("MyInstPassChangeRequestMaxAge"));
+      this.PassChangeRecaptchaRequired = Conversions.ToInteger(objSession.GetValue("MyInstPassChangeRecaptchaRequired"));
+      this.PassChangeSecurityQuestionsRequired = Conversions.ToInteger(objSession.GetValue("MyInstPassChangeSecurityQuestionsRequired"));
+      this.IPSwitchingMask = Conversions.ToInteger(objSession.GetValue("MyInstIPSwitchingMask"));
+      this.DefaultHomeFolderPath = objSession.GetValue("MyInstDefaultHomeFolderPath");
+      this.RootFolderID = objSession.GetValue("MyInstRootFolderID");
+      this.MessagesFolderID = objSession.GetValue("MyInstMessagesFolderID");
+      this.PreventFileViewInBrowser = Conversions.ToInteger(objSession.GetValue("MyInstPreventFileViewInBrowser"));
+      this.PreventChangeSignonLogging = Conversions.ToInteger(objSession.GetValue("MyInstPreventChangeSignonLogging"));
+      this.RestrictHostHeader = Conversions.ToInteger(objSession.GetValue("MyInstRestrictHostHeader"));
+      this.FormattingLocaleCode = objSession.GetValue("MyInstFormattingLocaleCode");
+      this.TimeZone = objSession.GetValue("MyInstTimeZone");
+      this.CertificateManagementEnabled = Conversions.ToInteger(objSession.GetValue("MyInstCertificateManagementEnabled"));
+      this.AllowSendToUnregRecip = Conversions.ToInteger(objSession.GetValue("MyInstAllowSendToUnregRecip"));
+      this.UnregRecipType = Conversions.ToInteger(objSession.GetValue("MyInstUnregRecipType"));
+      this.UnregRecipAskForPass = Conversions.ToInteger(objSession.GetValue("MyInstUnregRecipAskForPass"));
+      this.UnregRecipAutoSendPass = Conversions.ToInteger(objSession.GetValue("MyInstUnregRecipAutoSendPass"));
+      this.UnregRecipSeparateCredentialsNotification = Conversions.ToInteger(objSession.GetValue("MyInstUnregRecipSepCredNotifs"));
+      this.UnregRecipDomainMaskRule = Conversions.ToInteger(objSession.GetValue("MyInstUnregRecipDomainMaskRule"));
+      this.UnregRecipDomainMasks = objSession.GetValue("MyInstUnregRecipDomainMasks");
+      this.UnregRecipLDAPEmailDomainMaskRule = Conversions.ToInteger(objSession.GetValue("MyInstUnregRecipLDAPEmailDomainMaskRule"));
+      this.UnregRecipLDAPEmailDomainMasks = objSession.GetValue("MyInstUnregRecipLDAPEmailDomainMasks");
+      this.GuestAccessAllowSelfProvision = Conversions.ToInteger(objSession.GetValue("MyInstGuestAccessAllowSelfProvision"));
+      this.GuestAccessAllowSendMore = Conversions.ToInteger(objSession.GetValue("MyInstGuestAccessAllowSendMore"));
+      this.GuestAccessSelfProvisionType = Conversions.ToInteger(objSession.GetValue("MyInstGuestAccessSelfProvisionType"));
+      this.GuestAccessDomainMaskRule = Conversions.ToInteger(objSession.GetValue("MyInstGuestAccessDomainMaskRule"));
+      this.GuestAccessDomainMasks = objSession.GetValue("MyInstGuestAccessDomainMasks");
+      this.GuestAccessSenderDomainMaskRule = Conversions.ToInteger(objSession.GetValue("MyInstGuestAccessSenderDomainMaskRule"));
+      this.GuestAccessSenderDomainMasks = objSession.GetValue("MyInstGuestSenderAccessDomainMasks");
+      this.GuestAccessRecipientCount = Conversions.ToInteger(objSession.GetValue("MyInstGuestAccessRecipientCount"));
+      this.GuestAccessAllowSendTemp = Conversions.ToInteger(objSession.GetValue("MyInstGuestAccessAllowSendTemp"));
+      this.GuestSelfProvisionCaptchaKeyPublic = objSession.GetValue("MyInstGuestSelfProvisionCaptchaKeyPublic");
+      this.GuestSelfProvisionCaptchaKeyPrivate = objSession.GetValue("MyInstGuestSelfProvisionCaptchaKeyPrivate");
+      this.NotificationSendOnBehalf = Conversions.ToInteger(objSession.GetValue("MyInstNotificationSendOnBehalf"));
+      this.NotificationSendOnBehalfDomainMasks = objSession.GetValue("MyInstNotificationSendOnBehalfDomainMasks");
+      this.PackageFlags = Conversions.ToInteger(objSession.GetValue("MyInstPackageFlags"));
+      this.GuestAccessRecipMatchRule = Conversions.ToInteger(objSession.GetValue("MyInstGuestAccessRecipMatchRule"));
+      this.RequireUniqueFullNames = Conversions.ToInteger(objSession.GetValue("MyInstRequireUniqueFullNames"));
+      this.GuestAdvOptions = Conversions.ToInteger(objSession.GetValue("MyInstGuestAdvOptions"));
+      this.AllowCustomMsgExpiration = Conversions.ToInteger(objSession.GetValue("MyInstAllowCustomMsgExpiration"));
+      this.DefaultUserCustomMsgExpiration = Conversions.ToInteger(objSession.GetValue("MyInstDefaultUserCustomMsgExpiration"));
+      this.EnforceMaxAttchDownloads = Conversions.ToInteger(objSession.GetValue("MyInstEnforceMaxAttchDownloads"));
+      this.AllowSetMaxDownloads = Conversions.ToInteger(objSession.GetValue("MyInstAllowSetMaxDownloads"));
+      this.DefaultOrgMaxDownloads = Conversions.ToInteger(objSession.GetValue("MyInstDefaultOrgMaxDownloads"));
+      this.MaxValueMaxDownloads = Conversions.ToInteger(objSession.GetValue("MyInstMaxValueMaxDownloads"));
+      this.NotificationDelay = Conversions.ToInteger(objSession.GetValue("MyInstNotificationDelay"));
+      this.NotificationType = Conversions.ToInteger(objSession.GetValue("MyInstNotificationType"));
+      this.SAMLSPAssertionConsumerBindings = objSession.GetValue("MyInstSAMLSPAssertionConsumerBindings");
+      this.SAMLSPSingleLogoutBindings = Conversions.ToInteger(objSession.GetValue("MyInstSAMLSPSingleLogoutBindings"));
+      this.SSOAuthMode = objSession.GetValue("MyInstSSOAuthMode").ToEnum<SSOAuthModeEnum>(SSOAuthModeEnum.Invalid);
+      if (this.SSOAuthMode == SSOAuthModeEnum.Invalid)
+        Globals.objDebug.Log(20, $"Invalid SSO authentication mode '{objSession.GetValue("MyInstSSOAuthMode")}' in session for organization {this.ID}.");
+      this.AVEnable = Conversions.ToInteger(objSession.GetValue("MyInstAVEnable"));
+      this.AVBlockOnError = Conversions.ToInteger(objSession.GetValue("MyInstAVBlockOnError"));
+      this.DLPEnable = Conversions.ToInteger(objSession.GetValue("MyInstDLPEnable"));
+      this.DLPBlockOnError = Conversions.ToInteger(objSession.GetValue("MyInstDLPBlockOnError"));
+      this.LayoutWidth = Conversions.ToInteger(objSession.GetValue("MyInstLayoutWidth"));
+      this.LayoutWidthUnit = Conversions.ToInteger(objSession.GetValue("MyInstLayoutWidthUnit"));
+      this.LayoutAlignment = Conversions.ToInteger(objSession.GetValue("MyInstLayoutAlignment"));
+      this.MessageUI = Conversions.ToInteger(objSession.GetValue("MyInstMessageUI"));
+      this.ArchiveLogs = Conversions.ToInteger(objSession.GetValue("MyInstArchiveLogs"));
+      this.AllowShowSQLQuery = Conversions.ToInteger(objSession.GetValue("MyInstAllowShowSQLQuery"));
+      this.MFARequiredClassTypes = Conversions.ToInteger(objSession.GetValue("MyInstMFARequiredClassTypes"));
+      this.MFAAllowedTypes = Conversions.ToInteger(objSession.GetValue("MyInstMFAAllowedTypes"));
+      this.MFAEnableTrustDevice = Conversions.ToInteger(objSession.GetValue("MyInstMFAEnableTrustDevice"));
+      this.SchemeID = Conversions.ToInteger(objSession.GetValue("MySchemeID"));
+      this.SchemeName = objSession.GetValue("MySchemeName");
+      this.SchemeFile = objSession.GetValue("MySchemeFile");
+      this.LogoLeft = objSession.GetValue("MyLogoLeft");
+      this.LogoRight = objSession.GetValue("MyLogoRight");
+      this.LogoBackground = objSession.GetValue("MyLogoBackground");
+      this.rawMOTD = objSession.GetValue("MyInstMOTD");
+      this.rawTechPhone = objSession.GetValue("MyInstTechPhone");
+      this.rawTechEmail = objSession.GetValue("MyInstTechEmail");
+      this.rawTechName = objSession.GetValue("MyInstTechName");
+      this.rawTechInfo = objSession.GetValue("MyInstTechInfo");
+      this.rawSecBanner = objSession.GetValue("MyInstSecBanner");
+      this.rawSecNotice = objSession.GetValue("MyInstSecNotice");
+      this.rawWelcomeMessage = objSession.GetValue("MyInstWelcomeMessage");
+      this.rawCustomHelpLink = objSession.GetValue("MyInstCustomHelpLink");
+      this.rawCustomHelpName = objSession.GetValue("MyInstCustomHelpName");
+      this.rawInformationLink = objSession.GetValue("MyInstInformationLink");
+      this.rawInformationLinkName = objSession.GetValue("MyInstInformationLinkName");
+      this.rawContactLink = objSession.GetValue("MyInstContactLink");
+      this.rawContactLinkName = objSession.GetValue("MyInstContactLinkName");
+      this.rawNoteSig = objSession.GetValue("MyInstNoteSig");
+      this.rawSecNoticeAcceptance = objSession.GetValue("MyInstSecNoticeAcceptance");
+      this.SecNoticeAcceptanceRequired = Conversions.ToInteger(objSession.GetValue("MyInstSecNoticeAcceptanceRequired"));
+      this.AllowOrgAdminsPasswordReset = Conversions.ToInteger(objSession.GetValue("AllowOrgAdminsPasswordReset"));
+      this.HomeFolderAllowedSharingRelationship = Conversions.ToInteger(objSession.GetValue("MyInstAllowedSharingRelationships"));
+      this.UseCustomNotifBranding = SILUtility.StrToBool(objSession.GetValue("MyInstUseCustomNotifBranding"));
+      this.InAppNotificationsDisableNotifications = Conversions.ToInteger(objSession.GetValue("InAppNotificationsDisableNotifications"));
+      this.InAppNotificationsDisableTelemetry = Conversions.ToInteger(objSession.GetValue("InAppNotificationsDisableTelemetry"));
+      this.AnonDisplayProfileBits = Conversions.ToLong(objSession.GetValue("MyInstAnonDisplayProfileBits"));
+      recSet = true;
+    }
+    else
+    {
+      SILDictionary<string, string> silDictionary = sql.SelectQueryRow();
+      if (silDictionary != null)
+      {
+        this.Name = silDictionary["Name"];
+        this.BaseURL = silDictionary["BaseURL"];
+        this.MobileURL = silDictionary["MobileURL"];
+        this.UseCustomHeader = Conversions.ToInteger(silDictionary["UseCustomHeader"]);
+        this.MOTDStamp = silDictionary["MOTDStamp"];
+        this.MOTDRealName = silDictionary["MOTDRealName"];
+        this.HomeNameConv = Conversions.ToInteger(silDictionary["HomeNameConv"]);
+        this.HistoryTime = silDictionary["HistoryTime"];
+        this.FormResponsePath = silDictionary["FormResponsePath"];
+        this.FormResponseEmail = silDictionary["FormResponseEmail"];
+        this.SecNoticeStamp = silDictionary["SecNoticeStamp"];
+        this.SecNoticeRealName = silDictionary["SecNoticeRealName"];
+        this.SecNoticeRequired = Conversions.ToInteger(silDictionary["SecNoticeRequired"]);
+        this.DefaultInst = Conversions.ToInteger(silDictionary["DefaultInst"]);
+        this.MinCertKey = Conversions.ToInteger(silDictionary["MinCertKey"]);
+        this.PassLength = Conversions.ToInteger(silDictionary["PassLength"]);
+        this.PassStrength = Conversions.ToInteger(silDictionary["PassStrength"]);
+        this.PassHistory = Conversions.ToInteger(silDictionary["PassHistory"]);
+        this.ShowSkipLink = Conversions.ToInteger(silDictionary["ShowSkipLink"]);
+        this.ShowGMTOffset = Conversions.ToInteger(silDictionary["ShowGMTOffset"]);
+        this.ShowMOVEitLink = Conversions.ToInteger(silDictionary["ShowMOVEitLink"]);
+        this.AuthMethod = Conversions.ToInteger(silDictionary["AuthMethod"]);
+        this.FailOnFirstAuthFailure = Conversions.ToInteger(silDictionary["FailOnFirstAuthFailure"]);
+        this.Messaging = Conversions.ToInteger(silDictionary["Messaging"]);
+        this.AllowHomeUpload = Conversions.ToInteger(silDictionary["AllowHomeUpload"]);
+        this.AllowHomeXMaintenance = Conversions.ToInteger(silDictionary["AllowHomeXMaintenance"]);
+        this.AllowHomeSubfolderAdd = Conversions.ToInteger(silDictionary["AllowHomeSubfolderAdd"]);
+        this.NoUserXPassword = Conversions.ToInteger(silDictionary["NoUserXPassword"]);
+        this.TemporaryUsers = Conversions.ToInteger(silDictionary["TemporaryUsers"]);
+        this.TempUserOpts = Conversions.ToLong(silDictionary["TempUserOpts"]);
+        this.TempUserDomainMaskRule = Conversions.ToInteger(silDictionary["TempUserDomainMaskRule"]);
+        this.TempUserDomainMasks = silDictionary["TempUserDomainMasks"];
+        this.ReadWriteEqualsDelete = Conversions.ToInteger(silDictionary["ReadWriteEqualsDelete"]);
+        this.DefaultFilelistSortOrder = Conversions.ToInteger(silDictionary["DefaultFilelistSortOrder"]);
+        this.UserLockoutExpireTime = Conversions.ToInteger(silDictionary["UserLockoutExpireTime"]);
+        this.EmailNoteFlags = Conversions.ToLong(silDictionary["EmailNoteFlags"]);
+        this.DefaultEmailFormat = Conversions.ToInteger(silDictionary["DefaultEmailFormat"]);
+        this.MessageLogsViewable = Conversions.ToInteger(silDictionary["MessageLogsViewable"]);
+        this.AdminMsgAccess = Conversions.ToInteger(silDictionary["AdminMsgAccess"]);
+        this.MessagesCleanType = Conversions.ToInteger(silDictionary["MessagesCleanType"]);
+        this.MessagesCleanTime = silDictionary["MessagesCleanTime"];
+        this.ArchiveMessages = Conversions.ToInteger(silDictionary["ArchiveMessages"]);
+        this.HomeFolderRelationship = Conversions.ToLong(silDictionary["HomeFolderRelationship"]);
+        this.QuotaWarningType = Conversions.ToInteger(silDictionary["QuotaWarningType"]);
+        this.QuotaWarningValue = Conversions.ToInteger(silDictionary["QuotaWarningValue"]);
+        this.MaxAttachmentFileCount = Conversions.ToInteger(silDictionary["MaxAttachmentFileCount"]);
+        this.MsgQuotaWarningType = Conversions.ToInteger(silDictionary["MsgQuotaWarningType"]);
+        this.MsgQuotaWarningValue = Conversions.ToInteger(silDictionary["MsgQuotaWarningValue"]);
+        this.DefUseOrigUploader = Conversions.ToInteger(silDictionary["DefaultUseOrigUploader"]);
+        this.AllowSelfAddressBooks = Conversions.ToInteger(silDictionary["AllowSelfAddressBooks"]);
+        this.AllowAttachments = Conversions.ToInteger(silDictionary["AllowAttachments"]);
+        this.DefaultMaxAttchSize = Conversions.ToDouble(silDictionary["DefaultMaxAttchSize"]);
+        this.AttchFileMasks = silDictionary["AttchFileMasks"];
+        this.AttchFileMaskRule = Conversions.ToInteger(silDictionary["AttchFileMaskRule"]);
+        this.LangOrgDefault = silDictionary["LangOrgDefault"];
+        this.CertificateManagementEnabled = Conversions.ToInteger(silDictionary["CertificateManagementEnabled"]);
+        IEnumerable list = (IEnumerable) Globals.objEngine.sysEngine.SystemAvailableLanguages().KeysToList();
+        this.LangsOrgAllowed = SILUtility.ListJoin(ref list);
+        this.ShowSelectLangPage = Conversions.ToInteger(silDictionary["ShowSelectLangPage"]);
+        this.DefaultHTTPCertRequired = Conversions.ToInteger(silDictionary["DefaultHTTPCertRequired"]);
+        this.DefaultHTTPCertPlusPW = Conversions.ToInteger(silDictionary["DefaultHTTPCertPlusPW"]);
+        this.DefaultFTPCertRequired = Conversions.ToInteger(silDictionary["DefaultFTPCertRequired"]);
+        this.DefaultFTPCertPlusPW = Conversions.ToInteger(silDictionary["DefaultFTPCertPlusPW"]);
+        this.DefaultSSHCertRequired = Conversions.ToInteger(silDictionary["DefaultSSHCertRequired"]);
+        this.DefaultSSHCertPlusPW = Conversions.ToInteger(silDictionary["DefaultSSHCertPlusPW"]);
+        this.DefaultMobileCacheCredsAllowed = Conversions.ToInteger(silDictionary["DefaultMobileCacheCredsAllowed"]);
+        this.DefaultMobilePinRequired = Conversions.ToInteger(silDictionary["DefaultMobilePinRequired"]);
+        this.MobilePinLength = Conversions.ToInteger(silDictionary["MobilePinLength"]);
+        this.HTTPUsernameIsCN = Conversions.ToInteger(silDictionary["HTTPUsernameIsCN"]);
+        this.FTPUsernameIsCN = Conversions.ToInteger(silDictionary["FTPUsernameIsCN"]);
+        this.HTTPSingleSignOn = Conversions.ToInteger(silDictionary["HTTPSingleSignOn"]);
+        this.HTTPSingleSignOnField = Conversions.ToInteger(silDictionary["HTTPSingleSignOnField"]);
+        this.HoldingTankTime = Conversions.ToInteger(silDictionary["HoldingTankTime"]);
+        this.AllowUsernameFromClientCert = Conversions.ToInteger(silDictionary["AllowUsernameFromClientCert"]);
+        this.MaxUsersInDropDown = Conversions.ToInteger(silDictionary["MaxUsersInDropDown"]);
+        this.MaxFoldersInDropDown = Conversions.ToInteger(silDictionary["MaxFoldersInDropDown"]);
+        this.AllowSendPasswordByEmail = Conversions.ToInteger(silDictionary["AllowSendPasswordByEmail"]);
+        this.AllowPassChangeRequests = Conversions.ToInteger(silDictionary["AllowPassChangeRequests"]);
+        this.PassChangeRequestMaxAge = Conversions.ToInteger(silDictionary["PassChangeRequestMaxAge"]);
+        this.PassChangeRecaptchaRequired = Conversions.ToInteger(silDictionary["PassChangeRecaptchaRequired"]);
+        this.PassChangeSecurityQuestionsRequired = Conversions.ToInteger(silDictionary["PassChangeSecurityQuestionsRequired"]);
+        this.IPSwitchingMask = Conversions.ToInteger(silDictionary["IPSwitchingMask"]);
+        this.DefaultHomeFolderPath = silDictionary["DefaultHomeFolderPath"];
+        this.RootFolderID = silDictionary["RootFolderID"];
+        this.MessagesFolderID = silDictionary["MessagesFolderID"];
+        this.PreventFileViewInBrowser = Conversions.ToInteger(silDictionary["PreventFileViewInBrowser"]);
+        this.PreventChangeSignonLogging = Conversions.ToInteger(silDictionary["PreventChangeSignonLogging"]);
+        this.RestrictHostHeader = Conversions.ToInteger(silDictionary["RestrictHostHeader"]);
+        this.FormattingLocaleCode = silDictionary["FormattingLocaleCode"];
+        this.TimeZone = silDictionary["TimeZone"];
+        this.AllowSendToUnregRecip = Conversions.ToInteger(silDictionary["AllowSendToUnregRecip"]);
+        this.UnregRecipType = Conversions.ToInteger(silDictionary["UnregRecipType"]);
+        this.UnregRecipAskForPass = Conversions.ToInteger(silDictionary["UnregRecipAskForPass"]);
+        this.UnregRecipAutoSendPass = Conversions.ToInteger(silDictionary["UnregRecipAutoSendPass"]);
+        this.UnregRecipSeparateCredentialsNotification = Conversions.ToInteger(silDictionary["UnregRecipSepCredNotifs"]);
+        this.UnregRecipDomainMaskRule = Conversions.ToInteger(silDictionary["UnregRecipDomainMaskRule"]);
+        this.UnregRecipDomainMasks = silDictionary["UnregRecipDomainMasks"];
+        this.UnregRecipLDAPEmailDomainMaskRule = Conversions.ToInteger(silDictionary["UnregRecipLDAPEmailDomainMaskRule"]);
+        this.UnregRecipLDAPEmailDomainMasks = silDictionary["UnregRecipLDAPEmailDomainMasks"];
+        this.GuestAccessAllowSelfProvision = Conversions.ToInteger(silDictionary["GuestAccessAllowSelfProvision"]);
+        this.GuestAccessAllowSendMore = Conversions.ToInteger(silDictionary["GuestAccessAllowSendMore"]);
+        this.GuestAccessSelfProvisionType = Conversions.ToInteger(silDictionary["GuestAccessSelfProvisionType"]);
+        this.GuestAccessDomainMaskRule = Conversions.ToInteger(silDictionary["GuestAccessDomainMaskRule"]);
+        this.GuestAccessDomainMasks = silDictionary["GuestAccessDomainMasks"];
+        this.GuestAccessSenderDomainMaskRule = Conversions.ToInteger(silDictionary["GuestAccessSenderDomainMaskRule"]);
+        this.GuestAccessSenderDomainMasks = silDictionary["GuestAccessSenderDomainMasks"];
+        this.GuestAccessRecipientCount = Conversions.ToInteger(silDictionary["GuestAccessRecipientCount"]);
+        this.GuestAccessAllowSendTemp = Conversions.ToInteger(silDictionary["GuestAccessAllowSendTemp"]);
+        this.GuestSelfProvisionCaptchaKeyPublic = silDictionary["GuestSelfProvisionCaptchaKeyPublic"];
+        this.GuestSelfProvisionCaptchaKeyPrivate = silDictionary["GuestSelfProvisionCaptchaKeyPrivate"];
+        this.NotificationSendOnBehalf = Conversions.ToInteger(silDictionary["NotificationSendOnBehalf"]);
+        this.NotificationSendOnBehalfDomainMasks = silDictionary["NotificationSendOnBehalfDomainMasks"];
+        this.PackageFlags = Conversions.ToInteger(silDictionary["PackageFlags"]);
+        this.GuestAccessRecipMatchRule = Conversions.ToInteger(silDictionary["GuestAccessRecipMatchRule"]);
+        this.RequireUniqueFullNames = Conversions.ToInteger(silDictionary["RequireUniqueFullNames"]);
+        this.GuestAdvOptions = Conversions.ToInteger(silDictionary["GuestAdvOptions"]);
+        this.AllowCustomMsgExpiration = Conversions.ToInteger(silDictionary["AllowCustomMsgExpiration"]);
+        this.DefaultUserCustomMsgExpiration = Conversions.ToInteger(silDictionary["DefaultUserCustomMsgExpiration"]);
+        this.EnforceMaxAttchDownloads = Conversions.ToInteger(silDictionary["EnforceMaxAttchDownloads"]);
+        this.AllowSetMaxDownloads = Conversions.ToInteger(silDictionary["AllowSetMaxDownloads"]);
+        this.DefaultOrgMaxDownloads = Conversions.ToInteger(silDictionary["DefaultOrgMaxDownloads"]);
+        this.MaxValueMaxDownloads = Conversions.ToInteger(silDictionary["MaxValueMaxDownloads"]);
+        this.NotificationDelay = Conversions.ToInteger(silDictionary["NotificationDelay"]);
+        this.NotificationType = Conversions.ToInteger(silDictionary["NotificationType"]);
+        this.SAMLSPAssertionConsumerBindings = silDictionary["SAMLSPAssertionConsumerBindings"];
+        this.SAMLSPSingleLogoutBindings = Conversions.ToInteger(silDictionary["SAMLSPSingleLogoutBindings"]);
+        this.SSOAuthMode = silDictionary["SAMLAuthMode"].ToEnum<SSOAuthModeEnum>(SSOAuthModeEnum.Invalid);
+        if (this.SSOAuthMode == SSOAuthModeEnum.Invalid)
+          Globals.objDebug.Log(20, $"Invalid SSO authentication mode '{silDictionary["SAMLAuthMode"]}' in database for organization {this.ID}.");
+        this.AVEnable = Conversions.ToInteger(silDictionary["AVEnable"]);
+        this.AVBlockOnError = Conversions.ToInteger(silDictionary["AVBlockOnErr"]);
+        this.DLPEnable = Conversions.ToInteger(silDictionary["DLPEnable"]);
+        this.DLPBlockOnError = Conversions.ToInteger(silDictionary["DLPBlockOnErr"]);
+        this.LayoutWidth = Conversions.ToInteger(silDictionary["LayoutWidth"]);
+        this.LayoutWidthUnit = Conversions.ToInteger(silDictionary["LayoutWidthUnit"]);
+        this.LayoutAlignment = Conversions.ToInteger(silDictionary["LayoutAlignment"]);
+        this.MessageUI = Conversions.ToInteger(silDictionary["MessageUI"]);
+        this.ArchiveLogs = Conversions.ToInteger(silDictionary["ArchiveLogsBeforeDeleting"]);
+        this.AllowShowSQLQuery = Conversions.ToInteger(silDictionary["AllowShowSQLQuery"]);
+        this.MFARequiredClassTypes = Conversions.ToInteger(silDictionary["MFARequiredClassTypes"]);
+        this.MFAAllowedTypes = Conversions.ToInteger(silDictionary["MFAAllowedTypes"]);
+        this.MFAEnableTrustDevice = Conversions.ToInteger(silDictionary["MFAEnableTrustDevice"]);
+        this.rawMOTD = silDictionary["MOTD"];
+        this.rawTechPhone = silDictionary["TechPhone"];
+        this.rawTechEmail = silDictionary["TechEmail"];
+        this.rawTechName = silDictionary["TechName"];
+        this.rawTechInfo = silDictionary["TechInfo"];
+        this.rawSecBanner = silDictionary["SecBanner"];
+        this.rawSecNotice = silDictionary["SecNotice"];
+        this.rawWelcomeMessage = silDictionary["WelcomeMessage"];
+        this.rawCustomHelpLink = silDictionary["CustomHelpLink"];
+        this.rawCustomHelpName = silDictionary["CustomHelpName"];
+        this.rawInformationLink = silDictionary["InformationLink"];
+        this.rawInformationLinkName = silDictionary["InformationLinkName"];
+        this.rawContactLink = silDictionary["ContactLink"];
+        this.rawContactLinkName = silDictionary["ContactLinkName"];
+        this.rawNoteSig = silDictionary["NoteSig"];
+        this.rawSecNoticeAcceptance = silDictionary["SecNoticeAcceptance"];
+        this.SecNoticeAcceptanceRequired = Conversions.ToInteger(silDictionary["SecNoticeAcceptanceRequired"]);
+        this.AllowOrgAdminsPasswordReset = Conversions.ToInteger(silDictionary["AllowOrgAdminsPasswordReset"]);
+        this.HomeFolderAllowedSharingRelationship = Conversions.ToInteger(silDictionary["HomeFolderAllowedSharingRelationship"]);
+        this.UseCustomNotifBranding = SILUtility.StrToBool(silDictionary["UseCustomNotifBranding"]);
+        this.InAppNotificationsDisableNotifications = Conversions.ToInteger(silDictionary["InAppNotificationsDisableNotifications"]);
+        this.InAppNotificationsDisableTelemetry = Conversions.ToInteger(silDictionary["InAppNotificationsDisableTelemetry"]);
+        string Left1 = silDictionary["AnonDisplayProfile"];
+        this.AnonDisplayProfileBits = Globals.objEngine.displayProfileEngine.DefaultDisplayProfileBits();
+        if (Operators.CompareString(Left1, "0", false) != 0)
+        {
+          string Left2 = new SQLBasicBuilder(Globals.objWrap, "displayprofiles").AddColumnToSelect("Bits").AddAndColumnEqualsToWhere<string>("ID", Left1, true).SelectQueryValue();
+          if (Operators.CompareString(Left2, string.Empty, false) != 0)
+            this.AnonDisplayProfileBits = Conversions.ToLong(Left2);
+        }
+        this.KeyRotationReminder = !string.IsNullOrEmpty(silDictionary["KeyRotationReminder"]) ? new DateTime?(Conversions.ToDate(silDictionary["KeyRotationReminder"])) : new DateTime?();
+        if (string.IsNullOrEmpty(silDictionary["SchemeName"]))
+        {
+          Globals.objDebug.Log(30, "Unable to locate scheme. Using default scheme instead.");
+          SILOrganization.SchemeInfo defaultScheme = SILOrganization.GetDefaultScheme();
+          this.SchemeID = defaultScheme.Id;
+          this.SchemeName = defaultScheme.Name;
+          this.SchemeFile = defaultScheme.StylesheetFile;
+        }
+        else
+        {
+          this.SchemeID = Conversions.ToInteger(silDictionary["SchemeID"]);
+          this.SchemeName = silDictionary["SchemeName"];
+          this.SchemeFile = silDictionary["SchemeStylesheet"];
+        }
+        SILUtility.GetLogoFiles(Conversions.ToString(this.ID), ref this.LogoLeft, ref this.LogoRight, ref this.LogoBackground);
+        if (!flag2)
+        {
+          this.MessageUI = Conversions.ToInteger(Interaction.IIf(Expression, (object) 4, (object) 1));
+          this.GuestAccessAllowSelfProvision = 0;
+          this.GuestAccessAllowSendMore = 0;
+          this.AllowSendToUnregRecip = 0;
+          this.AllowAttachments = 0;
+          this.Messaging = 0;
+        }
+        else if (!flag1)
+        {
+          this.MessageUI = 2;
+          this.Messaging = 1;
+        }
+        if (string.IsNullOrEmpty(this.rawSecBanner))
+          this.rawSecBanner = Globals.objI11N.GetMsg(40021);
+        if (string.IsNullOrEmpty(this.rawSecNotice))
+          this.rawSecNotice = Globals.objI11N.GetMsg(40022, this.Name);
+        if (string.IsNullOrEmpty(this.rawSecNoticeAcceptance))
+          this.rawSecNoticeAcceptance = Globals.objI11N.GetMsg(40033);
+        try
+        {
+          if (string.IsNullOrEmpty(this.FormResponseEmail))
+            this.FormResponseEmail = RegUtility.GetSILRegValueDef("EmailAddrAutomation");
+        }
+        catch (Exception ex)
+        {
+          ProjectData.SetProjectError(ex);
+          ProjectData.ClearProjectError();
+        }
+        ISession objSession = Globals.objSession;
+        objSession.SetValue("MyInstName", (object) this.Name);
+        objSession.SetValue("MyInstBaseURL", (object) this.BaseURL);
+        objSession.SetValue("MyInstMobileURL", (object) this.MobileURL);
+        objSession.SetValue("MyInstUseCustomHeader", (object) this.UseCustomHeader);
+        objSession.SetValue("MyInstMOTDStamp", (object) this.MOTDStamp);
+        objSession.SetValue("MyInstMOTDRealName", (object) this.MOTDRealName);
+        objSession.SetValue("MyInstHomeNameConv", (object) this.HomeNameConv);
+        objSession.SetValue("MyInstHistoryTime", (object) this.HistoryTime);
+        objSession.SetValue("MyInstFormResponsePath", (object) this.FormResponsePath);
+        objSession.SetValue("MyInstFormResponseEmail", (object) this.FormResponseEmail);
+        objSession.SetValue("MyInstSecNoticeStamp", (object) this.SecNoticeStamp);
+        objSession.SetValue("MyInstSecNoticeRealName", (object) this.SecNoticeRealName);
+        objSession.SetValue("MyInstSecNoticeRequired", (object) this.SecNoticeRequired);
+        objSession.SetValue("MyInstDefaultInst", (object) this.DefaultInst);
+        objSession.SetValue("MyInstMinCertKey", (object) this.MinCertKey);
+        objSession.SetValue("MyInstPassLength", (object) this.PassLength);
+        objSession.SetValue("MyInstPassStrength", (object) this.PassStrength);
+        objSession.SetValue("MyInstPassHistory", (object) this.PassHistory);
+        objSession.SetValue("MyInstShowSkipLink", (object) this.ShowSkipLink);
+        objSession.SetValue("MyInstShowGMTOffset", (object) this.ShowGMTOffset);
+        objSession.SetValue("MyInstShowMOVEitLink", (object) this.ShowMOVEitLink);
+        objSession.SetValue("MyInstAuthMethod", (object) this.AuthMethod);
+        objSession.SetValue("MyInstFailOnFirstAuthFailure", (object) this.FailOnFirstAuthFailure);
+        objSession.SetValue("MyInstMessaging", (object) this.Messaging);
+        objSession.SetValue("MyInstAllowHomeUpload", (object) this.AllowHomeUpload);
+        objSession.SetValue("MyInstAllowHomeXMaintenance", (object) this.AllowHomeXMaintenance);
+        objSession.SetValue("MyInstAllowHomeSubfolderAdd", (object) this.AllowHomeSubfolderAdd);
+        objSession.SetValue("MyInstNoUserXPassword", (object) this.NoUserXPassword);
+        objSession.SetValue("MyInstTemporaryUsers", (object) this.TemporaryUsers);
+        objSession.SetValue("MyInstTempUserOpts", (object) this.TempUserOpts);
+        objSession.SetValue("MyInstTempUserDomainMaskRule", (object) this.TempUserDomainMaskRule);
+        objSession.SetValue("MyInstTempUserDomainMasks", (object) this.TempUserDomainMasks);
+        objSession.SetValue("MyInstReadWriteEqualsDelete", (object) this.ReadWriteEqualsDelete);
+        objSession.SetValue("MyInstDefaultFilelistSortOrder", (object) this.DefaultFilelistSortOrder);
+        objSession.SetValue("MyInstUserLockoutExpireTime", (object) this.UserLockoutExpireTime);
+        objSession.SetValue("MyInstEmailNoteFlags", (object) this.EmailNoteFlags);
+        objSession.SetValue("MyInstDefaultEmailFormat", (object) this.DefaultEmailFormat);
+        objSession.SetValue("MyInstMessageLogsViewable", (object) this.MessageLogsViewable);
+        objSession.SetValue("MyInstAdminMsgAccess", (object) this.AdminMsgAccess);
+        objSession.SetValue("MyInstMessagesCleanType", (object) this.MessagesCleanType);
+        objSession.SetValue("MyInstMessagesCleanTime", (object) this.MessagesCleanTime);
+        objSession.SetValue("MyInstArchiveMessages", (object) this.ArchiveMessages);
+        objSession.SetValue("MyInstHomeFolderRelationship", (object) this.HomeFolderRelationship);
+        objSession.SetValue("MyInstQuotaWarningType", (object) this.QuotaWarningType);
+        objSession.SetValue("MyInstQuotaWarningValue", (object) this.QuotaWarningValue);
+        objSession.SetValue("MyInstMaxAttachmentFileCount", (object) this.MaxAttachmentFileCount);
+        objSession.SetValue("MyInstMsgQuotaWarningType", (object) this.MsgQuotaWarningType);
+        objSession.SetValue("MyInstMsgQuotaWarningValue", (object) this.MsgQuotaWarningValue);
+        objSession.SetValue("MyInstDefaultUseOrigUploader", (object) this.DefUseOrigUploader);
+        objSession.SetValue("MyInstAllowSelfAddressBooks", (object) this.AllowSelfAddressBooks);
+        objSession.SetValue("MyInstAllowAttachments", (object) this.AllowAttachments);
+        objSession.SetValue("MyInstDefaultMaxAttchSize", (object) this.DefaultMaxAttchSize);
+        objSession.SetValue("MyInstAttchFileMasks", (object) this.AttchFileMasks);
+        objSession.SetValue("MyInstAttchFileMaskRule", (object) this.AttchFileMaskRule);
+        objSession.SetValue("MyInstLangOrgDefault", (object) this.LangOrgDefault);
+        objSession.SetValue("MyInstLangsOrgAllowed", (object) this.LangsOrgAllowed);
+        objSession.SetValue("MyInstShowSelectLangPage", (object) this.ShowSelectLangPage);
+        objSession.SetValue("MyInstDefaultHTTPCertRequired", (object) this.DefaultHTTPCertRequired);
+        objSession.SetValue("MyInstDefaultHTTPCertPlusPW", (object) this.DefaultHTTPCertPlusPW);
+        objSession.SetValue("MyInstDefaultFTPCertRequired", (object) this.DefaultFTPCertRequired);
+        objSession.SetValue("MyInstDefaultFTPCertPlusPW", (object) this.DefaultFTPCertPlusPW);
+        objSession.SetValue("MyInstDefaultSSHCertRequired", (object) this.DefaultSSHCertRequired);
+        objSession.SetValue("MyInstDefaultSSHCertPlusPW", (object) this.DefaultSSHCertPlusPW);
+        objSession.SetValue("MyInstDefaultMobileCacheCredsAllowed", (object) this.DefaultMobileCacheCredsAllowed);
+        objSession.SetValue("MyInstDefaultMobilePinRequired", (object) this.DefaultMobilePinRequired);
+        objSession.SetValue("MyInstMobilePinLength", (object) this.MobilePinLength);
+        objSession.SetValue("MyInstHTTPUsernameIsCN", (object) this.HTTPUsernameIsCN);
+        objSession.SetValue("MyInstFTPUsernameIsCN", (object) this.FTPUsernameIsCN);
+        objSession.SetValue("MyInstHTTPSingleSignOn", (object) this.HTTPSingleSignOn);
+        objSession.SetValue("MyInstHTTPSingleSignOnField", (object) this.HTTPSingleSignOnField);
+        objSession.SetValue("MyInstHoldingTankTime", (object) this.HoldingTankTime);
+        objSession.SetValue("MyInstAllowUsernameFromClientCert", (object) this.AllowUsernameFromClientCert);
+        objSession.SetValue("MyInstMaxUsersInDropDown", (object) this.MaxUsersInDropDown);
+        objSession.SetValue("MyInstMaxFoldersInDropDown", (object) this.MaxFoldersInDropDown);
+        objSession.SetValue("MyInstAllowSendPasswordByEmail", (object) this.AllowSendPasswordByEmail);
+        objSession.SetValue("MyInstAllowPassChangeRequests", (object) this.AllowPassChangeRequests);
+        objSession.SetValue("MyInstPassChangeRequestMaxAge", (object) this.PassChangeRequestMaxAge);
+        objSession.SetValue("MyInstPassChangeRecaptchaRequired", (object) this.PassChangeRecaptchaRequired);
+        objSession.SetValue("MyInstPassChangeSecurityQuestionsRequired", (object) this.PassChangeSecurityQuestionsRequired);
+        objSession.SetValue("MyInstIPSwitchingMask", (object) this.IPSwitchingMask);
+        objSession.SetValue("MyInstDefaultHomeFolderPath", (object) this.DefaultHomeFolderPath);
+        objSession.SetValue("MyInstRootFolderID", (object) this.RootFolderID);
+        objSession.SetValue("MyInstMessagesFolderID", (object) this.MessagesFolderID);
+        objSession.SetValue("MyInstPreventFileViewInBrowser", (object) this.PreventFileViewInBrowser);
+        objSession.SetValue("MyInstPreventChangeSignonLogging", (object) this.PreventChangeSignonLogging);
+        objSession.SetValue("MyInstTimeZone", (object) this.TimeZone);
+        objSession.SetValue("MyInstRestrictHostHeader", (object) this.RestrictHostHeader);
+        objSession.SetValue("MyInstFormattingLocaleCode", (object) this.FormattingLocaleCode);
+        objSession.SetValue("MyInstCertificateManagementEnabled", (object) this.CertificateManagementEnabled);
+        objSession.SetValue("MyInstAllowSendToUnregRecip", (object) this.AllowSendToUnregRecip);
+        objSession.SetValue("MyInstUnregRecipType", (object) this.UnregRecipType);
+        objSession.SetValue("MyInstUnregRecipAskForPass", (object) this.UnregRecipAskForPass);
+        objSession.SetValue("MyInstUnregRecipAutoSendPass", (object) this.UnregRecipAutoSendPass);
+        objSession.SetValue("MyInstUnregRecipSepCredNotifs", (object) this.UnregRecipSeparateCredentialsNotification);
+        objSession.SetValue("MyInstUnregRecipDomainMaskRule", (object) this.UnregRecipDomainMaskRule);
+        objSession.SetValue("MyInstUnregRecipDomainMasks", (object) this.UnregRecipDomainMasks);
+        objSession.SetValue("MyInstUnregRecipLDAPEmailDomainMaskRule", (object) this.UnregRecipLDAPEmailDomainMaskRule);
+        objSession.SetValue("MyInstUnregRecipLDAPEmailDomainMasks", (object) this.UnregRecipLDAPEmailDomainMasks);
+        objSession.SetValue("MyInstGuestAccessAllowSelfProvision", (object) this.GuestAccessAllowSelfProvision);
+        objSession.SetValue("MyInstGuestAccessAllowSendMore", (object) this.GuestAccessAllowSendMore);
+        objSession.SetValue("MyInstGuestAccessSelfProvisionType", (object) this.GuestAccessSelfProvisionType);
+        objSession.SetValue("MyInstGuestAccessDomainMaskRule", (object) this.GuestAccessDomainMaskRule);
+        objSession.SetValue("MyInstGuestAccessDomainMasks", (object) this.GuestAccessDomainMasks);
+        objSession.SetValue("MyInstGuestAccessSenderDomainMaskRule", (object) this.GuestAccessSenderDomainMaskRule);
+        objSession.SetValue("MyInstGuestAccessSenderDomainMasks", (object) this.GuestAccessSenderDomainMasks);
+        objSession.SetValue("MyInstGuestAccessRecipientCount", (object) this.GuestAccessRecipientCount);
+        objSession.SetValue("MyInstGuestAccessAllowSendTemp", (object) this.GuestAccessAllowSendTemp);
+        objSession.SetValue("MyInstGuestSelfProvisionCaptchaKeyPublic", (object) this.GuestSelfProvisionCaptchaKeyPublic);
+        objSession.SetValue("MyInstGuestSelfProvisionCaptchaKeyPrivate", (object) this.GuestSelfProvisionCaptchaKeyPrivate);
+        objSession.SetValue("MyInstNotificationSendOnBehalf", (object) this.NotificationSendOnBehalf);
+        objSession.SetValue("MyInstNotificationSendOnBehalfDomainMasks", (object) this.NotificationSendOnBehalfDomainMasks);
+        objSession.SetValue("MyInstPackageFlags", (object) this.PackageFlags);
+        objSession.SetValue("MyInstGuestAccessRecipMatchRule", (object) this.GuestAccessRecipMatchRule);
+        objSession.SetValue("MyInstRequireUniqueFullNames", (object) this.RequireUniqueFullNames);
+        objSession.SetValue("MyInstGuestAdvOptions", (object) this.GuestAdvOptions);
+        objSession.SetValue("MyInstAllowCustomMsgExpiration", (object) this.AllowCustomMsgExpiration);
+        objSession.SetValue("MyInstDefaultUserCustomMsgExpiration", (object) this.DefaultUserCustomMsgExpiration);
+        objSession.SetValue("MyInstEnforceMaxAttchDownloads", (object) this.EnforceMaxAttchDownloads);
+        objSession.SetValue("MyInstAllowSetMaxDownloads", (object) this.AllowSetMaxDownloads);
+        objSession.SetValue("MyInstDefaultOrgMaxDownloads", (object) this.DefaultOrgMaxDownloads);
+        objSession.SetValue("MyInstMaxValueMaxDownloads", (object) this.MaxValueMaxDownloads);
+        objSession.SetValue("MyInstNotificationDelay", (object) this.NotificationDelay);
+        objSession.SetValue("MyInstNotificationType", (object) this.NotificationType);
+        objSession.SetValue("MyInstSAMLSPAssertionConsumerBindings", (object) this.SAMLSPAssertionConsumerBindings);
+        objSession.SetValue("MyInstSAMLSPSingleLogoutBindings", (object) this.SAMLSPSingleLogoutBindings);
+        objSession.SetValue("MyInstSSOAuthMode", (object) (int) this.SSOAuthMode);
+        objSession.SetValue("MyInstAVEnable", (object) this.AVEnable);
+        objSession.SetValue("MyInstAVBlockOnError", (object) this.AVBlockOnError);
+        objSession.SetValue("MyInstDLPEnable", (object) this.DLPEnable);
+        objSession.SetValue("MyInstDLPBlockOnError", (object) this.DLPBlockOnError);
+        objSession.SetValue("MyInstLayoutWidth", (object) this.LayoutWidth);
+        objSession.SetValue("MyInstLayoutWidthUnit", (object) this.LayoutWidthUnit);
+        objSession.SetValue("MyInstLayoutAlignment", (object) this.LayoutAlignment);
+        objSession.SetValue("MyInstMessageUI", (object) this.MessageUI);
+        objSession.SetValue("MyInstArchiveLogs", (object) this.ArchiveLogs);
+        objSession.SetValue("MyInstAllowShowSQLQuery", (object) this.AllowShowSQLQuery);
+        objSession.SetValue("MyInstMFARequiredClassTypes", (object) this.MFARequiredClassTypes);
+        objSession.SetValue("MyInstMFAAllowedTypes", (object) this.MFAAllowedTypes);
+        objSession.SetValue("MyInstMFAEnableTrustDevice", (object) this.MFAEnableTrustDevice);
+        objSession.SetValue("MySchemeID", (object) this.SchemeID);
+        objSession.SetValue("MySchemeName", (object) this.SchemeName);
+        objSession.SetValue("MySchemeFile", (object) this.SchemeFile);
+        objSession.SetValue("MyLogoLeft", (object) this.LogoLeft);
+        objSession.SetValue("MyLogoRight", (object) this.LogoRight);
+        objSession.SetValue("MyLogoBackground", (object) this.LogoBackground);
+        objSession.SetValue("MyInstMOTD", (object) this.rawMOTD);
+        objSession.SetValue("MyInstTechPhone", (object) this.rawTechPhone);
+        objSession.SetValue("MyInstTechEmail", (object) this.rawTechEmail);
+        objSession.SetValue("MyInstTechName", (object) this.rawTechName);
+        objSession.SetValue("MyInstTechInfo", (object) this.rawTechInfo);
+        objSession.SetValue("MyInstSecBanner", (object) this.rawSecBanner);
+        objSession.SetValue("MyInstSecNotice", (object) this.rawSecNotice);
+        objSession.SetValue("MyInstWelcomeMessage", (object) this.rawWelcomeMessage);
+        objSession.SetValue("MyInstCustomHelpLink", (object) this.rawCustomHelpLink);
+        objSession.SetValue("MyInstCustomHelpName", (object) this.rawCustomHelpName);
+        objSession.SetValue("MyInstInformationLink", (object) this.rawInformationLink);
+        objSession.SetValue("MyInstInformationLinkName", (object) this.rawInformationLinkName);
+        objSession.SetValue("MyInstContactLink", (object) this.rawContactLink);
+        objSession.SetValue("MyInstContactLinkName", (object) this.rawContactLinkName);
+        objSession.SetValue("MyInstNoteSig", (object) this.rawNoteSig);
+        objSession.SetValue("MyInstSecNoticeAcceptance", (object) this.rawSecNoticeAcceptance);
+        objSession.SetValue("MyInstSecNoticeAcceptanceRequired", (object) this.SecNoticeAcceptanceRequired);
+        objSession.SetValue("AllowOrgAdminsPasswordReset", (object) this.AllowOrgAdminsPasswordReset);
+        objSession.SetValue("MyInstAllowedSharingRelationships", (object) this.HomeFolderAllowedSharingRelationship);
+        objSession.SetValue("MyInstUseCustomNotifBranding", (object) SILUtility.BoolToStr(this.UseCustomNotifBranding));
+        objSession.SetValue("InAppNotificationsDisableNotifications", (object) this.InAppNotificationsDisableNotifications);
+        objSession.SetValue("InAppNotificationsDisableTelemetry", (object) this.InAppNotificationsDisableTelemetry);
+        objSession.SetValue("MyInstAnonDisplayProfileBits", (object) this.AnonDisplayProfileBits);
+        recSet = true;
+      }
+    }
+    this.ExtractMessages(Globals.objUtility);
+    return recSet;
+  }
+
+  public void ExtractMessages(SILUtility Utility)
+  {
+    this.MOTD = Utility.GetSubstrForLang(this.rawMOTD);
+    this.WelcomeMessage = Utility.GetSubstrForLang(this.rawWelcomeMessage);
+    this.SecBanner = Utility.GetSubstrForLang(this.rawSecBanner);
+    this.SecNotice = Utility.GetSubstrForLang(this.rawSecNotice);
+    this.CustomHelpName = Utility.GetSubstrForLang(this.rawCustomHelpName);
+    this.CustomHelpLink = Utility.GetSubstrForLang(this.rawCustomHelpLink);
+    this.TechInfo = Utility.GetSubstrForLang(this.rawTechInfo);
+    this.TechName = Utility.GetSubstrForLang(this.rawTechName);
+    this.TechEmail = Utility.GetSubstrForLang(this.rawTechEmail);
+    this.TechPhone = Utility.GetSubstrForLang(this.rawTechPhone);
+    this.InformationLinkName = Utility.GetSubstrForLang(this.rawInformationLinkName);
+    this.InformationLink = Utility.GetSubstrForLang(this.rawInformationLink);
+    this.ContactLinkName = Utility.GetSubstrForLang(this.rawContactLinkName);
+    this.ContactLink = Utility.GetSubstrForLang(this.rawContactLink);
+    this.NoteSig = Utility.GetSubstrForLang(this.rawNoteSig);
+    this.SecNoticeAcceptance = Utility.GetSubstrForLang(this.rawSecNoticeAcceptance);
+  }
+
+  public string GetDefaultLang(SILGlobals Globals)
+  {
+    if (Operators.CompareString(this.LangsOrgAllowed, string.Empty, false) == 0)
+    {
+      this.LangsOrgAllowed = "en";
+      this.LangOrgDefault = this.LangsOrgAllowed;
+      Globals.objDebug.Log(20, $"GetDefaultLang: No languages allowed for org; setting list to '{this.LangOrgDefault}'");
+    }
+    if (Operators.CompareString(this.LangOrgDefault, string.Empty, false) == 0 | !Globals.objUtility.ItemIsInString(this.LangsOrgAllowed, ',', this.LangOrgDefault))
+    {
+      this.LangOrgDefault = Globals.objUtility.TruncateToNItems(this.LangsOrgAllowed, ',', 1);
+      Globals.objDebug.Log(20, $"GetOrgDefaultLang: Setting local copy of org default lang to '{this.LangOrgDefault}'");
+    }
+    return this.LangOrgDefault;
+  }
+
+  public class SchemeInfo
+  {
+    public int Id;
+    public string Name;
+    public string StylesheetFile;
+    public bool IsDefault;
+    public string RTLStylesheetFile;
+
+    public SchemeInfo()
+    {
+      this.IsDefault = false;
+      this.RTLStylesheetFile = (string) null;
+    }
+  }
+}
