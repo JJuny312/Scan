@@ -1,0 +1,4461 @@
+// Decompiled with JetBrains decompiler
+// Type: MOVEit.DMZ.ClassLib.SILGlobals
+// Assembly: MOVEit.DMZ.ClassLib, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: F53DB182-DFE7-4C1C-B257-1775EFE0EAF7
+// Assembly location: C:\Program Files\MOVEit\MOVEitTransfer\MOVEit.DMZ.ClassLib.dll
+
+using AutoMapper;
+using Microsoft.VisualBasic;
+using Microsoft.VisualBasic.CompilerServices;
+using MOVEit.DMZ.Application.Contracts.FileSystem;
+using MOVEit.DMZ.Application.Contracts.Infrastructure;
+using MOVEit.DMZ.Application.Contracts.Infrastructure.Data;
+using MOVEit.DMZ.Application.Contracts.IoC;
+using MOVEit.DMZ.Core;
+using MOVEit.DMZ.Core.Cryptography.Providers.MOVEit;
+using MOVEit.DMZ.Core.FileSystem.Azure;
+using MOVEit.DMZ.Core.FileSystem.Local;
+using MOVEit.DMZ.Core.Session;
+using MOVEit.DMZ.Crosscutting.Contracts;
+using MOVEit.DMZ.Crosscutting.Contracts.Settings;
+using MOVEit.DMZ.Crosscutting.Features;
+using MOVEit.DMZ.Cryptography.Contracts;
+using MOVEit.Licensing;
+using MOVEit.Net.Syslog;
+using siLockCRYPTLib;
+using SNICOMUTILLib;
+using SNIENCRYPTIONLib;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading;
+using System.Web;
+using System.Web.SessionState;
+using System.Xml;
+
+#nullable disable
+namespace MOVEit.DMZ.ClassLib;
+
+public class SILGlobals
+{
+  public string LoginName;
+  public string Password;
+  public string Challenge;
+  public string OrgID;
+  public string IPAddressExplicitFromUser;
+  public bool DBConnected;
+  public string AspName;
+  public HttpRequestBase MyRequest;
+  public HttpResponseBase MyResponse;
+  public HttpApplicationStateBase MyApplicationState;
+  public string LogAuditToEventLog;
+  public string LogAuditEventSourceName;
+  public string LogAuditToSyslog;
+  public string ResiliencyNode;
+  public bool InWebfarm;
+  public string ShowSystemErrorMessages;
+  public string LongTermCookieDuration;
+  public string LogInsecureFTPFailedSignons;
+  public string ClientPollingIntervalSecs;
+  public bool AllowInsecureQueryStrings;
+  public SILDBWrap objWrap;
+  public SILCurrentUser objUser;
+  public siLockCryptAPI objCrypt;
+  public SILDebug objDebug;
+  public SILUtility objUtility;
+  public SNICOMUtilAPI objSNIUtil;
+  public SNIEncryptionAPI objSNIEncryption;
+  public SILUpload objUpload;
+  public SILEngine objEngine;
+  public ISession objSession;
+  public SILSessionStub objSessionStub;
+  public ILicDecoder objLicDecode;
+  public SILGetMsg objI11N;
+  public string FromSignon;
+  public string FromSignonMFA;
+  public string FromCertToUser;
+  public string PassChange1;
+  public string PassChange2;
+  public string Arg01;
+  public string Arg02;
+  public string Arg03;
+  public string Arg04;
+  public string Arg05;
+  public string Arg06;
+  public string Arg07;
+  public string Arg08;
+  public string Arg09;
+  public string Arg10;
+  public string Arg11;
+  public string Arg12;
+  public string Arg13;
+  public string Arg14;
+  public string Arg15;
+  public string Arg16;
+  public string Transaction;
+  public string Opt01;
+  public string Opt02;
+  public string Opt03;
+  public string Opt04;
+  public string Opt05;
+  public string Opt06;
+  public string Opt07;
+  public string Opt08;
+  public string Opt09;
+  public string Opt10;
+  public string Opt11;
+  public string Opt12;
+  public string Opt13;
+  public string Opt14;
+  public string Opt15;
+  public string Opt16;
+  public string Opt17;
+  public string Opt18;
+  public string Opt19;
+  public string Opt20;
+  public string Opt21;
+  public string Opt22;
+  public string Opt23;
+  public string Opt24;
+  public string Opt25;
+  public string Opt26;
+  public string Opt27;
+  public string Opt28;
+  public string Opt29;
+  public string Opt30;
+  public string Opt31;
+  public string Opt32;
+  public string OrgIDFromRequest;
+  public string r;
+  public string ContentOnly;
+  public string ReturnTo;
+  public string NoAttch;
+  public string Confirm;
+  public string PasswordChangeCode;
+  public string ForceNonMobile;
+  public string MFACode;
+  public string TrustDevice;
+  public string RequestEmailCode;
+  public long SecurityFlags;
+  public string Nonce;
+  public string MFATemp;
+  public string MFAStatus;
+  public string MFAEmail;
+  public string SessionVarsStamp;
+  public string SuggestedPassword;
+  public string SSOType;
+  public string OIDCState;
+  public string OIDCNonce;
+  public string OIDCCodeVerifier;
+  public string OIDCIdpId;
+  public string OIDCIdToken;
+  public string ExternalClient;
+  public string ExternalCodeChallenge;
+  public static BsdSyslogSender objSyslog;
+  public static object objSyslogLock = RuntimeHelpers.GetObjectValue(new object());
+  public static bool SyslogFailedToInit = false;
+  public string LicAgentBrand;
+  public string AgentBrand;
+  public string AgentVersion;
+  public bool AgentIsMobile;
+  public string OSBrand;
+  public string OSVersion;
+  public int RequestType;
+  private static Hashtable UnsynchronizedNotifHash;
+  public static Hashtable NotificationHash;
+  public string TheDSN;
+  public string CurLangCode;
+  public static long NextFileIDPart = 0;
+  public string CsrfTokenIncoming;
+  private bool m_bDoLogHashing;
+  private bool SettingsHaveBeenUpdated;
+  private static FilesDirMountState m_filesdirmountstate = (FilesDirMountState) null;
+  public static CScanSettings m_AVCScanSettings = new CScanSettings();
+  public static CScanSettings m_DLPCScanSettings = new CScanSettings();
+  public static CScanSettings m_AVDLPCScanSettings = new CScanSettings();
+  private static DateTime m_stampAVCScanSettings = new DateTime(1980, 1, 1);
+  private static DateTime m_stampDLPCScanSettings = new DateTime(1980, 1, 1);
+  private static DateTime m_stampAVDLPCScanSettings = new DateTime(1980, 1, 1);
+  public static HostHeaderSettings m_HostHeaderSettings = new HostHeaderSettings();
+  public HostHeaderSettings objHostHeaderSettings;
+  public CultureInfo FormattingLocale;
+  private bool gotincomingvariables;
+  private readonly string _debugLogFilename;
+  private IFileSystemFactory _fileSystemFactory;
+  private IFeatureDiscoveryService _featureDiscoveryService;
+  private IOrgKeyProvider _orgKeyProvider;
+
+  public static IIocContainer IocContainer { get; set; }
+
+  public TimeZoneInfo ServerTimeZone => TimeZoneInfo.Local;
+
+  public static IMapper Mapper { get; } = new MapperConfiguration((Action<IMapperConfigurationExpression>) ([SpecialName] (c) => c.AddProfile<ModelDtoMappingConfiguration>())).CreateMapper();
+
+  public static object siLockCreateObject(string objName) => Interaction.CreateObject(objName);
+
+  public static CScanSettings GetCScanSettings(
+    ISysEngine sysEngine,
+    bool forceRefresh,
+    bool bIsDLP = false,
+    bool returnBoth = true)
+  {
+    bool flag = forceRefresh;
+    CScanSettings cscanSettings;
+    if (bIsDLP)
+    {
+      lock ((object) SILGlobals.m_DLPCScanSettings)
+      {
+        if (SILGlobals.m_DLPCScanSettings == null)
+          flag = true;
+        else if (DateAndTime.DateDiff(DateInterval.Second, SILGlobals.m_stampDLPCScanSettings, DateAndTime.Now) > 30L)
+          flag = true;
+        if (flag)
+        {
+          SILGlobals.m_DLPCScanSettings = sysEngine.SysGetCScanByType(bIsDLP, returnBoth);
+          SILGlobals.m_stampDLPCScanSettings = DateAndTime.Now;
+        }
+      }
+      cscanSettings = SILGlobals.m_DLPCScanSettings;
+    }
+    else
+    {
+      lock ((object) SILGlobals.m_AVCScanSettings)
+      {
+        if (SILGlobals.m_AVCScanSettings == null)
+          flag = true;
+        else if (DateAndTime.DateDiff(DateInterval.Second, SILGlobals.m_stampAVCScanSettings, DateAndTime.Now) > 30L)
+          flag = true;
+        if (flag)
+        {
+          SILGlobals.m_AVCScanSettings = sysEngine.SysGetCScanByType(bIsDLP, returnBoth);
+          SILGlobals.m_stampAVCScanSettings = DateAndTime.Now;
+        }
+      }
+      cscanSettings = SILGlobals.m_AVCScanSettings;
+    }
+    return cscanSettings;
+  }
+
+  public static CScanSettings GetBothAVandDLPCScanSettings(SysEngine sysEngine, bool forceRefresh)
+  {
+    bool flag = forceRefresh;
+    lock ((object) SILGlobals.m_AVDLPCScanSettings)
+    {
+      if (SILGlobals.m_AVDLPCScanSettings == null)
+        flag = true;
+      else if (DateAndTime.DateDiff(DateInterval.Second, SILGlobals.m_stampAVDLPCScanSettings, DateAndTime.Now) > 30L)
+        flag = true;
+      if (flag)
+      {
+        SILGlobals.m_AVDLPCScanSettings = sysEngine.SysGetCScanBoth();
+        SILGlobals.m_stampAVDLPCScanSettings = DateAndTime.Now;
+      }
+    }
+    return SILGlobals.m_AVDLPCScanSettings;
+  }
+
+  public static HostHeaderSettings GetHostHeaderSettings(ref ISysEngine oEngine, bool ForceRefresh)
+  {
+    bool flag = ForceRefresh;
+    lock ((object) SILGlobals.m_HostHeaderSettings)
+    {
+      if (SILGlobals.m_HostHeaderSettings == null)
+        flag = true;
+      if (flag)
+        SILGlobals.m_HostHeaderSettings = oEngine.SysGetHostHeaderSettings();
+    }
+    return SILGlobals.m_HostHeaderSettings;
+  }
+
+  public T GetFromApplicationState<T>(string key, Func<T> factory, bool forceReset = false)
+  {
+    object obj = (object) null;
+    if (!forceReset && this.MyApplicationState != null)
+      obj = RuntimeHelpers.GetObjectValue(this.MyApplicationState.Get(key));
+    if (obj == null || !(obj is T))
+    {
+      obj = (object) factory();
+      this.SetToApplicationState<T>(key, Conversions.ToGenericParameter<T>(obj));
+    }
+    return Conversions.ToGenericParameter<T>(obj);
+  }
+
+  private void SetToApplicationState<T>(string key, T value)
+  {
+    if (this.MyApplicationState == null)
+      return;
+    this.MyApplicationState.Set(key, (object) value);
+  }
+
+  private T GetFromApplicationState<T>(string key, T defaultValue)
+  {
+    return this.GetFromApplicationState<T>(key, (Func<T>) ([SpecialName] () => defaultValue));
+  }
+
+  private IApplicationLogger InitLogger(
+    MOVEit.DMZ.Crosscutting.Contracts.IConfigurationProvider configProvider,
+    IApplicationLogger providedLogger = null)
+  {
+    SILGlobals silGlobals = this;
+    MOVEit.DMZ.Crosscutting.Contracts.IConfigurationProvider configProvider1 = configProvider;
+    IApplicationLogger applicationLogger;
+    if (providedLogger != null)
+    {
+      applicationLogger = providedLogger;
+    }
+    else
+    {
+      string str = $"Logger_{this._debugLogFilename}";
+      // ISSUE: variable of a compiler-generated type
+      VB\u0024AnonymousDelegate_3<FileLogger> anonymousDelegate3_1 = (VB\u0024AnonymousDelegate_3<FileLogger>) ([SpecialName] () => new FileLogger(silGlobals._debugLogFilename, configProvider1));
+      string key = str;
+      // ISSUE: variable of a compiler-generated type
+      VB\u0024AnonymousDelegate_3<FileLogger> anonymousDelegate3_2 = anonymousDelegate3_1;
+      // ISSUE: reference to a compiler-generated method
+      Func<IApplicationLogger> factory = anonymousDelegate3_2 == null ? (Func<IApplicationLogger>) null : new Func<IApplicationLogger>(anonymousDelegate3_2.Invoke);
+      applicationLogger = this.GetFromApplicationState<IApplicationLogger>(key, factory);
+    }
+    return applicationLogger;
+  }
+
+  private void InitGlobals(bool thin, IApplicationLogger providedLogger = null)
+  {
+    DefaultConfigurationProvider configProvider = new DefaultConfigurationProvider();
+    this.objDebug = new SILDebug(this.InitLogger((MOVEit.DMZ.Crosscutting.Contracts.IConfigurationProvider) configProvider, providedLogger), (MOVEit.DMZ.Crosscutting.Contracts.IConfigurationProvider) configProvider);
+    int applicationState = this.GetFromApplicationState<int>("RegistryUpdatedCount", 0);
+    int silRegIntValue = RegUtility.GetSILRegIntValue("Update", -1);
+    this.SettingsHaveBeenUpdated = false;
+    int num1 = silRegIntValue;
+    if (applicationState != num1)
+    {
+      this.SettingsHaveBeenUpdated = true;
+      this.objDebug.ReadDebugSettings();
+    }
+    this.objDebug.Log(50, $"SILGlobals version {"17.1.0.32"} initializing...");
+    this.objWrap = new SILDBWrap(this);
+    this.objUtility = new SILUtility(this, this.OrgKeyProvider);
+    this.objSNIUtil = (SNICOMUtilAPI) new SNICOMUtilAPIClass();
+    this.objI11N = new SILGetMsg();
+    this.objCrypt = (siLockCryptAPI) new siLockCryptAPIClass();
+    this.objSNIEncryption = (SNIEncryptionAPI) new SNIEncryptionAPIClass();
+    if (thin)
+      return;
+    this.objUser = new SILCurrentUser(this, this.FeatureDiscoveryService, this.OrgKeyProvider);
+    this.objEngine = new SILEngine(this, this.FeatureDiscoveryService, this.OrgKeyProvider);
+    this.CurLangCode = this.objSession.GetValue("MyL");
+    if (Operators.CompareString(this.CurLangCode, string.Empty, false) != 0)
+      this.objI11N.SetLang(this.CurLangCode);
+    this.objSessionStub = new SILSessionStub();
+    this.objLicDecode = (ILicDecoder) null;
+    if (SILGlobals.m_filesdirmountstate == null)
+    {
+      try
+      {
+        SILGlobals.m_filesdirmountstate = new FilesDirMountState();
+      }
+      catch (Exception ex)
+      {
+        ProjectData.SetProjectError(ex);
+        SILGlobals.m_filesdirmountstate = (FilesDirMountState) null;
+        ProjectData.ClearProjectError();
+      }
+    }
+    if (SILGlobals.NotificationHash == null)
+    {
+      SILGlobals.UnsynchronizedNotifHash = new Hashtable();
+      SILGlobals.NotificationHash = Hashtable.Synchronized(SILGlobals.UnsynchronizedNotifHash);
+    }
+    this.GetDoLogHashing();
+    this.AllowInsecureQueryStrings = RegUtility.GetSILRegValueDef("AllowInsecureQueryStrings", "0").Equals("1");
+    // ISSUE: variable of a compiler-generated type
+    VB\u0024AnonymousDelegate_3<ILicDecoder> anonymousDelegate3_1 = (VB\u0024AnonymousDelegate_3<ILicDecoder>) ([SpecialName] () =>
+    {
+      this.objUtility.LoadLicense();
+      return this.objLicDecode;
+    });
+    // ISSUE: variable of a compiler-generated type
+    VB\u0024AnonymousDelegate_3<ILicDecoder> anonymousDelegate3_2 = anonymousDelegate3_1;
+    // ISSUE: reference to a compiler-generated method
+    this.objLicDecode = this.GetFromApplicationState<ILicDecoder>("MyLicenseCache", anonymousDelegate3_2 == null ? (Func<ILicDecoder>) null : new Func<ILicDecoder>(anonymousDelegate3_2.Invoke), (this.SettingsHaveBeenUpdated ? 1 : 0) != 0);
+    if (this.SettingsHaveBeenUpdated)
+      this.SetToApplicationState<int>("RegistryUpdatedCount", silRegIntValue);
+    this.SecurityFlags = (long) RegUtility.GetSILRegIntValue("SecurityHeaderFlags", 1085);
+    SILUtility objUtility = this.objUtility;
+    int num2 = 24;
+    ref int local1 = ref num2;
+    int num3 = 20;
+    ref int local2 = ref num3;
+    this.Nonce = objUtility.MakeNewRandomPassword(ref local1, ref local2);
+    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+  }
+
+  public void InitGlobals(
+    HttpRequestBase request,
+    HttpResponseBase response,
+    ISession session,
+    HttpApplicationStateBase applicationState,
+    IApplicationLogger logger = null)
+  {
+    this.MyRequest = request;
+    this.MyResponse = response;
+    this.objSession = session ?? (ISession) new NullSession();
+    this.MyApplicationState = applicationState;
+    this.InitGlobals(false, logger);
+  }
+
+  public void InitGlobals(
+    ref HttpRequest parmRequest,
+    ref HttpResponse parmResponse,
+    ref HttpSessionState parmSession)
+  {
+    ref HttpRequest local1 = ref parmRequest;
+    ref HttpResponse local2 = ref parmResponse;
+    ref HttpSessionState local3 = ref parmSession;
+    HttpApplicationState applicationState = (HttpApplicationState) null;
+    ref HttpApplicationState local4 = ref applicationState;
+    this.InitGlobals(ref local1, ref local2, ref local3, ref local4);
+  }
+
+  public void InitGlobals(
+    ref HttpRequest parmRequest,
+    ref HttpResponse parmResponse,
+    ref HttpSessionState parmSession,
+    ref HttpApplicationState parmApplicationState)
+  {
+    ref HttpRequest local1 = ref parmRequest;
+    ref HttpResponse local2 = ref parmResponse;
+    SILHttpSessionWrapper httpSessionWrapper;
+    if (parmSession != null)
+    {
+      SILGlobals siGlobs = this;
+      httpSessionWrapper = new SILHttpSessionWrapper(ref siGlobs, ref parmSession);
+    }
+    else
+      httpSessionWrapper = (SILHttpSessionWrapper) null;
+    ISession session = (ISession) httpSessionWrapper;
+    ref ISession local3 = ref session;
+    ref HttpApplicationState local4 = ref parmApplicationState;
+    this.InitGlobals(ref local1, ref local2, ref local3, ref local4);
+  }
+
+  public void InitGlobals(
+    ref HttpRequest parmRequest,
+    ref HttpResponse parmResponse,
+    ref ISession session,
+    ref HttpApplicationState parmApplicationState)
+  {
+    this.InitGlobals(parmRequest == null ? (HttpRequestBase) null : (HttpRequestBase) new HttpRequestWrapper(parmRequest), parmResponse == null ? (HttpResponseBase) null : (HttpResponseBase) new HttpResponseWrapper(parmResponse), session, parmApplicationState == null ? (HttpApplicationStateBase) null : (HttpApplicationStateBase) new HttpApplicationStateWrapper(parmApplicationState));
+  }
+
+  public void InitGlobals(ISession session, IApplicationLogger logger)
+  {
+    HttpRequestBase request = (HttpRequestBase) null;
+    HttpResponseBase response = (HttpResponseBase) null;
+    HttpApplicationStateBase applicationState = (HttpApplicationStateBase) null;
+    this.InitGlobals(request, response, session, applicationState, logger);
+  }
+
+  public void InitGlobals(IApplicationLogger logger = null)
+  {
+    this.InitGlobals((ISession) null, logger);
+  }
+
+  public void InitVariables(bool usePooling = true, DbConn dataConnection = null)
+  {
+    this.TheDSN = RegUtility.GetSILRegValueDef("DSN");
+    if (dataConnection == null)
+    {
+      if (!this.objWrap.OpenConn(ref this.TheDSN, usePooling))
+      {
+        this.DBConnected = false;
+        if (!Information.IsNothing((object) this.MyResponse))
+        {
+          this.MyResponse.Write($"<siLockResponse><ErrorCode>{Conversions.ToString(2044)}</ErrorCode><ErrorDescription>Database down!!!</ErrorDescription></siLockResponse>");
+          this.MyResponse.End();
+        }
+      }
+      else
+        this.DBConnected = true;
+    }
+    else
+      this.UseDataConnection(dataConnection);
+    if (!Information.IsNothing((object) this.MyRequest))
+      this.objUtility.XSLPath = SystemSettings.XSLPathRoot;
+    try
+    {
+      if (RegUtility.SILRegValueExists("Resil", "DMZNode"))
+        this.ResiliencyNode = RegUtility.GetSILRegValueDef("Resil", "DMZNode", string.Empty);
+      if (RegUtility.SILRegValueExists("Farm", "AppNode"))
+      {
+        this.ResiliencyNode = RegUtility.GetSILRegValueDef("Farm", "AppNode", string.Empty);
+        this.InWebfarm = true;
+      }
+      if (Operators.CompareString(this.ResiliencyNode, string.Empty, false) == 0)
+        this.ResiliencyNode = "0";
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      this.ResiliencyNode = "0";
+      ProjectData.ClearProjectError();
+    }
+    this.LogAuditToEventLog = RegUtility.GetSILRegValueDef("LogAuditToEventLog", this.LogAuditToEventLog);
+    this.LogAuditEventSourceName = RegUtility.GetSILRegValueDef("LogAuditEventSource", "MOVEit DMZ Audit");
+    this.LogAuditToSyslog = RegUtility.GetSILRegValueDef("LogAuditToSyslog", this.LogAuditToSyslog);
+    try
+    {
+      this.ShowSystemErrorMessages = RegUtility.GetSILRegValue("ShowSystemErrorMessages");
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      this.ShowSystemErrorMessages = "0";
+      RegUtility.SetSILRegValue((IDataConnection) this.objWrap.Connection, "ShowSystemErrorMessages", this.ShowSystemErrorMessages);
+      this.objUtility.IncrementRegistry();
+      ProjectData.ClearProjectError();
+    }
+    bool ForceRefresh = false;
+    if (this.SettingsHaveBeenUpdated | SILGlobals.m_HostHeaderSettings == null)
+      ForceRefresh = true;
+    ISysEngine sysEngine = this.objEngine.sysEngine;
+    this.objHostHeaderSettings = SILGlobals.GetHostHeaderSettings(ref sysEngine, ForceRefresh);
+    try
+    {
+      this.LongTermCookieDuration = RegUtility.GetSILRegValue("LongTermCookieDuration");
+      if (this.LongTermCookieDuration.Length == 0)
+        this.LongTermCookieDuration = "2y";
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      this.LongTermCookieDuration = "2y";
+      RegUtility.SetSILRegValue((IDataConnection) this.objWrap.Connection, "LongTermCookieDuration", this.LongTermCookieDuration);
+      this.objUtility.IncrementRegistry();
+      ProjectData.ClearProjectError();
+    }
+    try
+    {
+      this.LogInsecureFTPFailedSignons = RegUtility.GetSILRegValue("LogInsecureFTPFailedSignons");
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      this.LogInsecureFTPFailedSignons = "1";
+      RegUtility.SetSILRegValue((IDataConnection) this.objWrap.Connection, "LogInsecureFTPFailedSignons", this.LogInsecureFTPFailedSignons);
+      this.objUtility.IncrementRegistry();
+      ProjectData.ClearProjectError();
+    }
+    try
+    {
+      this.ClientPollingIntervalSecs = RegUtility.GetSILRegValue("ClientPollingIntervalSecs");
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      this.ClientPollingIntervalSecs = "30";
+      RegUtility.SetSILRegValue((IDataConnection) this.objWrap.Connection, "ClientPollingIntervalSecs", this.ClientPollingIntervalSecs);
+      this.objUtility.IncrementRegistry();
+      ProjectData.ClearProjectError();
+    }
+    this.objUser.InitClientCertWrapper();
+    this.objUser.ComputeIpAddress();
+  }
+
+  public void UseDataConnection(DbConn dataConnection)
+  {
+    this.objWrap.Connection = dataConnection;
+    this.DBConnected = true;
+  }
+
+  public void ClearArguments()
+  {
+    this.Arg01 = string.Empty;
+    this.Arg02 = string.Empty;
+    this.Arg03 = string.Empty;
+    this.Arg04 = string.Empty;
+    this.Arg05 = string.Empty;
+    this.Arg06 = string.Empty;
+    this.Arg07 = string.Empty;
+    this.Arg08 = string.Empty;
+    this.Arg09 = string.Empty;
+    this.Arg10 = string.Empty;
+    this.Arg11 = string.Empty;
+    this.Arg12 = string.Empty;
+    this.Opt01 = string.Empty;
+    this.Opt02 = string.Empty;
+    this.Opt03 = string.Empty;
+    this.Opt04 = string.Empty;
+    this.Opt05 = string.Empty;
+    this.Opt06 = string.Empty;
+    this.Opt07 = string.Empty;
+    this.Opt08 = string.Empty;
+    this.Opt09 = string.Empty;
+    this.Opt10 = string.Empty;
+    this.Opt11 = string.Empty;
+    this.Opt12 = string.Empty;
+    this.Opt13 = string.Empty;
+    this.Opt14 = string.Empty;
+    this.Opt15 = string.Empty;
+    this.Opt16 = string.Empty;
+    this.Opt17 = string.Empty;
+    this.Opt18 = string.Empty;
+    this.Opt19 = string.Empty;
+    this.Opt20 = string.Empty;
+    this.Opt21 = string.Empty;
+    this.Opt22 = string.Empty;
+    this.Opt23 = string.Empty;
+    this.Opt24 = string.Empty;
+    this.Opt25 = string.Empty;
+    this.Opt26 = string.Empty;
+    this.Opt27 = string.Empty;
+    this.Opt28 = string.Empty;
+    this.Opt29 = string.Empty;
+    this.Opt30 = string.Empty;
+    this.Opt31 = string.Empty;
+    this.Opt32 = string.Empty;
+  }
+
+  public void SaveArgumentsToSessionForRedirect(bool bMFACredsOnly = false)
+  {
+    DMLBulkInsert dmlBulkInsert = new DMLBulkInsert(this, "sessionvars", new string[5]
+    {
+      "SessionID",
+      "InstID",
+      "Name",
+      "Value",
+      "LastTouchedStamp"
+    });
+    int result = 0;
+    int.TryParse(this.OrgID, out result);
+    string str = "NULL";
+    if (this.objUser.IsAnonymous())
+      str = !SILUtility.StrToBool(this.FromSignonMFA) || string.IsNullOrEmpty(this.SessionVarsStamp) ? this.objWrap.FormatDate((object) DateTime.Now) : this.objWrap.FormatDate((object) this.SessionVarsStamp);
+    if (!string.IsNullOrEmpty(this.LoginName))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "LoginName", (object) SILUtility.DBFieldEncryptByOrg(this.LoginName, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Password))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Password", (object) SILUtility.DBFieldEncryptByOrg(this.Password, result), (object) str);
+    if (!string.IsNullOrEmpty(this.PasswordChangeCode))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "PasswordChangeCode", (object) SILUtility.DBFieldEncryptByOrg(this.PasswordChangeCode, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Challenge))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Challenge", (object) SILUtility.DBFieldEncryptByOrg(this.Challenge, result), (object) str);
+    if (!string.IsNullOrEmpty(this.TrustDevice))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "TrustDevice", (object) SILUtility.DBFieldEncryptByOrg(this.TrustDevice, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Transaction))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Transaction", (object) SILUtility.DBFieldEncryptByOrg(this.Transaction, result), (object) str);
+    if (!string.IsNullOrEmpty(this.CsrfTokenIncoming))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "CsrfTokenIncoming", (object) SILUtility.DBFieldEncryptByOrg(this.CsrfTokenIncoming, result), (object) str);
+    if (!string.IsNullOrEmpty(this.FromSignon))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "FromSignon", (object) SILUtility.DBFieldEncryptByOrg(this.FromSignon, result), (object) str);
+    if (!string.IsNullOrEmpty(this.FromSignonMFA))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "FromSignonMFA", (object) SILUtility.DBFieldEncryptByOrg(this.FromSignonMFA, result), (object) str);
+    if (!string.IsNullOrEmpty(this.FromCertToUser))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "FromCertToUser", (object) SILUtility.DBFieldEncryptByOrg(this.FromCertToUser, result), (object) str);
+    if (!string.IsNullOrEmpty(this.ContentOnly))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "ContentOnly", (object) SILUtility.DBFieldEncryptByOrg(this.ContentOnly, result), (object) str);
+    if (!string.IsNullOrEmpty(this.ForceNonMobile))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "ForceNonMobile", (object) SILUtility.DBFieldEncryptByOrg(this.ForceNonMobile, result), (object) str);
+    if (!string.IsNullOrEmpty(this.LicAgentBrand))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "LicAgentBrand", (object) SILUtility.DBFieldEncryptByOrg(this.LicAgentBrand, result), (object) str);
+    if (!string.IsNullOrEmpty(this.AgentBrand))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "AgentBrand", (object) SILUtility.DBFieldEncryptByOrg(this.AgentBrand, result), (object) str);
+    if (!string.IsNullOrEmpty(this.AgentVersion))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "AgentVersion", (object) SILUtility.DBFieldEncryptByOrg(this.AgentVersion, result), (object) str);
+    if (!string.IsNullOrEmpty(this.MFATemp))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "MFATemp", (object) SILUtility.DBFieldEncryptByOrg(this.MFATemp, result), (object) str);
+    if (!string.IsNullOrEmpty(this.MFAStatus))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "MFAStatus", (object) SILUtility.DBFieldEncryptByOrg(this.MFAStatus, result), (object) str);
+    if (!string.IsNullOrEmpty(this.MFAEmail))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "MFAEmail", (object) SILUtility.DBFieldEncryptByOrg(this.MFAEmail, result), (object) str);
+    if (!string.IsNullOrEmpty(this.RequestEmailCode))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "RequestEmailCode", (object) SILUtility.DBFieldEncryptByOrg(this.RequestEmailCode, result), (object) str);
+    if (!string.IsNullOrEmpty(this.SuggestedPassword))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "SuggestedPassword", (object) SILUtility.DBFieldEncryptByOrg(this.SuggestedPassword, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Arg01))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Arg01", (object) SILUtility.DBFieldEncryptByOrg(this.Arg01, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Arg02))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Arg02", (object) SILUtility.DBFieldEncryptByOrg(this.Arg02, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Arg03))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Arg03", (object) SILUtility.DBFieldEncryptByOrg(this.Arg03, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Arg04))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Arg04", (object) SILUtility.DBFieldEncryptByOrg(this.Arg04, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Arg05))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Arg05", (object) SILUtility.DBFieldEncryptByOrg(this.Arg05, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Arg06))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Arg06", (object) SILUtility.DBFieldEncryptByOrg(this.Arg06, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Arg07))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Arg07", (object) SILUtility.DBFieldEncryptByOrg(this.Arg07, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Arg08))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Arg08", (object) SILUtility.DBFieldEncryptByOrg(this.Arg08, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Arg09))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Arg09", (object) SILUtility.DBFieldEncryptByOrg(this.Arg09, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Arg10))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Arg10", (object) SILUtility.DBFieldEncryptByOrg(this.Arg10, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Arg11))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Arg11", (object) SILUtility.DBFieldEncryptByOrg(this.Arg11, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Arg12))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Arg12", (object) SILUtility.DBFieldEncryptByOrg(this.Arg12, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt01))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt01", (object) SILUtility.DBFieldEncryptByOrg(this.Opt01, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt02))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt02", (object) SILUtility.DBFieldEncryptByOrg(this.Opt02, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt03))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt03", (object) SILUtility.DBFieldEncryptByOrg(this.Opt03, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt04))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt04", (object) SILUtility.DBFieldEncryptByOrg(this.Opt04, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt05))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt05", (object) SILUtility.DBFieldEncryptByOrg(this.Opt05, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt06))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt06", (object) SILUtility.DBFieldEncryptByOrg(this.Opt06, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt07))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt07", (object) SILUtility.DBFieldEncryptByOrg(this.Opt07, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt08))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt08", (object) SILUtility.DBFieldEncryptByOrg(this.Opt08, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt09))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt09", (object) SILUtility.DBFieldEncryptByOrg(this.Opt09, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt10))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt10", (object) SILUtility.DBFieldEncryptByOrg(this.Opt10, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt11))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt11", (object) SILUtility.DBFieldEncryptByOrg(this.Opt11, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt12))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt12", (object) SILUtility.DBFieldEncryptByOrg(this.Opt12, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt13))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt13", (object) SILUtility.DBFieldEncryptByOrg(this.Opt13, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt14))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt14", (object) SILUtility.DBFieldEncryptByOrg(this.Opt14, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt15))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt15", (object) SILUtility.DBFieldEncryptByOrg(this.Opt15, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt16))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt16", (object) SILUtility.DBFieldEncryptByOrg(this.Opt16, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt17))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt17", (object) SILUtility.DBFieldEncryptByOrg(this.Opt17, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt18))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt18", (object) SILUtility.DBFieldEncryptByOrg(this.Opt18, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt19))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt19", (object) SILUtility.DBFieldEncryptByOrg(this.Opt19, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt20))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt20", (object) SILUtility.DBFieldEncryptByOrg(this.Opt20, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt21))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt21", (object) SILUtility.DBFieldEncryptByOrg(this.Opt21, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt22))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt22", (object) SILUtility.DBFieldEncryptByOrg(this.Opt22, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt23))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt23", (object) SILUtility.DBFieldEncryptByOrg(this.Opt23, result), (object) str);
+    if (!string.IsNullOrEmpty(this.Opt24))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "Opt24", (object) SILUtility.DBFieldEncryptByOrg(this.Opt24, result), (object) str);
+    dmlBulkInsert.DoInserts();
+  }
+
+  public virtual void SaveArgumentsToSessionForMFA(bool bSaveCreds = false)
+  {
+    DMLBulkInsert dmlBulkInsert = new DMLBulkInsert(this, "sessionvars", new string[5]
+    {
+      "SessionID",
+      "InstID",
+      "Name",
+      "Value",
+      "LastTouchedStamp"
+    });
+    int result = 0;
+    int.TryParse(this.OrgID, out result);
+    string str = "NULL";
+    if (this.objUser.IsAnonymous())
+      str = !bSaveCreds || string.IsNullOrEmpty(this.SessionVarsStamp) ? this.objWrap.FormatDate((object) DateTime.Now) : this.objWrap.FormatDate((object) this.SessionVarsStamp);
+    if (!string.IsNullOrEmpty(this.MFATemp))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "MFATemp", (object) SILUtility.DBFieldEncryptByOrg(this.MFATemp, result), (object) str);
+    if (bSaveCreds)
+    {
+      if (!string.IsNullOrEmpty(this.LoginName))
+        dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "MFALoginName", (object) SILUtility.DBFieldEncryptByOrg(this.LoginName, result), (object) str);
+      if (!string.IsNullOrEmpty(this.Password))
+        dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "MFAPassword", (object) SILUtility.DBFieldEncryptByOrg(this.Password, result), (object) str);
+      if (!string.IsNullOrEmpty(this.PasswordChangeCode))
+        dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "MFAPasswordChangeCode", (object) SILUtility.DBFieldEncryptByOrg(this.PasswordChangeCode, result), (object) str);
+    }
+    dmlBulkInsert.DoInserts();
+  }
+
+  public virtual void SaveArgumentsToSessionForOIDC()
+  {
+    DMLBulkInsert dmlBulkInsert = new DMLBulkInsert(this, "sessionvars", new string[5]
+    {
+      "SessionID",
+      "InstID",
+      "Name",
+      "Value",
+      "LastTouchedStamp"
+    });
+    int result = 0;
+    int.TryParse(this.OrgID, out result);
+    string str = "NULL";
+    if (this.objUser.IsAnonymous())
+      str = string.IsNullOrEmpty(this.SessionVarsStamp) ? this.objWrap.FormatDate((object) DateTime.Now) : this.objWrap.FormatDate((object) this.SessionVarsStamp);
+    if (!string.IsNullOrEmpty(this.SSOType))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "SSOType", (object) SILUtility.DBFieldEncryptByOrg(this.SSOType, result), (object) str);
+    if (!string.IsNullOrEmpty(this.OIDCState))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "OIDCState", (object) SILUtility.DBFieldEncryptByOrg(this.OIDCState, result), (object) str);
+    if (!string.IsNullOrEmpty(this.OIDCNonce))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "OIDCNonce", (object) SILUtility.DBFieldEncryptByOrg(this.OIDCNonce, result), (object) str);
+    if (!string.IsNullOrEmpty(this.OIDCCodeVerifier))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "OIDCCodeVerifier", (object) SILUtility.DBFieldEncryptByOrg(this.OIDCCodeVerifier, result), (object) str);
+    if (!string.IsNullOrEmpty(this.OIDCIdpId))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "OIDCIdpId", (object) SILUtility.DBFieldEncryptByOrg(this.OIDCIdpId, result), (object) str);
+    if (!string.IsNullOrEmpty(this.ExternalClient))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "ExternalClient", (object) SILUtility.DBFieldEncryptByOrg(this.ExternalClient, result), (object) str);
+    if (!string.IsNullOrEmpty(this.ExternalCodeChallenge))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "ExternalCodeChallenge", (object) SILUtility.DBFieldEncryptByOrg(this.ExternalCodeChallenge, result), (object) str);
+    if (!string.IsNullOrEmpty(this.OIDCIdToken))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "OIDCIdToken", (object) SILUtility.DBFieldEncryptByOrg(this.OIDCIdToken, result), (object) str);
+    dmlBulkInsert.DoInserts();
+  }
+
+  public void SaveArgumentsToSessionForSuggestedPassword()
+  {
+    DMLBulkInsert dmlBulkInsert = new DMLBulkInsert(this, "sessionvars", new string[5]
+    {
+      "SessionID",
+      "InstID",
+      "Name",
+      "Value",
+      "LastTouchedStamp"
+    });
+    int result = 0;
+    int.TryParse(this.OrgID, out result);
+    string str = "NULL";
+    if (this.objUser.IsAnonymous())
+      str = string.IsNullOrEmpty(this.SessionVarsStamp) ? this.objWrap.FormatDate((object) DateTime.Now) : this.objWrap.FormatDate((object) this.SessionVarsStamp);
+    if (!string.IsNullOrEmpty(this.SuggestedPassword))
+      dmlBulkInsert.AddRecord((object) this.objSession.SessionId, (object) result, (object) "SuggestedPassword", (object) SILUtility.DBFieldEncryptByOrg(this.SuggestedPassword, result), (object) str);
+    dmlBulkInsert.DoInserts();
+  }
+
+  public void LoadArgumentsFromSessionIfNeeded(string targetSessionId = "")
+  {
+    string str1 = string.IsNullOrWhiteSpace(targetSessionId) ? this.objSession.SessionId : targetSessionId;
+    using (IRecordset recordset = new SQLBasicBuilder(this.objWrap, SqlTable.SessionVars).AddColumnsToSelect("Name", "Value", "InstID", "LastTouchedStamp").AddAndColumnEqualsToWhere<string>("SessionID", str1, true).AddAndToWhere($"(LastTouchedStamp IS NULL OR LastTouchedStamp > TIMESTAMPADD(MINUTE, -{5}, CURRENT_TIMESTAMP))").SelectQuery())
+    {
+      if (recordset.EOF)
+        return;
+      int result = 0;
+      int.TryParse(Conversions.ToString(recordset["InstID"].Value), out result);
+      object objectValue = RuntimeHelpers.GetObjectValue(recordset["LastTouchedStamp"].Value);
+      string str2 = "";
+      ref string local = ref str2;
+      this.SessionVarsStamp = SILDBWrap.MakeNonNull(objectValue, ref local);
+      string str3 = "";
+      string str4 = "";
+      string str5 = "";
+      this.objDebug.Log(60, this.AspName + "Arguments present in session, overriding received values");
+      while (!recordset.EOF)
+      {
+        string str6 = Conversions.ToString(recordset["Name"].Value);
+        string str7 = this.objUtility.DBFieldDecryptByOrg(Conversions.ToString(recordset["Value"].Value), result);
+        // ISSUE: reference to a compiler-generated method
+        switch (\u003CPrivateImplementationDetails\u003E.ComputeStringHash(str6))
+        {
+          case 124138627:
+            if (Operators.CompareString(str6, "MFAStatus", false) == 0)
+            {
+              this.MFAStatus = str7;
+              break;
+            }
+            break;
+          case 128815145:
+            if (Operators.CompareString(str6, "ForceNonMobile", false) == 0)
+            {
+              this.ForceNonMobile = str7;
+              break;
+            }
+            break;
+          case 173670634:
+            if (Operators.CompareString(str6, "AgentVersion", false) == 0)
+            {
+              this.AgentVersion = str7;
+              break;
+            }
+            break;
+          case 338882513:
+            if (Operators.CompareString(str6, "FromCertToUser", false) == 0)
+            {
+              this.FromCertToUser = str7;
+              break;
+            }
+            break;
+          case 532626459:
+            if (Operators.CompareString(str6, "MFATemp", false) == 0)
+            {
+              this.MFATemp = str7;
+              break;
+            }
+            break;
+          case 589962313:
+            if (Operators.CompareString(str6, "ExternalClient", false) == 0)
+            {
+              this.ExternalClient = str7;
+              break;
+            }
+            break;
+          case 590796218:
+            if (Operators.CompareString(str6, "OIDCIdpId", false) == 0)
+            {
+              this.OIDCIdpId = str7;
+              break;
+            }
+            break;
+          case 604332132:
+            if (Operators.CompareString(str6, "ContentOnly", false) == 0)
+            {
+              this.ContentOnly = str7;
+              break;
+            }
+            break;
+          case 638036981:
+            if (Operators.CompareString(str6, "MFALoginName", false) == 0)
+            {
+              str3 = str7;
+              break;
+            }
+            break;
+          case 750979128:
+            if (Operators.CompareString(str6, "Password", false) == 0)
+            {
+              this.Password = str7;
+              break;
+            }
+            break;
+          case 782279552:
+            if (Operators.CompareString(str6, "Opt11", false) == 0)
+            {
+              this.Opt11 = str7;
+              break;
+            }
+            break;
+          case 799057171:
+            if (Operators.CompareString(str6, "Opt10", false) == 0)
+            {
+              this.Opt10 = str7;
+              break;
+            }
+            break;
+          case 815834790:
+            if (Operators.CompareString(str6, "Opt13", false) == 0)
+            {
+              this.Opt13 = str7;
+              break;
+            }
+            break;
+          case 832612409:
+            if (Operators.CompareString(str6, "Opt12", false) == 0)
+            {
+              this.Opt12 = str7;
+              break;
+            }
+            break;
+          case 849390028:
+            if (Operators.CompareString(str6, "Opt15", false) == 0)
+            {
+              this.Opt15 = str7;
+              break;
+            }
+            break;
+          case 866167647:
+            if (Operators.CompareString(str6, "Opt14", false) == 0)
+            {
+              this.Opt14 = str7;
+              break;
+            }
+            break;
+          case 882945266:
+            if (Operators.CompareString(str6, "Opt17", false) == 0)
+            {
+              this.Opt17 = str7;
+              break;
+            }
+            break;
+          case 899722885:
+            if (Operators.CompareString(str6, "Opt16", false) == 0)
+            {
+              this.Opt16 = str7;
+              break;
+            }
+            break;
+          case 916500504:
+            if (Operators.CompareString(str6, "Opt19", false) == 0)
+            {
+              this.Opt19 = str7;
+              break;
+            }
+            break;
+          case 923219129:
+            if (Operators.CompareString(str6, "LicAgentBrand", false) == 0)
+            {
+              this.LicAgentBrand = str7;
+              break;
+            }
+            break;
+          case 929596709:
+            if (Operators.CompareString(str6, "PasswordChangeCode", false) == 0)
+            {
+              this.PasswordChangeCode = str7;
+              break;
+            }
+            break;
+          case 933278123:
+            if (Operators.CompareString(str6, "Opt18", false) == 0)
+            {
+              this.Opt18 = str7;
+              break;
+            }
+            break;
+          case 975671752:
+            if (Operators.CompareString(str6, "ExternalCodeChallenge", false) == 0)
+            {
+              this.ExternalCodeChallenge = str7;
+              break;
+            }
+            break;
+          case 987249744:
+            if (Operators.CompareString(str6, "Arg12", false) == 0)
+            {
+              this.Arg12 = str7;
+              break;
+            }
+            break;
+          case 1020804982:
+            if (Operators.CompareString(str6, "Arg10", false) == 0)
+            {
+              this.Arg10 = str7;
+              break;
+            }
+            break;
+          case 1037582601:
+            if (Operators.CompareString(str6, "Arg11", false) == 0)
+            {
+              this.Arg11 = str7;
+              break;
+            }
+            break;
+          case 1037729696:
+            if (Operators.CompareString(str6, "Arg05", false) == 0)
+            {
+              this.Arg05 = str7;
+              break;
+            }
+            break;
+          case 1054507315:
+            if (Operators.CompareString(str6, "Arg04", false) == 0)
+            {
+              this.Arg04 = str7;
+              break;
+            }
+            break;
+          case 1071284934:
+            if (Operators.CompareString(str6, "Arg07", false) == 0)
+            {
+              this.Arg07 = str7;
+              break;
+            }
+            break;
+          case 1088062553:
+            if (Operators.CompareString(str6, "Arg06", false) == 0)
+            {
+              this.Arg06 = str7;
+              break;
+            }
+            break;
+          case 1100907218:
+            if (Operators.CompareString(str6, "Opt08", false) == 0)
+            {
+              this.Opt08 = str7;
+              break;
+            }
+            break;
+          case 1104840172:
+            if (Operators.CompareString(str6, "Arg01", false) == 0)
+            {
+              this.Arg01 = str7;
+              break;
+            }
+            break;
+          case 1117684837:
+            if (Operators.CompareString(str6, "Opt09", false) == 0)
+            {
+              this.Opt09 = str7;
+              break;
+            }
+            break;
+          case 1134462456:
+            if (Operators.CompareString(str6, "Opt06", false) == 0)
+            {
+              this.Opt06 = str7;
+              break;
+            }
+            break;
+          case 1138395410:
+            if (Operators.CompareString(str6, "Arg03", false) == 0)
+            {
+              this.Arg03 = str7;
+              break;
+            }
+            break;
+          case 1151240075:
+            if (Operators.CompareString(str6, "Opt07", false) == 0)
+            {
+              this.Opt07 = str7;
+              break;
+            }
+            break;
+          case 1155173029:
+            if (Operators.CompareString(str6, "Arg02", false) == 0)
+            {
+              this.Arg02 = str7;
+              break;
+            }
+            break;
+          case 1168017694:
+            if (Operators.CompareString(str6, "Opt04", false) == 0)
+            {
+              this.Opt04 = str7;
+              break;
+            }
+            break;
+          case 1184795313:
+            if (Operators.CompareString(str6, "Opt05", false) == 0)
+            {
+              this.Opt05 = str7;
+              break;
+            }
+            break;
+          case 1196731679:
+            if (Operators.CompareString(str6, "OIDCNonce", false) == 0)
+            {
+              this.OIDCNonce = str7;
+              break;
+            }
+            break;
+          case 1201572932:
+            if (Operators.CompareString(str6, "Opt02", false) == 0)
+            {
+              this.Opt02 = str7;
+              break;
+            }
+            break;
+          case 1218350551:
+            if (Operators.CompareString(str6, "Opt03", false) == 0)
+            {
+              this.Opt03 = str7;
+              break;
+            }
+            break;
+          case 1239061124:
+            if (Operators.CompareString(str6, "Arg09", false) == 0)
+            {
+              this.Arg09 = str7;
+              break;
+            }
+            break;
+          case 1251905789:
+            if (Operators.CompareString(str6, "Opt01", false) == 0)
+            {
+              this.Opt01 = str7;
+              break;
+            }
+            break;
+          case 1255838743:
+            if (Operators.CompareString(str6, "Arg08", false) == 0)
+            {
+              this.Arg08 = str7;
+              break;
+            }
+            break;
+          case 1461249341:
+            if (Operators.CompareString(str6, "FromSignon", false) == 0)
+            {
+              this.FromSignon = str7;
+              break;
+            }
+            break;
+          case 1607089962:
+            if (Operators.CompareString(str6, "OIDCIdToken", false) == 0)
+            {
+              this.OIDCIdToken = str7;
+              break;
+            }
+            break;
+          case 1897917763:
+            if (Operators.CompareString(str6, "TrustDevice", false) == 0)
+            {
+              this.TrustDevice = str7;
+              break;
+            }
+            break;
+          case 2024465360:
+            if (Operators.CompareString(str6, "CsrfTokenIncoming", false) == 0)
+            {
+              this.CsrfTokenIncoming = str7;
+              break;
+            }
+            break;
+          case 2498675643:
+            if (Operators.CompareString(str6, "AgentBrand", false) == 0)
+            {
+              this.AgentBrand = str7;
+              break;
+            }
+            break;
+          case 2584555004:
+            if (Operators.CompareString(str6, "MFAPassword", false) == 0)
+            {
+              str4 = str7;
+              break;
+            }
+            break;
+          case 2621391817:
+            if (Operators.CompareString(str6, "MFAPasswordChangeCode", false) == 0)
+            {
+              str5 = str7;
+              break;
+            }
+            break;
+          case 2637417011:
+            if (Operators.CompareString(str6, "OIDCCodeVerifier", false) == 0)
+            {
+              this.OIDCCodeVerifier = str7;
+              break;
+            }
+            break;
+          case 2655732275:
+            if (Operators.CompareString(str6, "MFAEmail", false) == 0)
+            {
+              this.MFAEmail = str7;
+              break;
+            }
+            break;
+          case 2813166302:
+            if (Operators.CompareString(str6, "Challenge", false) == 0)
+            {
+              this.Challenge = str7;
+              break;
+            }
+            break;
+          case 3101332204:
+            if (Operators.CompareString(str6, "SSOType", false) == 0)
+            {
+              this.SSOType = str7;
+              break;
+            }
+            break;
+          case 3180934616:
+            if (Operators.CompareString(str6, "Opt20", false) == 0)
+            {
+              this.Opt20 = str7;
+              break;
+            }
+            break;
+          case 3197712235:
+            if (Operators.CompareString(str6, "Opt21", false) == 0)
+            {
+              this.Opt21 = str7;
+              break;
+            }
+            break;
+          case 3214489854:
+            if (Operators.CompareString(str6, "Opt22", false) == 0)
+            {
+              this.Opt22 = str7;
+              break;
+            }
+            break;
+          case 3231267473:
+            if (Operators.CompareString(str6, "Opt23", false) == 0)
+            {
+              this.Opt23 = str7;
+              break;
+            }
+            break;
+          case 3248045092:
+            if (Operators.CompareString(str6, "Opt24", false) == 0)
+            {
+              this.Opt24 = str7;
+              break;
+            }
+            break;
+          case 3308286649:
+            if (Operators.CompareString(str6, "LoginName", false) == 0)
+            {
+              this.LoginName = str7;
+              break;
+            }
+            break;
+          case 3494386371:
+            if (Operators.CompareString(str6, "Transaction", false) == 0)
+            {
+              this.Transaction = str7;
+              break;
+            }
+            break;
+          case 3553178201:
+            if (Operators.CompareString(str6, "FromSignonMFA", false) == 0)
+            {
+              this.FromSignonMFA = str7;
+              break;
+            }
+            break;
+          case 3682382019:
+            if (Operators.CompareString(str6, "RequestEmailCode", false) == 0)
+            {
+              this.RequestEmailCode = str7;
+              break;
+            }
+            break;
+          case 3999633461:
+            if (Operators.CompareString(str6, "OIDCState", false) == 0)
+            {
+              this.OIDCState = str7;
+              break;
+            }
+            break;
+          case 4176991613:
+            if (Operators.CompareString(str6, "SuggestedPassword", false) == 0)
+            {
+              this.SuggestedPassword = str7;
+              break;
+            }
+            break;
+        }
+        recordset.MoveNext();
+      }
+      if (SILUtility.StrToBool(this.FromSignonMFA) && Operators.CompareString(this.LoginName, "", false) == 0 && Operators.CompareString(this.PasswordChangeCode, "", false) == 0)
+      {
+        this.LoginName = str3;
+        this.Password = str4;
+        this.PasswordChangeCode = str5;
+      }
+      new SqlDeleteBuilder(this.objWrap, SqlTable.SessionVars).AddAndColumnEqualsToWhere("SessionID", (object) str1, true).Execute();
+    }
+  }
+
+  public void CleanupVariables() => this.objWrap?.CloseConn();
+
+  public void UnmountShareIfNecessary()
+  {
+    SILGlobals.m_filesdirmountstate?.UnmountShareIfNecessary();
+  }
+
+  public void SendSyslogMessage(
+    Severity Severity,
+    DateTime Timestamp,
+    string MessageHeader,
+    string Message)
+  {
+    object objSyslogLock = SILGlobals.objSyslogLock;
+    ObjectFlowControl.CheckForSyncLockOnValueType(objSyslogLock);
+    bool lockTaken = false;
+    try
+    {
+      Monitor.Enter(objSyslogLock, ref lockTaken);
+      if (SILGlobals.SyslogFailedToInit)
+      {
+        this.objDebug.Log(50, "SendSyslogMessage: A previous attempt to initialize a Syslog connection failed. We will refrain from sending Syslog messages until this has been resolved. Please visit the system settings page \"System - Auditing - Syslog\" to change or test your Syslog settings.");
+        return;
+      }
+      if (SILGlobals.objSyslog == null)
+      {
+        if (Operators.CompareString(this.LogAuditToSyslog, "1", false) == 0)
+        {
+          string silRegValueDef = RegUtility.GetSILRegValueDef("LogAuditSyslogHost", "");
+          string Left1 = RegUtility.GetSILRegValueDef("LogAuditSyslogPort", "514");
+          if (Operators.CompareString(Left1, string.Empty, false) == 0)
+            Left1 = "514";
+          string Left2 = RegUtility.GetSILRegValueDef("LogAuditSyslogFacility", "11");
+          if (Operators.CompareString(Left2, string.Empty, false) == 0)
+            Left2 = "11";
+          if (!this.InitSyslog(silRegValueDef, Conversions.ToInteger(Left1), (Facility) Conversions.ToInteger(Left2)))
+          {
+            this.objDebug.Log(10, "SendSyslogMessage: Not sending Syslog message: Failed to initialize object");
+            SILGlobals.SyslogFailedToInit = true;
+            return;
+          }
+          this.objDebug.Log(50, "SendSyslogMessage: Successfully initialzed Syslog connection");
+        }
+      }
+    }
+    finally
+    {
+      if (lockTaken)
+        Monitor.Exit(objSyslogLock);
+    }
+    try
+    {
+      SILGlobals.objSyslog.SendMessageRecur(Severity, Timestamp, MessageHeader, Message);
+      this.objDebug.Log(50, "SendSyslogMessage: Message successfully sent to Syslog host");
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      this.objDebug.Log(20, "SendSyslogMessage: Error sending log entry to Syslog host: " + ex.Message);
+      ProjectData.ClearProjectError();
+    }
+  }
+
+  public bool InitSyslog(string Host, int Port, Facility Facility)
+  {
+    bool flag = true;
+    try
+    {
+      SILGlobals.objSyslog = new BsdSyslogSender(Host, Port, Facility, "MOVEitDMZ_17.1.0.32");
+      this.objDebug.Log(50, "InitSyslog: Successfully initialized Syslog connection");
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      this.objDebug.Log(10, "InitSyslog: Failed to initialze Syslog connection: " + ex.Message);
+      flag = false;
+      ProjectData.ClearProjectError();
+    }
+    return flag;
+  }
+
+  public void GetDoLogHashing()
+  {
+    this.m_bDoLogHashing = Operators.CompareString(RegUtility.GetSILRegValueDef("SuppressHashing", "0"), "1", false) != 0;
+  }
+
+  public int GetDBResilNode() => RegUtility.GetSILRegIntValue("Resil", "SQLNode", 0);
+
+  public bool DoLogHashing() => this.m_bDoLogHashing;
+
+  public bool IsPrimaryOrOnlyDBNode()
+  {
+    bool flag = true;
+    int dbResilNode = this.GetDBResilNode();
+    if (dbResilNode != 0)
+      flag = Operators.CompareString(this.TheDSN.ToLower(), "moveitdmz", false) == 0 & 1 == dbResilNode || Operators.CompareString(this.TheDSN.ToLower(), "moveitdmz2", false) == 0 & 2 == dbResilNode;
+    return flag;
+  }
+
+  public void GetOrgID(string InOrgID = "")
+  {
+    string rawWebVar = this.GetRawWebVar(this.RequestType, "Username");
+    string inputOrgID = this.OrgIDFromRequest;
+    if (string.IsNullOrEmpty(inputOrgID))
+      inputOrgID = this.GetRawWebVar(this.RequestType, "OrgID");
+    if (string.IsNullOrEmpty(inputOrgID))
+      inputOrgID = this.GetRawWebVar(this.RequestType, "InstID");
+    this.GetOrgID(rawWebVar, inputOrgID, InOrgID);
+  }
+
+  public virtual void GetOrgID(string inputLoginName, string inputOrgID, string InOrgID = "")
+  {
+    string str1 = "\\";
+    string str2 = string.Empty;
+    if (inputLoginName.Contains(str1))
+    {
+      str2 = SILUtility.XHTMLClean(inputLoginName.Substring(0, inputLoginName.IndexOf(str1)));
+      this.LoginName = SILUtility.XHTMLClean(inputLoginName.Substring(checked (inputLoginName.IndexOf(str1) + 1)));
+    }
+    string Expression1 = InOrgID;
+    if (Versioned.IsNumeric((object) Expression1))
+    {
+      this.objDebug.Log(60, $"SILGlobals.GetOrgID: Found orgID '{Expression1}' supplied in the InOrgID param");
+      this.OrgID = Expression1;
+    }
+    else
+    {
+      string Expression2 = this.objSession.GetValue("MyInstID");
+      if (Versioned.IsNumeric((object) Expression2))
+      {
+        this.objDebug.Log(60, $"SILGlobals.GetOrgID: Found orgID '{Expression2}' in session");
+        this.OrgID = Expression2;
+      }
+      else
+      {
+        SQLBasicBuilder where = new SQLBasicBuilder(this.objWrap, SqlTable.Institutions).AddColumnToSelect("ID").AddAndToWhere($"ID={this.objWrap.P("ID")}");
+        if (Operators.CompareString(str2, string.Empty, false) != 0)
+        {
+          if (this.objUtility.isValidValueInRange(str2, 0L, 9999L))
+          {
+            string Expression3 = where.WithParameter("ID", (object) int.Parse(str2)).SelectQueryValue();
+            if (Versioned.IsNumeric((object) Expression3))
+            {
+              this.objDebug.Log(60, $"SILGlobals.GetOrgID: Matched orgID '{Expression3}' from provided prefix '{str2}'");
+              this.OrgID = Expression3;
+              return;
+            }
+          }
+          string Expression4 = new SQLBasicBuilder(this.objWrap, SqlTable.Institutions).AddColumnToSelect("ID").AddOrToWhere($"Name={this.objWrap.P("SearchString")}").AddOrToWhere($"ShortName={this.objWrap.P("SearchString")}").WithParameter("SearchString", (object) str2).SelectQueryValue();
+          if (Versioned.IsNumeric((object) Expression4))
+          {
+            this.objDebug.Log(60, $"SILGlobals.GetOrgID: Matched orgID '{Expression4}' from provided prefix '{str2}'");
+            this.OrgID = Expression4;
+            return;
+          }
+        }
+        string str3 = inputOrgID;
+        if (Operators.CompareString(str3, string.Empty, false) != 0)
+        {
+          if (this.objUtility.isValidValueInRange(str3, 0L, 9999L))
+          {
+            string Expression5 = where.WithParameter("ID", (object) int.Parse(str3)).SelectQueryValue();
+            if (Versioned.IsNumeric((object) Expression5))
+            {
+              this.objDebug.Log(60, $"SILGlobals.GetOrgID: Found orgID '{Expression5}' in request");
+              this.OrgID = Expression5;
+              return;
+            }
+          }
+          else
+            this.objDebug.Log(60, $"SILGlobals.GetOrgID: Form input orgID '{str3}' is invalid, ignoring...");
+        }
+        if (Information.IsNothing((object) this.MyRequest))
+        {
+          this.objDebug.Log(50, "SILGlobals.GetOrgID: MyRequest is NULL; unable to attempt to get orgID from hostname or cookie");
+        }
+        else
+        {
+          string s1 = this.MyRequest.Headers.Get("X-IPSGW-OrgID");
+          if (this.objUtility.isValidValueInRange(s1, 0L, 9999L))
+          {
+            string Expression6 = where.WithParameter("ID", (object) int.Parse(s1)).SelectQueryValue();
+            if (Versioned.IsNumeric((object) Expression6))
+            {
+              this.objDebug.Log(60, $"SILGlobals.GetOrgID: Found orgID '{Expression6}' in the {"X-IPSGW-OrgID"} header");
+              this.OrgID = Expression6;
+              return;
+            }
+          }
+          else
+            this.objDebug.Log(60, $"SILGlobals.GetOrgID: No or invalid org ID specified in the {"X-IPSGW-OrgID"} header");
+          string idFromHostname = this.objEngine.orgEngine.InstGetIDFromHostname(this.MyRequest.ServerVariables.Get("HTTP_HOST"));
+          if (Versioned.IsNumeric((object) idFromHostname))
+          {
+            this.objDebug.Log(60, $"SILGlobals.GetOrgID: Matched orgID '{idFromHostname}' from hostname '{this.MyRequest.ServerVariables.Get("HTTP_HOST")}'");
+            this.OrgID = idFromHostname;
+            return;
+          }
+          try
+          {
+            string s2 = this.MyRequest.Cookies["siLockLongTermInstID"].Value;
+            if (this.objUtility.isValidValueInRange(s2, 0L, 9999L))
+            {
+              string Expression7 = where.WithParameter("ID", (object) int.Parse(s2)).SelectQueryValue();
+              if (Versioned.IsNumeric((object) Expression7))
+              {
+                this.objDebug.Log(60, $"SILGlobals.GetOrgID: Found orgID '{Expression7}' in cookie");
+                this.OrgID = Expression7;
+                return;
+              }
+            }
+            else
+              this.objDebug.Log(60, $"SILGlobals.GetOrgID: Cookie input orgID '{s2}' is invalid, ignoring...");
+          }
+          catch (Exception ex)
+          {
+            ProjectData.SetProjectError(ex);
+            ProjectData.ClearProjectError();
+          }
+        }
+        string str4 = Conversions.ToString(this.objEngine.orgEngine.InstDefaultID());
+        this.objDebug.Log(60, $"SILGlobals.GetOrgID: Using default orgID '{str4}'");
+        this.OrgID = str4;
+      }
+    }
+  }
+
+  public string GetLangCode() => this.GetLangCode(this.GetRawWebVar(this.RequestType, "Language"));
+
+  public virtual string GetLangCode(string inputLanguage)
+  {
+    string LangCode1 = string.Empty;
+    string langCode;
+    if (!string.IsNullOrEmpty(inputLanguage))
+    {
+      string LangCode2 = SILUtility.XHTMLClean(inputLanguage);
+      if (!this.objEngine.sysEngine.IsValidSystemLanguage(ref LangCode2))
+      {
+        this.objDebug.Log(30, $"SILGlobals.GetLangCode: Ignoring invalid language code '{LangCode2}' found in request");
+        LangCode1 = string.Empty;
+      }
+      else
+      {
+        this.objDebug.Log(60, $"SILGlobals.GetLangCode: Found language code '{LangCode2}' in request");
+        langCode = LangCode2;
+        goto label_12;
+      }
+    }
+    try
+    {
+      LangCode1 = SILUtility.XHTMLClean(this.MyRequest.Cookies["MIDMZLang"].Value);
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      ProjectData.ClearProjectError();
+    }
+    if (!string.IsNullOrEmpty(LangCode1))
+    {
+      if (!this.objEngine.sysEngine.IsValidSystemLanguage(ref LangCode1))
+      {
+        this.objDebug.Log(30, $"SILGlobals.GetLangCode: Ignoring invalid language code '{LangCode1}' found in cookie");
+        LangCode1 = string.Empty;
+      }
+      else
+      {
+        this.objDebug.Log(60, $"SILGlobals.GetLangCode: Found language code '{LangCode1}' in cookie");
+        langCode = LangCode1;
+        goto label_12;
+      }
+    }
+    langCode = LangCode1;
+label_12:
+    return langCode;
+  }
+
+  public void GetIncomingAgentInfo()
+  {
+    this.objUtility.DetectBrowser(this.MyRequest.ServerVariables.Get("HTTP_USER_AGENT"), ref this.AgentBrand, ref this.AgentVersion, ref this.OSBrand, ref this.OSVersion, ref this.AgentIsMobile);
+    this.LicAgentBrand = this.AgentBrand;
+  }
+
+  private void DebugLogArguments(params string[] SuppressList)
+  {
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Arg01, "Arg01", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Arg02, "Arg02", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Arg03, "Arg03", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Arg04, "Arg04", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Arg05, "Arg05", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Arg06, "Arg06", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Arg07, "Arg07", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Arg08, "Arg08", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Arg09, "Arg09", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Arg10, "Arg10", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Arg11, "Arg11", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Arg12, "Arg12", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt01, "Opt01", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt02, "Opt02", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt03, "Opt03", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt04, "Opt04", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt05, "Opt05", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt06, "Opt06", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt07, "Opt07", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt08, "Opt08", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt09, "Opt09", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt10, "Opt10", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt11, "Opt11", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt12, "Opt12", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt13, "Opt13", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt14, "Opt14", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt15, "Opt15", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt16, "Opt16", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt17, "Opt17", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt18, "Opt18", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt19, "Opt19", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt20, "Opt20", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt21, "Opt21", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt22, "Opt22", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt23, "Opt23", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt24, "Opt24", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt25, "Opt25", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt26, "Opt26", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt27, "Opt27", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt28, "Opt28", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt29, "Opt29", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt30, "Opt30", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt31, "Opt31", SuppressList);
+    this.DebugLogNonEmptyArgumentWithSuppressList(this.Opt32, "Opt32", SuppressList);
+  }
+
+  private void DebugLogNonEmptyArgumentWithSuppressList(
+    string Value,
+    string Name,
+    params string[] SuppressList)
+  {
+    if (string.IsNullOrEmpty(Value))
+      return;
+    this.DebugLogArgument(((IEnumerable<string>) SuppressList).Contains<string>(Name) ? "(suppressed)" : Value, Name);
+  }
+
+  private void DebugLogArgument(string Value, string Name)
+  {
+    this.objDebug.Log(60, $"{this.AspName}Incoming Var ({Name}):{Value}");
+  }
+
+  public void GetIncomingVariables(bool bIgnoreSessionArgs = false)
+  {
+    if (this.gotincomingvariables)
+      return;
+    this.GetIncomingAgentInfo();
+    this.r = SILUtility.XHTMLClean(this.MyRequest.QueryString.Get("r"));
+    string str1 = this.MyRequest.ServerVariables.Get("CONTENT_TYPE");
+    if (Strings.InStr(str1, "multipart/form-data") > 0)
+    {
+      SILGlobals MyGlobs = this;
+      this.objUpload = new SILUpload(ref MyGlobs);
+      SILUpload objUpload = this.objUpload;
+      string str2 = "XML";
+      ref string local = ref str2;
+      this.RequestType = Operators.CompareString(objUpload.GetValue(ref local), string.Empty, false) != 0 ? 12 : 22;
+    }
+    else
+    {
+      this.RequestType = 24;
+      if (Operators.CompareString(str1, "application/x-www-form-urlencoded", false) == 0)
+        this.RequestType = 20;
+      if (Operators.CompareString(this.MyRequest.Form.Get("Transaction"), string.Empty, false) != 0)
+        this.RequestType = 20;
+      if (Operators.CompareString(this.MyRequest.QueryString.Get("Transaction"), string.Empty, false) != 0)
+        this.RequestType = 24;
+      if (Operators.CompareString(this.MyRequest.Form.Get("XML"), string.Empty, false) != 0)
+        this.RequestType = 10;
+      if (Operators.CompareString(this.MyRequest.QueryString.Get("XML"), string.Empty, false) != 0)
+        this.RequestType = 14;
+    }
+    this.objDebug.Log(60, $"{this.AspName}Detected MyRequest Type:{Conversions.ToString(this.RequestType)}");
+    switch (this.RequestType)
+    {
+      case 10:
+        this.GetWebVarsXMLPOST();
+        break;
+      case 12:
+        this.GetWebVarsXMLPOSTF();
+        break;
+      case 14:
+        this.GetWebVarsXMLGET();
+        break;
+      case 20:
+        this.GetWebVarsWEBFORMPOST();
+        break;
+      case 22:
+        this.GetWebVarsWEBFORMPOSTF();
+        break;
+      case 24:
+        this.GetWebVarsWEBFORMGET();
+        break;
+    }
+    if (Operators.CompareString(this.MyRequest.QueryString.Get("ep"), string.Empty, false) != 0)
+      this.GetEncryptedQueryParameters();
+    if (!bIgnoreSessionArgs)
+      this.LoadArgumentsFromSessionIfNeeded();
+    try
+    {
+      if (Operators.CompareString(this.MyRequest.Cookies["ContentOnly"].Value, "1", false) == 0 & Operators.CompareString(this.ContentOnly, "", false) == 0)
+      {
+        this.ContentOnly = "1";
+        this.MyResponse.Cookies["ContentOnly"].Value = "";
+      }
+    }
+    catch (Exception ex)
+    {
+      ProjectData.SetProjectError(ex);
+      ProjectData.ClearProjectError();
+    }
+    this.DebugLogArgument(this.LoginName, "LoginName");
+    this.DebugLogArgument(this.Transaction, "Transaction");
+    string transaction = this.Transaction;
+    // ISSUE: reference to a compiler-generated method
+    switch (\u003CPrivateImplementationDetails\u003E.ComputeStringHash(transaction))
+    {
+      case 143173534:
+        if (Operators.CompareString(transaction, "passchangerequestquestions", false) == 0)
+        {
+          this.DebugLogArguments("Arg02", "Arg03");
+          goto label_77;
+        }
+        goto default;
+      case 169925044:
+        if (Operators.CompareString(transaction, "signonmfarequired", false) == 0)
+          goto label_68;
+        goto default;
+      case 252479477:
+        if (Operators.CompareString(transaction, "userchangesecurityquestions", false) == 0)
+        {
+          this.DebugLogArguments("Arg01", "Arg02");
+          goto label_77;
+        }
+        goto default;
+      case 529041647:
+        if (Operators.CompareString(transaction, "msgpassword", false) == 0)
+          goto label_69;
+        goto default;
+      case 645316873:
+        if (Operators.CompareString(transaction, "secmsgpost", false) == 0)
+          break;
+        goto default;
+      case 741367729:
+        if (Operators.CompareString(transaction, "signonmfaselect", false) == 0)
+          goto label_68;
+        goto default;
+      case 895273531:
+        if (Operators.CompareString(transaction, "signonmfaemail", false) == 0)
+          goto label_68;
+        goto default;
+      case 1185898374:
+        if (Operators.CompareString(transaction, "signonnoticeacceptance", false) == 0)
+          goto label_68;
+        goto default;
+      case 1465205687:
+        if (Operators.CompareString(transaction, "userclone", false) == 0)
+        {
+          this.DebugLogArguments("Arg07", "Arg08", "Opt01");
+          goto label_77;
+        }
+        goto default;
+      case 1501367042:
+        if (Operators.CompareString(transaction, "secmsgaddattch", false) == 0)
+          break;
+        goto default;
+      case 1516780833:
+        if (Operators.CompareString(transaction, "secmsgaddattchnowiz", false) == 0)
+          break;
+        goto default;
+      case 1931342866:
+        if (Operators.CompareString(transaction, "authsourcechangeldapsettings", false) == 0)
+        {
+          this.DebugLogArguments("Opt04", "Opt08");
+          goto label_77;
+        }
+        goto default;
+      case 2064133433:
+        if (Operators.CompareString(transaction, "usersetsecurityquestions", false) == 0)
+          goto label_68;
+        goto default;
+      case 2088197312:
+        if (Operators.CompareString(transaction, "instadd", false) == 0)
+        {
+          this.DebugLogArguments("Arg02", "Arg04", "Arg05");
+          goto label_77;
+        }
+        goto default;
+      case 2096832854:
+        if (Operators.CompareString(transaction, "fileupload", false) == 0)
+        {
+          this.DebugLogArguments("Arg03");
+          goto label_77;
+        }
+        goto default;
+      case 2098883227:
+        if (Operators.CompareString(transaction, "passwd", false) == 0)
+          goto label_68;
+        goto default;
+      case 2135699447:
+        if (Operators.CompareString(transaction, "userchangepass", false) == 0)
+        {
+          this.DebugLogArguments("Arg02", "Arg03", "Arg04", "Arg09");
+          goto label_77;
+        }
+        goto default;
+      case 2296278444:
+        if (Operators.CompareString(transaction, "signonmfaauthenticator", false) == 0)
+          goto label_68;
+        goto default;
+      case 2629128663:
+        if (Operators.CompareString(transaction, "signonstatus", false) == 0)
+          goto label_68;
+        goto default;
+      case 2886579991:
+        if (Operators.CompareString(transaction, "instuploadcertificate", false) == 0)
+          goto label_69;
+        goto default;
+      case 3070790439:
+        if (Operators.CompareString(transaction, "redir", false) == 0)
+          goto label_68;
+        goto default;
+      case 3146432877:
+        if (Operators.CompareString(transaction, "signon", false) == 0)
+          goto label_68;
+        goto default;
+      case 3164846579:
+        if (Operators.CompareString(transaction, "usercreateclientcert", false) == 0)
+        {
+          this.DebugLogArguments("Arg03", "Arg04", "Arg09");
+          goto label_77;
+        }
+        goto default;
+      case 3195945856:
+        if (Operators.CompareString(transaction, "usercreateclientcertreally", false) == 0)
+        {
+          this.DebugLogArguments("Arg09");
+          goto label_77;
+        }
+        goto default;
+      case 3661457970:
+        if (Operators.CompareString(transaction, "testextauth", false) == 0)
+        {
+          this.DebugLogArguments("Arg04");
+          goto label_77;
+        }
+        goto default;
+      case 4059513617:
+        if (Operators.CompareString(transaction, "authsourcechangeradiussettings", false) == 0)
+        {
+          this.DebugLogArguments("Opt03", "Opt06");
+          goto label_77;
+        }
+        goto default;
+      case 4069647081:
+        if (Operators.CompareString(transaction, "useradd", false) == 0)
+        {
+          this.DebugLogArguments("Arg08", "Arg09", "Opt05");
+          goto label_77;
+        }
+        goto default;
+      case 4157272143:
+        if (Operators.CompareString(transaction, "secmsgxattch", false) == 0)
+          break;
+        goto default;
+      case 4286495546:
+        if (Operators.CompareString(transaction, "signonsetsecurityquestions", false) == 0)
+          goto label_68;
+        goto default;
+      default:
+        if (Operators.CompareString(this.Arg12, "secmsgcomposenew", false) == 0 || Operators.CompareString(this.Arg12, "pkgcompose", false) == 0)
+        {
+          this.DebugLogArguments("Arg01", "Arg04");
+          goto label_77;
+        }
+        this.DebugLogArguments();
+        goto label_77;
+    }
+    this.DebugLogArguments("Arg01", "Arg04");
+    goto label_77;
+label_68:
+    this.objDebug.Log(60, this.AspName + "Incoming vars from signon suppressed");
+    goto label_77;
+label_69:
+    this.DebugLogArguments("Arg01");
+label_77:
+    this.objDebug.Log(60, $"{this.AspName}AllowInsecureQueryStrings={Conversions.ToString(this.AllowInsecureQueryStrings)}");
+    if (Operators.CompareString(this.ContentOnly, "1", false) == 0 | Operators.CompareString(this.ContentOnly, "0", false) == 0)
+    {
+      this.objSession.SetValue("MyContentOnly", (object) this.ContentOnly);
+    }
+    else
+    {
+      this.ContentOnly = this.objSession.GetValue("MyContentOnly");
+      if (Operators.CompareString(this.ContentOnly, string.Empty, false) == 0)
+        this.ContentOnly = "0";
+    }
+    if (Operators.CompareString(this.ForceNonMobile, "1", false) == 0 | Operators.CompareString(this.ForceNonMobile, "0", false) == 0)
+    {
+      this.objSession.SetValue("MyForceNonMobile", (object) this.ForceNonMobile);
+    }
+    else
+    {
+      this.ForceNonMobile = this.objSession.GetValue("MyForceNonMobile");
+      if (Operators.CompareString(this.ForceNonMobile, string.Empty, false) == 0)
+        this.ForceNonMobile = "0";
+    }
+    this.objDebug.Log(60, "GetIncomingVariables: ReturnTo=" + this.ReturnTo);
+    if (!this.objUtility.isValidOnOffValue(ref this.NoAttch))
+      this.NoAttch = "1";
+    if (!this.objUtility.isValidOnOffValue(ref this.Confirm))
+      this.Confirm = "0";
+    this.gotincomingvariables = true;
+  }
+
+  public void GetIncomingMachineVariables()
+  {
+    if (this.gotincomingvariables)
+      return;
+    this.objDebug.Log(60, "MyRequest.ServerVariables.Get('REQUEST_METHOD'):" + this.MyRequest.ServerVariables.Get("REQUEST_METHOD"));
+    this.objDebug.Log(60, "MyRequest.ServerVariables.Get('CONTENT_TYPE'):" + this.MyRequest.ServerVariables.Get("CONTENT_TYPE"));
+    if (Strings.InStr(this.MyRequest.ServerVariables.Get("REQUEST_METHOD"), "POST") > 0 & Strings.InStr(this.MyRequest.ServerVariables.Get("CONTENT_TYPE"), "text/xml") > 0)
+    {
+      this.RequestType = 16 /*0x10*/;
+      using (XmlReader validatingXmlReader = MOVEit.DMZ.Core.Xml.GetSafeNonValidatingXmlReader(this.MyRequest.InputStream))
+      {
+        XmlReader xmlreader = validatingXmlReader;
+        this.ParseXMLReader(ref xmlreader);
+      }
+    }
+    else if (Strings.InStr(this.MyRequest.ServerVariables.Get("CONTENT_TYPE"), "multipart/form-data") > 0)
+    {
+      SILGlobals MyGlobs = this;
+      this.objUpload = new SILUpload(ref MyGlobs);
+      SILUpload objUpload = this.objUpload;
+      string str = "XML";
+      ref string local = ref str;
+      this.RequestType = Operators.CompareString(objUpload.GetValue(ref local), string.Empty, false) != 0 ? 12 : 22;
+    }
+    else
+    {
+      this.RequestType = 24;
+      if (Operators.CompareString(this.MyRequest.Form.Get("Transaction"), string.Empty, false) != 0)
+        this.RequestType = 20;
+      if (Operators.CompareString(this.MyRequest.QueryString.Get("Transaction"), string.Empty, false) != 0)
+        this.RequestType = 24;
+      if (Operators.CompareString(this.MyRequest.Form.Get("XML"), string.Empty, false) != 0)
+        this.RequestType = 10;
+      if (Operators.CompareString(this.MyRequest.QueryString.Get("XML"), string.Empty, false) != 0)
+        this.RequestType = 14;
+    }
+    this.objDebug.Log(60, $"{this.AspName}Detected MyRequest Type:{Conversions.ToString(this.RequestType)}");
+    switch (this.RequestType)
+    {
+      case 10:
+        this.GetWebVarsXMLPOST();
+        break;
+      case 12:
+        this.GetWebVarsXMLPOSTF();
+        break;
+      case 14:
+        this.GetWebVarsXMLGET();
+        break;
+      case 20:
+        this.GetWebVarsWEBFORMPOST();
+        break;
+      case 22:
+        this.GetWebVarsWEBFORMPOSTF();
+        break;
+      case 24:
+        this.GetWebVarsWEBFORMGET();
+        break;
+    }
+    this.DebugLogArgument(this.LoginName, "LoginName");
+    this.DebugLogArgument(this.Transaction, "Transaction");
+    string transaction = this.Transaction;
+    // ISSUE: reference to a compiler-generated method
+    switch (\u003CPrivateImplementationDetails\u003E.ComputeStringHash(transaction))
+    {
+      case 737396667:
+        if (Operators.CompareString(transaction, "userchangepassword", false) == 0)
+        {
+          this.DebugLogArguments("Arg02", "Arg03", "Arg04");
+          goto label_40;
+        }
+        goto default;
+      case 926806152:
+        if (Operators.CompareString(transaction, "useraddtemporary", false) == 0)
+        {
+          this.DebugLogArguments("Arg02", "Arg03");
+          goto label_40;
+        }
+        goto default;
+      case 2096832854:
+        if (Operators.CompareString(transaction, "fileupload", false) == 0)
+        {
+          this.DebugLogArguments("Arg03");
+          goto label_40;
+        }
+        goto default;
+      case 2343166430:
+        if (Operators.CompareString(transaction, "useraddclone", false) == 0)
+        {
+          this.DebugLogArguments("Arg04", "Arg05");
+          goto label_40;
+        }
+        goto default;
+      case 2497239079:
+        if (Operators.CompareString(transaction, "msgsavebody", false) == 0)
+          break;
+        goto default;
+      case 2941072740:
+        if (Operators.CompareString(transaction, "msgpost", false) == 0)
+          break;
+        goto default;
+      case 4069647081:
+        if (Operators.CompareString(transaction, "useradd", false) == 0)
+        {
+          this.DebugLogArguments("Arg02", "Arg03");
+          goto label_40;
+        }
+        goto default;
+      default:
+        this.DebugLogArguments();
+        goto label_40;
+    }
+    this.DebugLogArguments("Arg01", "Arg04");
+label_40:
+    this.gotincomingvariables = true;
+  }
+
+  public string GetRawWebVar(int MyRequestType, string VarName)
+  {
+    string rawWebVar;
+    switch (MyRequestType)
+    {
+      case 10:
+        rawWebVar = this.GetRawWebVarXMLPOST(VarName);
+        break;
+      case 12:
+        rawWebVar = this.GetRawWebVarXMLPOSTF(VarName);
+        break;
+      case 14:
+        rawWebVar = this.GetRawWebVarXMLGET(VarName);
+        break;
+      case 16 /*0x10*/:
+        rawWebVar = this.GetRawWebVarXMLNATIVE(VarName);
+        break;
+      case 20:
+        rawWebVar = this.GetRawWebVarWEBFORMPOST(VarName);
+        break;
+      case 22:
+        rawWebVar = this.GetRawWebVarWEBFORMPOSTF(VarName);
+        break;
+      case 24:
+        rawWebVar = this.GetRawWebVarWEBFORMGET(VarName);
+        break;
+      default:
+        rawWebVar = string.Empty;
+        break;
+    }
+    return rawWebVar;
+  }
+
+  public string GetRawWebVarXMLNATIVE(string VarName)
+  {
+    this.MyRequest.InputStream.Seek(0L, SeekOrigin.Begin);
+    using (XmlReader validatingXmlReader = MOVEit.DMZ.Core.Xml.GetSafeNonValidatingXmlReader(this.MyRequest.InputStream))
+    {
+      XmlReader XmlReader = validatingXmlReader;
+      return this.GetRawWebVarFromXMLReader(ref XmlReader, VarName);
+    }
+  }
+
+  public string GetRawWebVarXMLPOST(string VarName)
+  {
+    string MyXML = this.MyRequest.Form.Get("XML");
+    return this.GetRawWebVarFromXMLRequest(ref MyXML, VarName, true);
+  }
+
+  public void GetWebVarsXMLPOST()
+  {
+    string MyXML = this.MyRequest.Form.Get("XML");
+    this.ParseIncomingXMLRequest(ref MyXML, true);
+  }
+
+  public string GetRawWebVarXMLPOSTF(string VarName)
+  {
+    SILUpload objUpload = this.objUpload;
+    string str = "XML";
+    ref string local = ref str;
+    string MyXML = objUpload.GetValue(ref local);
+    return this.GetRawWebVarFromXMLRequest(ref MyXML, VarName, true);
+  }
+
+  public void GetWebVarsXMLPOSTF()
+  {
+    SILUpload objUpload = this.objUpload;
+    string str = "XML";
+    ref string local = ref str;
+    string MyXML = objUpload.GetValue(ref local);
+    this.ParseIncomingXMLRequest(ref MyXML, true);
+  }
+
+  public string GetRawWebVarXMLGET(string VarName)
+  {
+    string MyXML = this.MyRequest.QueryString.Get("XML");
+    return this.GetRawWebVarFromXMLRequest(ref MyXML, VarName, this.AllowInsecureQueryStrings);
+  }
+
+  public void GetWebVarsXMLGET()
+  {
+    string MyXML = this.MyRequest.QueryString.Get("XML");
+    this.ParseIncomingXMLRequest(ref MyXML, this.AllowInsecureQueryStrings);
+  }
+
+  public string GetRawWebVarFromXMLReader(ref XmlReader XmlReader, string VarName)
+  {
+    int content = (int) XmlReader.MoveToContent();
+    string varFromXmlReader;
+    while (XmlReader.Read())
+    {
+      if (XmlReader.NodeType == XmlNodeType.Element && Operators.CompareString(XmlReader.Name.ToLower(), VarName.ToLower(), false) == 0)
+      {
+        varFromXmlReader = this.ParseXMLReaderNode(ref XmlReader);
+        goto label_5;
+      }
+    }
+    varFromXmlReader = string.Empty;
+label_5:
+    return varFromXmlReader;
+  }
+
+  public void GetEncryptedQueryParameters()
+  {
+    string EncryptedParam = this.MyRequest.QueryString.Get("ep");
+    string Right = this.objCrypt.DecryptParam(EncryptedParam);
+    if (Operators.CompareString("", Right, false) == 0)
+      this.objDebug.Log(30, $"GetEncryptedQueryParameters: Error '{this.objCrypt.ErrorString}' decrypting {EncryptedParam}");
+    string[] strArray1 = Right.Split('&');
+    SILDictionary<string, string> InputParams = new SILDictionary<string, string>(string.Empty);
+    string[] strArray2 = strArray1;
+    int index = 0;
+    while (index < strArray2.Length)
+    {
+      string str1 = strArray2[index];
+      int length = str1.IndexOf('=');
+      string key;
+      string str2;
+      if (length >= 0)
+      {
+        key = str1.Substring(0, length);
+        str2 = str1.Substring(checked (1 + length));
+      }
+      else
+      {
+        key = str1;
+        str2 = "";
+      }
+      InputParams[key] = str2;
+      string lower = key.ToLower();
+      // ISSUE: reference to a compiler-generated method
+      switch (\u003CPrivateImplementationDetails\u003E.ComputeStringHash(lower))
+      {
+        case 15175742:
+          if (Operators.CompareString(lower, "challenge", false) == 0)
+          {
+            this.Challenge = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 245400352:
+          if (Operators.CompareString(lower, "opt28", false) == 0)
+          {
+            this.Opt28 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 262177971:
+          if (Operators.CompareString(lower, "opt29", false) == 0)
+          {
+            this.Opt29 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 379621304:
+          if (Operators.CompareString(lower, "opt20", false) == 0)
+          {
+            this.Opt20 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 396398923:
+          if (Operators.CompareString(lower, "opt21", false) == 0)
+          {
+            this.Opt21 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 413176542:
+          if (Operators.CompareString(lower, "opt22", false) == 0)
+          {
+            this.Opt22 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 429954161:
+          if (Operators.CompareString(lower, "opt23", false) == 0)
+          {
+            this.Opt23 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 446731780:
+          if (Operators.CompareString(lower, "opt24", false) == 0)
+          {
+            this.Opt24 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 446878875:
+          if (Operators.CompareString(lower, "opt32", false) == 0)
+          {
+            this.Opt32 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 447025970:
+          if (Operators.CompareString(lower, "opt08", false) == 0)
+          {
+            this.Opt08 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 463509399:
+          if (Operators.CompareString(lower, "opt25", false) == 0)
+          {
+            this.Opt25 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 463656494:
+          if (Operators.CompareString(lower, "opt31", false) == 0)
+          {
+            this.Opt31 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 463803589:
+          if (Operators.CompareString(lower, "opt09", false) == 0)
+          {
+            this.Opt09 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 480287018:
+          if (Operators.CompareString(lower, "opt26", false) == 0)
+          {
+            this.Opt26 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 480434113:
+          if (Operators.CompareString(lower, "opt30", false) == 0)
+          {
+            this.Opt30 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 480581208:
+          if (Operators.CompareString(lower, "opt06", false) == 0)
+          {
+            this.Opt06 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 497064637:
+          if (Operators.CompareString(lower, "opt27", false) == 0)
+          {
+            this.Opt27 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 497358827:
+          if (Operators.CompareString(lower, "opt07", false) == 0)
+          {
+            this.Opt07 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 514136446:
+          if (Operators.CompareString(lower, "opt04", false) == 0)
+          {
+            this.Opt04 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 530914065:
+          if (Operators.CompareString(lower, "opt05", false) == 0)
+          {
+            this.Opt05 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 547691684:
+          if (Operators.CompareString(lower, "opt02", false) == 0)
+          {
+            this.Opt02 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 564469303:
+          if (Operators.CompareString(lower, "opt03", false) == 0)
+          {
+            this.Opt03 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 598024541:
+          if (Operators.CompareString(lower, "opt01", false) == 0)
+          {
+            this.Opt01 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 741801676:
+          if (Operators.CompareString(lower, "ipaddress", false) == 0)
+          {
+            this.IPAddressExplicitFromUser = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 757825968:
+          if (Operators.CompareString(lower, "arg12", false) == 0)
+          {
+            this.Arg12 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 774227524:
+          if (Operators.CompareString(lower, "csrftoken", false) == 0)
+          {
+            this.CsrfTokenIncoming = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 791381206:
+          if (Operators.CompareString(lower, "arg10", false) == 0)
+          {
+            this.Arg10 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 808158825:
+          if (Operators.CompareString(lower, "arg11", false) == 0)
+          {
+            this.Arg11 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 808305920:
+          if (Operators.CompareString(lower, "arg05", false) == 0)
+          {
+            this.Arg05 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 825083539:
+          if (Operators.CompareString(lower, "arg04", false) == 0)
+          {
+            this.Arg04 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 841861158:
+          if (Operators.CompareString(lower, "arg07", false) == 0)
+          {
+            this.Arg07 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 858638777:
+          if (Operators.CompareString(lower, "arg06", false) == 0)
+          {
+            this.Arg06 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 875416396:
+          if (Operators.CompareString(lower, "arg01", false) == 0)
+          {
+            this.Arg01 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 908971634:
+          if (Operators.CompareString(lower, "arg03", false) == 0)
+          {
+            this.Arg03 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 910909208:
+          if (Operators.CompareString(lower, "password", false) == 0)
+          {
+            this.Password = str2;
+            break;
+          }
+          break;
+        case 925749253:
+          if (Operators.CompareString(lower, "arg02", false) == 0)
+          {
+            this.Arg02 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 1009637348:
+          if (Operators.CompareString(lower, "arg09", false) == 0)
+          {
+            this.Arg09 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 1026414967:
+          if (Operators.CompareString(lower, "arg08", false) == 0)
+          {
+            this.Arg08 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 1320097209:
+          if (Operators.CompareString(lower, "username", false) == 0)
+          {
+            this.LoginName = SILUtility.XHTMLClean(HttpUtility.UrlDecode(str2));
+            break;
+          }
+          break;
+        case 1362240042:
+          if (Operators.CompareString(lower, "agentversion", false) == 0)
+          {
+            this.AgentVersion = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 1963546403:
+          if (Operators.CompareString(lower, "transaction", false) == 0)
+          {
+            this.Transaction = SILUtility.CustomClean("abcdefghijklmnopqrstuvwxyz1234567890 .,!$?*#@-_=+():", str2);
+            break;
+          }
+          break;
+        case 2275933536:
+          if (Operators.CompareString(lower, "opt11", false) == 0)
+          {
+            this.Opt11 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 2292711155:
+          if (Operators.CompareString(lower, "opt10", false) == 0)
+          {
+            this.Opt10 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 2309488774:
+          if (Operators.CompareString(lower, "opt13", false) == 0)
+          {
+            this.Opt13 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 2326266393:
+          if (Operators.CompareString(lower, "opt12", false) == 0)
+          {
+            this.Opt12 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 2343044012:
+          if (Operators.CompareString(lower, "opt15", false) == 0)
+          {
+            this.Opt15 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 2359821631:
+          if (Operators.CompareString(lower, "opt14", false) == 0)
+          {
+            this.Opt14 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 2376599250:
+          if (Operators.CompareString(lower, "opt17", false) == 0)
+          {
+            this.Opt17 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 2393376869:
+          if (Operators.CompareString(lower, "opt16", false) == 0)
+          {
+            this.Opt16 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 2410154488:
+          if (Operators.CompareString(lower, "opt19", false) == 0)
+          {
+            this.Opt19 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 2426932107:
+          if (Operators.CompareString(lower, "opt18", false) == 0)
+          {
+            this.Opt18 = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 2971599132:
+          if (Operators.CompareString(lower, "orgid", false) == 0)
+          {
+            this.OrgIDFromRequest = SILUtility.XHTMLClean(str2);
+            break;
+          }
+          break;
+        case 3314564859:
+          if (Operators.CompareString(lower, "agentbrand", false) == 0)
+          {
+            this.AgentBrand = this.objUtility.SplitAgentString(SILUtility.XHTMLClean(str2), ref this.LicAgentBrand);
+            break;
+          }
+          break;
+      }
+      checked { ++index; }
+    }
+    this.CheckForImageButtons(InputParams);
+  }
+
+  public string ParseXMLReaderNode(ref XmlReader xmlreader)
+  {
+    string name = xmlreader.Name;
+    string xmlReaderNode = string.Empty;
+    if (xmlreader.IsEmptyElement)
+    {
+      xmlReaderNode = string.Empty;
+    }
+    else
+    {
+      while (xmlreader.Read())
+      {
+        switch (xmlreader.NodeType)
+        {
+          case XmlNodeType.Element:
+            xmlReaderNode = $"{xmlReaderNode}<{xmlreader.Name}>";
+            continue;
+          case XmlNodeType.Text:
+            xmlReaderNode += xmlreader.Value;
+            continue;
+          case XmlNodeType.EndElement:
+            if (Operators.CompareString(xmlreader.Name, name, false) != 0)
+            {
+              xmlReaderNode = $"{xmlReaderNode}</{xmlreader.Name}>";
+              continue;
+            }
+            goto label_8;
+          default:
+            continue;
+        }
+      }
+    }
+label_8:
+    return xmlReaderNode;
+  }
+
+  public void ParseXMLReader(ref XmlReader xmlreader)
+  {
+    int content = (int) xmlreader.MoveToContent();
+    while (xmlreader.Read())
+    {
+      if (xmlreader.NodeType == XmlNodeType.Element)
+      {
+        string name = xmlreader.Name;
+        string xmlReaderNode = this.ParseXMLReaderNode(ref xmlreader);
+        string str = Strings.LCase(name);
+        // ISSUE: reference to a compiler-generated method
+        switch (\u003CPrivateImplementationDetails\u003E.ComputeStringHash(str))
+        {
+          case 15175742:
+            if (Operators.CompareString(str, "challenge", false) == 0)
+            {
+              this.Challenge = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 447025970:
+            if (Operators.CompareString(str, "opt08", false) == 0)
+            {
+              this.Opt08 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 463803589:
+            if (Operators.CompareString(str, "opt09", false) == 0)
+            {
+              this.Opt09 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 480581208:
+            if (Operators.CompareString(str, "opt06", false) == 0)
+            {
+              this.Opt06 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 497358827:
+            if (Operators.CompareString(str, "opt07", false) == 0)
+            {
+              this.Opt07 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 514136446:
+            if (Operators.CompareString(str, "opt04", false) == 0)
+            {
+              this.Opt04 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 530914065:
+            if (Operators.CompareString(str, "opt05", false) == 0)
+            {
+              this.Opt05 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 547691684:
+            if (Operators.CompareString(str, "opt02", false) == 0)
+            {
+              this.Opt02 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 564469303:
+            if (Operators.CompareString(str, "opt03", false) == 0)
+            {
+              this.Opt03 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 598024541:
+            if (Operators.CompareString(str, "opt01", false) == 0)
+            {
+              this.Opt01 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 741801676:
+            if (Operators.CompareString(str, "ipaddress", false) == 0)
+            {
+              this.IPAddressExplicitFromUser = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 757825968:
+            if (Operators.CompareString(str, "arg12", false) == 0)
+            {
+              this.Arg12 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 774227524:
+            if (Operators.CompareString(str, "csrftoken", false) == 0)
+            {
+              this.CsrfTokenIncoming = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 791381206:
+            if (Operators.CompareString(str, "arg10", false) == 0)
+            {
+              this.Arg10 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 808158825:
+            if (Operators.CompareString(str, "arg11", false) == 0)
+            {
+              this.Arg11 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 808305920:
+            if (Operators.CompareString(str, "arg05", false) == 0)
+            {
+              this.Arg05 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 825083539:
+            if (Operators.CompareString(str, "arg04", false) == 0)
+            {
+              this.Arg04 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 841861158:
+            if (Operators.CompareString(str, "arg07", false) == 0)
+            {
+              this.Arg07 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 858638777:
+            if (Operators.CompareString(str, "arg06", false) == 0)
+            {
+              this.Arg06 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 875416396:
+            if (Operators.CompareString(str, "arg01", false) == 0)
+            {
+              this.Arg01 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 908971634:
+            if (Operators.CompareString(str, "arg03", false) == 0)
+            {
+              this.Arg03 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 910909208:
+            if (Operators.CompareString(str, "password", false) == 0)
+            {
+              this.Password = xmlReaderNode;
+              continue;
+            }
+            continue;
+          case 925749253:
+            if (Operators.CompareString(str, "arg02", false) == 0)
+            {
+              this.Arg02 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 1009637348:
+            if (Operators.CompareString(str, "arg09", false) == 0)
+            {
+              this.Arg09 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 1026414967:
+            if (Operators.CompareString(str, "arg08", false) == 0)
+            {
+              this.Arg08 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 1320097209:
+            if (Operators.CompareString(str, "username", false) == 0)
+            {
+              this.LoginName = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 1362240042:
+            if (Operators.CompareString(str, "agentversion", false) == 0 && Operators.CompareString(this.AgentVersion, string.Empty, false) == 0)
+            {
+              this.AgentVersion = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 1819009762:
+            if (Operators.CompareString(str, "pxc", false) == 0)
+            {
+              this.PasswordChangeCode = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 1963546403:
+            if (Operators.CompareString(str, "transaction", false) == 0)
+            {
+              this.Transaction = SILUtility.CustomClean("abcdefghijklmnopqrstuvwxyz1234567890 .,!$?*#@-_=+():", xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 2275933536:
+            if (Operators.CompareString(str, "opt11", false) == 0)
+            {
+              this.Opt11 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 2292711155:
+            if (Operators.CompareString(str, "opt10", false) == 0)
+            {
+              this.Opt10 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 2326266393:
+            if (Operators.CompareString(str, "opt12", false) == 0)
+            {
+              this.Opt12 = SILUtility.XHTMLClean(xmlReaderNode);
+              continue;
+            }
+            continue;
+          case 3314564859:
+            if (Operators.CompareString(str, "agentbrand", false) == 0)
+            {
+              this.AgentBrand = this.objUtility.SplitAgentString(SILUtility.XHTMLClean(xmlReaderNode), ref this.LicAgentBrand);
+              this.objUtility.DetectBrowser(this.AgentBrand, ref this.AgentBrand, ref this.AgentVersion, ref this.OSBrand, ref this.OSVersion, ref this.AgentIsMobile);
+              continue;
+            }
+            continue;
+          default:
+            continue;
+        }
+      }
+    }
+  }
+
+  public string GetRawWebVarFromXMLRequest(ref string MyXML, string VarName, bool bSensitiveArgsOK)
+  {
+    string empty = string.Empty;
+    string varFromXmlRequest;
+    try
+    {
+      XmlElement documentElement = MOVEit.DMZ.Core.Xml.GetSafeNonValidatingXmlDocumentFromString(MyXML).DocumentElement;
+      try
+      {
+        foreach (XmlNode childNode in documentElement.ChildNodes)
+        {
+          if (Operators.CompareString(childNode.Name.ToLower(), VarName.ToLower(), false) == 0)
+          {
+            string innerText = childNode.InnerText;
+            if (innerText == null)
+            {
+              varFromXmlRequest = string.Empty;
+              goto label_16;
+            }
+            if (innerText.Length > 0 && !bSensitiveArgsOK)
+            {
+              string lower = VarName.ToLower();
+              if (Operators.CompareString(lower, "password", false) == 0 | Operators.CompareString(lower, "transaction", false) == 0 | Operators.CompareString(lower, "csrftoken", false) == 0)
+              {
+                this.objDebug.Log(30, "Error: sensitive data passed in query string parameter " + VarName);
+                varFromXmlRequest = string.Empty;
+                goto label_16;
+              }
+            }
+            varFromXmlRequest = innerText;
+            goto label_16;
+          }
+        }
+      }
+      finally
+      {
+        IEnumerator enumerator;
+        if (enumerator is IDisposable)
+          (enumerator as IDisposable).Dispose();
+      }
+    }
+    catch (XmlException ex)
+    {
+      ProjectData.SetProjectError((Exception) ex);
+      XmlException xmlException = ex;
+      this.objDebug.Log(20, $"XML Parse Error: {xmlException.Message} on line {xmlException.LineNumber} at char {xmlException.LinePosition}");
+      ProjectData.ClearProjectError();
+    }
+    varFromXmlRequest = string.Empty;
+label_16:
+    return varFromXmlRequest;
+  }
+
+  public void ParseIncomingXMLRequest(ref string MyXML, bool bSensitiveArgsOK)
+  {
+    string empty = string.Empty;
+    try
+    {
+      XmlElement documentElement = MOVEit.DMZ.Core.Xml.GetSafeNonValidatingXmlDocumentFromString(MyXML).DocumentElement;
+      int num = checked (documentElement.ChildNodes.Count - 1);
+      int index = 0;
+      while (index <= num)
+      {
+        XmlNode xmlNode = documentElement.ChildNodes.Item(index);
+        string name = xmlNode.Name;
+        string innerText = xmlNode.InnerText;
+        string str = Strings.LCase(name);
+        // ISSUE: reference to a compiler-generated method
+        switch (\u003CPrivateImplementationDetails\u003E.ComputeStringHash(str))
+        {
+          case 15175742:
+            if (Operators.CompareString(str, "challenge", false) == 0)
+            {
+              this.Challenge = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 741801676:
+            if (Operators.CompareString(str, "ipaddress", false) == 0)
+            {
+              this.IPAddressExplicitFromUser = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 757825968:
+            if (Operators.CompareString(str, "arg12", false) == 0)
+            {
+              this.Arg12 = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 774227524:
+            if (Operators.CompareString(str, "csrftoken", false) == 0)
+            {
+              this.CsrfTokenIncoming = SILUtility.XHTMLClean(innerText);
+              if (!bSensitiveArgsOK & this.CsrfTokenIncoming.Length > 0)
+              {
+                empty += " csrftoken";
+                this.CsrfTokenIncoming = string.Empty;
+                break;
+              }
+              break;
+            }
+            break;
+          case 791381206:
+            if (Operators.CompareString(str, "arg10", false) == 0)
+            {
+              this.Arg10 = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 808158825:
+            if (Operators.CompareString(str, "arg11", false) == 0)
+            {
+              this.Arg11 = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 808305920:
+            if (Operators.CompareString(str, "arg05", false) == 0)
+            {
+              this.Arg05 = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 825083539:
+            if (Operators.CompareString(str, "arg04", false) == 0)
+            {
+              this.Arg04 = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 841861158:
+            if (Operators.CompareString(str, "arg07", false) == 0)
+            {
+              this.Arg07 = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 858638777:
+            if (Operators.CompareString(str, "arg06", false) == 0)
+            {
+              this.Arg06 = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 875416396:
+            if (Operators.CompareString(str, "arg01", false) == 0)
+            {
+              this.Arg01 = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 908971634:
+            if (Operators.CompareString(str, "arg03", false) == 0)
+            {
+              this.Arg03 = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 910909208:
+            if (Operators.CompareString(str, "password", false) == 0)
+            {
+              this.Password = innerText;
+              if (!bSensitiveArgsOK & !string.IsNullOrEmpty(this.Password))
+              {
+                empty += " password";
+                this.Password = string.Empty;
+                break;
+              }
+              break;
+            }
+            break;
+          case 925749253:
+            if (Operators.CompareString(str, "arg02", false) == 0)
+            {
+              this.Arg02 = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 1009637348:
+            if (Operators.CompareString(str, "arg09", false) == 0)
+            {
+              this.Arg09 = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 1026414967:
+            if (Operators.CompareString(str, "arg08", false) == 0)
+            {
+              this.Arg08 = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 1320097209:
+            if (Operators.CompareString(str, "username", false) == 0)
+            {
+              this.LoginName = SILGlobals.CleanLoginName(innerText);
+              break;
+            }
+            break;
+          case 1362240042:
+            if (Operators.CompareString(str, "agentversion", false) == 0)
+            {
+              this.AgentVersion = SILUtility.XHTMLClean(innerText);
+              break;
+            }
+            break;
+          case 1963546403:
+            if (Operators.CompareString(str, "transaction", false) == 0)
+            {
+              this.Transaction = SILUtility.CustomClean("abcdefghijklmnopqrstuvwxyz1234567890 .,!$?*#@-_=+():", innerText);
+              if (!bSensitiveArgsOK & this.Transaction.Length > 0)
+              {
+                empty += " transaction";
+                this.Transaction = string.Empty;
+                break;
+              }
+              break;
+            }
+            break;
+          case 3314564859:
+            if (Operators.CompareString(str, "agentbrand", false) == 0)
+            {
+              this.AgentBrand = this.objUtility.SplitAgentString(SILUtility.XHTMLClean(innerText), ref this.LicAgentBrand);
+              break;
+            }
+            break;
+        }
+        checked { ++index; }
+      }
+    }
+    catch (XmlException ex)
+    {
+      ProjectData.SetProjectError((Exception) ex);
+      XmlException xmlException = ex;
+      this.objDebug.Log(20, $"XML Parse Error: {xmlException.Message} on line {xmlException.LineNumber} at char {xmlException.LinePosition}");
+      ProjectData.ClearProjectError();
+    }
+    if (empty.Length <= 0)
+      return;
+    this.objDebug.Log(30, "Error: sensitive data passed in query string: " + empty);
+  }
+
+  public string GetRawWebVarWEBFORMPOST(string VarName)
+  {
+    return this.MyRequest.Form.Get(VarName) ?? string.Empty;
+  }
+
+  public void GetWebVarsWEBFORMPOST()
+  {
+    NameValueCollection form = this.MyRequest.Form;
+    this.FromSignon = SILUtility.XHTMLClean(form.Get("fromsignon"));
+    this.FromSignonMFA = SILUtility.XHTMLClean(form.Get("fromsignonmfa"));
+    this.PassChange1 = form.Get("PassChange1");
+    this.PassChange2 = form.Get("PassChange2");
+    this.LoginName = SILGlobals.CleanLoginName(form.Get("Username"));
+    this.Password = form.Get("Password");
+    this.Challenge = SILUtility.XHTMLClean(form.Get("Challenge"));
+    this.MFACode = SILUtility.XHTMLClean(form.Get("MFACode"));
+    this.TrustDevice = SILUtility.XHTMLClean(form.Get("TrustDevice"));
+    this.RequestEmailCode = SILUtility.XHTMLClean(form.Get("RequestEmailCode"));
+    this.MFAStatus = SILUtility.XHTMLClean(form.Get("MFAStatus"));
+    this.Transaction = SILUtility.CustomClean("abcdefghijklmnopqrstuvwxyz1234567890 .,!$?*#@-_=+():", form.Get("Transaction"));
+    this.CsrfTokenIncoming = SILUtility.XHTMLClean(form.Get("CsrfToken"));
+    this.ContentOnly = SILUtility.CustomClean("0123456789", form.Get("ContentOnly"));
+    this.ReturnTo = SILUtility.XHTMLClean(form.Get("returnto"));
+    this.NoAttch = SILUtility.XHTMLClean(form.Get("noattch"));
+    this.Confirm = SILUtility.XHTMLClean(form.Get("confirm"));
+    this.PasswordChangeCode = SILUtility.XHTMLClean(form.Get("pxc"));
+    this.ForceNonMobile = SILUtility.CustomClean("0123456789", form.Get("ForceNonMobile"));
+    this.Arg01 = SILUtility.XHTMLClean(form.Get("arg01"));
+    if (Operators.CompareString(this.Transaction, "instchangeldapsettings", false) == 0)
+    {
+      this.Arg02 = SILUtility.XHTMLClean(form.Get("arg02"), false);
+      this.Arg04 = SILUtility.XHTMLClean(form.Get("arg04"), false);
+    }
+    else if (Operators.CompareString(this.Transaction, "classificationtypetryapply", false) == 0)
+    {
+      this.Arg02 = SILUtility.XHTMLClean(form.Get("arg02"), false);
+    }
+    else
+    {
+      this.Arg02 = SILUtility.XHTMLClean(form.Get("arg02"));
+      this.Arg04 = SILUtility.XHTMLClean(form.Get("arg04"));
+    }
+    this.Arg03 = SILUtility.XHTMLClean(form.Get("arg03"));
+    this.Arg05 = SILUtility.XHTMLClean(form.Get("arg05"));
+    this.Arg06 = SILUtility.XHTMLClean(form.Get("arg06"));
+    this.Arg07 = SILUtility.XHTMLClean(form.Get("arg07"));
+    this.Arg08 = SILUtility.XHTMLClean(form.Get("arg08"));
+    this.Arg09 = SILUtility.XHTMLClean(form.Get("arg09"));
+    this.Arg10 = SILUtility.XHTMLClean(form.Get("arg10"));
+    this.Arg11 = SILUtility.XHTMLClean(form.Get("arg11"));
+    this.Arg12 = SILUtility.XHTMLClean(form.Get("arg12"));
+    this.Opt01 = SILUtility.XHTMLClean(form.Get("Opt01"));
+    this.Opt02 = SILUtility.XHTMLClean(form.Get("Opt02"));
+    this.Opt03 = SILUtility.XHTMLClean(form.Get("Opt03"));
+    this.Opt04 = SILUtility.XHTMLClean(form.Get("Opt04"));
+    this.Opt05 = SILUtility.XHTMLClean(form.Get("Opt05"));
+    this.Opt06 = SILUtility.XHTMLClean(form.Get("Opt06"));
+    this.Opt07 = SILUtility.XHTMLClean(form.Get("Opt07"));
+    this.Opt08 = SILUtility.XHTMLClean(form.Get("Opt08"));
+    this.Opt09 = SILUtility.XHTMLClean(form.Get("Opt09"));
+    this.Opt10 = SILUtility.XHTMLClean(form.Get("Opt10"));
+    this.Opt11 = SILUtility.XHTMLClean(form.Get("Opt11"));
+    this.Opt12 = SILUtility.XHTMLClean(form.Get("Opt12"));
+    this.Opt13 = SILUtility.XHTMLClean(form.Get("Opt13"));
+    this.Opt14 = SILUtility.XHTMLClean(form.Get("Opt14"));
+    this.Opt15 = SILUtility.XHTMLClean(form.Get("Opt15"));
+    this.Opt16 = SILUtility.XHTMLClean(form.Get("Opt16"));
+    this.Opt17 = SILUtility.XHTMLClean(form.Get("Opt17"));
+    this.Opt18 = SILUtility.XHTMLClean(form.Get("Opt18"));
+    this.Opt19 = SILUtility.XHTMLClean(form.Get("Opt19"));
+    this.Opt20 = SILUtility.XHTMLClean(form.Get("Opt20"));
+    this.Opt21 = SILUtility.XHTMLClean(form.Get("Opt21"));
+    this.Opt22 = SILUtility.XHTMLClean(form.Get("Opt22"));
+    this.Opt23 = SILUtility.XHTMLClean(form.Get("Opt23"));
+    this.Opt24 = SILUtility.XHTMLClean(form.Get("Opt24"));
+    this.Opt25 = SILUtility.XHTMLClean(form.Get("Opt25"));
+    this.Opt26 = SILUtility.XHTMLClean(form.Get("Opt26"));
+    this.Opt27 = SILUtility.XHTMLClean(form.Get("Opt27"));
+    this.Opt28 = SILUtility.XHTMLClean(form.Get("Opt28"));
+    this.Opt29 = SILUtility.XHTMLClean(form.Get("Opt29"));
+    this.Opt30 = SILUtility.XHTMLClean(form.Get("Opt30"));
+    this.Opt31 = SILUtility.XHTMLClean(form.Get("Opt31"));
+    this.Opt32 = SILUtility.XHTMLClean(form.Get("Opt32"));
+    this.CheckForImageButtons();
+  }
+
+  public IEnumerable<string> GetHtmlPostValueList(string varName)
+  {
+    string[] values = this.MyRequest.Form.GetValues(varName);
+    if (values == null)
+      return Enumerable.Empty<string>();
+    string[] source = values;
+    Func<string, string> selector;
+    // ISSUE: reference to a compiler-generated field
+    if (SILGlobals._Closure\u0024__.\u0024IR213\u002D1 != null)
+    {
+      // ISSUE: reference to a compiler-generated field
+      selector = SILGlobals._Closure\u0024__.\u0024IR213\u002D1;
+    }
+    else
+    {
+      // ISSUE: reference to a compiler-generated field
+      SILGlobals._Closure\u0024__.\u0024IR213\u002D1 = selector = (Func<string, string>) ([SpecialName] (a0) => SILUtility.XHTMLClean(a0));
+    }
+    return ((IEnumerable<string>) source).Select<string, string>(selector);
+  }
+
+  public void ProcessOneImageButton(string formKey)
+  {
+    string str1 = formKey.ToLower().Trim();
+    if (!((str1.StartsWith("arg") | str1.StartsWith("opt") | str1.StartsWith("confirm")) & str1.IndexOf("_") >= 5 & str1.Length >= 7))
+      return;
+    int length = str1.IndexOf("_");
+    string MyString = str1.Substring(checked (length + 1));
+    string str2 = str1.Substring(0, length);
+    if (MyString.EndsWith(".x") | MyString.EndsWith(".y"))
+      MyString = MyString.Substring(0, checked (MyString.Length - 2));
+    this.objDebug.Log(60, $"CheckForImageButtons: Found image submit: Orig={formKey};TempName={str2};TempValue={MyString}");
+    // ISSUE: reference to a compiler-generated method
+    switch (\u003CPrivateImplementationDetails\u003E.ComputeStringHash(str2))
+    {
+      case 379621304:
+        if (Operators.CompareString(str2, "opt20", false) != 0)
+          break;
+        this.Opt20 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 396398923:
+        if (Operators.CompareString(str2, "opt21", false) != 0)
+          break;
+        this.Opt21 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 413176542:
+        if (Operators.CompareString(str2, "opt22", false) != 0)
+          break;
+        this.Opt22 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 429954161:
+        if (Operators.CompareString(str2, "opt23", false) != 0)
+          break;
+        this.Opt23 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 446731780:
+        if (Operators.CompareString(str2, "opt24", false) != 0)
+          break;
+        this.Opt24 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 447025970:
+        if (Operators.CompareString(str2, "opt08", false) != 0)
+          break;
+        this.Opt08 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 463803589:
+        if (Operators.CompareString(str2, "opt09", false) != 0)
+          break;
+        this.Opt09 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 480581208:
+        if (Operators.CompareString(str2, "opt06", false) != 0)
+          break;
+        this.Opt06 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 497358827:
+        if (Operators.CompareString(str2, "opt07", false) != 0)
+          break;
+        this.Opt07 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 514136446:
+        if (Operators.CompareString(str2, "opt04", false) != 0)
+          break;
+        this.Opt04 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 530914065:
+        if (Operators.CompareString(str2, "opt05", false) != 0)
+          break;
+        this.Opt05 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 547691684:
+        if (Operators.CompareString(str2, "opt02", false) != 0)
+          break;
+        this.Opt02 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 564469303:
+        if (Operators.CompareString(str2, "opt03", false) != 0)
+          break;
+        this.Opt03 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 598024541:
+        if (Operators.CompareString(str2, "opt01", false) != 0)
+          break;
+        this.Opt01 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 757825968:
+        if (Operators.CompareString(str2, "arg12", false) != 0)
+          break;
+        this.Arg12 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 791381206:
+        if (Operators.CompareString(str2, "arg10", false) != 0)
+          break;
+        this.Arg10 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 808158825:
+        if (Operators.CompareString(str2, "arg11", false) != 0)
+          break;
+        this.Arg11 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 808305920:
+        if (Operators.CompareString(str2, "arg05", false) != 0)
+          break;
+        this.Arg05 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 825083539:
+        if (Operators.CompareString(str2, "arg04", false) != 0)
+          break;
+        this.Arg04 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 841861158:
+        if (Operators.CompareString(str2, "arg07", false) != 0)
+          break;
+        this.Arg07 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 858638777:
+        if (Operators.CompareString(str2, "arg06", false) != 0)
+          break;
+        this.Arg06 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 875416396:
+        if (Operators.CompareString(str2, "arg01", false) != 0)
+          break;
+        this.Arg01 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 908971634:
+        if (Operators.CompareString(str2, "arg03", false) != 0)
+          break;
+        this.Arg03 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 925749253:
+        if (Operators.CompareString(str2, "arg02", false) != 0)
+          break;
+        this.Arg02 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 1009637348:
+        if (Operators.CompareString(str2, "arg09", false) != 0)
+          break;
+        this.Arg09 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 1026414967:
+        if (Operators.CompareString(str2, "arg08", false) != 0)
+          break;
+        this.Arg08 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 1893396047:
+        if (Operators.CompareString(str2, "confirm", false) != 0)
+          break;
+        this.Confirm = SILUtility.XHTMLClean(MyString);
+        break;
+      case 2275933536:
+        if (Operators.CompareString(str2, "opt11", false) != 0)
+          break;
+        this.Opt11 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 2292711155:
+        if (Operators.CompareString(str2, "opt10", false) != 0)
+          break;
+        this.Opt10 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 2309488774:
+        if (Operators.CompareString(str2, "opt13", false) != 0)
+          break;
+        this.Opt13 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 2326266393:
+        if (Operators.CompareString(str2, "opt12", false) != 0)
+          break;
+        this.Opt12 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 2343044012:
+        if (Operators.CompareString(str2, "opt15", false) != 0)
+          break;
+        this.Opt15 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 2359821631:
+        if (Operators.CompareString(str2, "opt14", false) != 0)
+          break;
+        this.Opt14 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 2376599250:
+        if (Operators.CompareString(str2, "opt17", false) != 0)
+          break;
+        this.Opt17 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 2393376869:
+        if (Operators.CompareString(str2, "opt16", false) != 0)
+          break;
+        this.Opt16 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 2410154488:
+        if (Operators.CompareString(str2, "opt19", false) != 0)
+          break;
+        this.Opt19 = SILUtility.XHTMLClean(MyString);
+        break;
+      case 2426932107:
+        if (Operators.CompareString(str2, "opt18", false) != 0)
+          break;
+        this.Opt18 = SILUtility.XHTMLClean(MyString);
+        break;
+    }
+  }
+
+  public void CheckForImageButtons(SILDictionary<string, string> InputParams = null)
+  {
+    if (InputParams == null)
+    {
+      try
+      {
+        foreach (object key in this.MyRequest.Form.Keys)
+        {
+          string str = Conversions.ToString(key);
+          if (str != null && Operators.CompareString(str, string.Empty, false) != 0)
+            this.ProcessOneImageButton(str);
+        }
+      }
+      finally
+      {
+        IEnumerator enumerator;
+        if (enumerator is IDisposable)
+          (enumerator as IDisposable).Dispose();
+      }
+      try
+      {
+        foreach (object key in this.MyRequest.QueryString.Keys)
+        {
+          string str = Conversions.ToString(key);
+          if (str != null && Operators.CompareString(str, string.Empty, false) != 0)
+            this.ProcessOneImageButton(str);
+        }
+      }
+      finally
+      {
+        IEnumerator enumerator;
+        if (enumerator is IDisposable)
+          (enumerator as IDisposable).Dispose();
+      }
+    }
+    else
+    {
+      try
+      {
+        foreach (string key in InputParams.Keys)
+        {
+          if (!string.IsNullOrEmpty(key))
+            this.ProcessOneImageButton(key);
+        }
+      }
+      finally
+      {
+        Dictionary<string, string>.KeyCollection.Enumerator enumerator;
+        enumerator.Dispose();
+      }
+    }
+  }
+
+  public string GetRawWebVarWEBFORMPOSTF(string VarName)
+  {
+    return this.objUpload.GetValue(ref VarName) ?? string.Empty;
+  }
+
+  public void GetWebVarsWEBFORMPOSTF()
+  {
+    SILUpload objUpload = this.objUpload;
+    SILUpload silUpload1 = objUpload;
+    string str1 = "fromsignon";
+    ref string local1 = ref str1;
+    this.FromSignon = SILUtility.XHTMLClean(silUpload1.GetValue(ref local1));
+    SILUpload silUpload2 = objUpload;
+    string str2 = "fromsignonmfa";
+    ref string local2 = ref str2;
+    this.FromSignonMFA = SILUtility.XHTMLClean(silUpload2.GetValue(ref local2));
+    SILUpload silUpload3 = objUpload;
+    string str3 = "PassChange1";
+    ref string local3 = ref str3;
+    this.PassChange1 = silUpload3.GetValue(ref local3);
+    SILUpload silUpload4 = objUpload;
+    string str4 = "PassChange2";
+    ref string local4 = ref str4;
+    this.PassChange2 = silUpload4.GetValue(ref local4);
+    SILUpload silUpload5 = objUpload;
+    string str5 = "Username";
+    ref string local5 = ref str5;
+    this.LoginName = SILGlobals.CleanLoginName(silUpload5.GetValue(ref local5));
+    SILUpload silUpload6 = objUpload;
+    string str6 = "Password";
+    ref string local6 = ref str6;
+    this.Password = silUpload6.GetValue(ref local6);
+    SILUpload silUpload7 = objUpload;
+    string str7 = "Challenge";
+    ref string local7 = ref str7;
+    this.Challenge = SILUtility.XHTMLClean(silUpload7.GetValue(ref local7));
+    SILUpload silUpload8 = objUpload;
+    string str8 = "MFACode";
+    ref string local8 = ref str8;
+    this.MFACode = SILUtility.XHTMLClean(silUpload8.GetValue(ref local8));
+    SILUpload silUpload9 = objUpload;
+    string str9 = "TrustDevice";
+    ref string local9 = ref str9;
+    this.TrustDevice = SILUtility.XHTMLClean(silUpload9.GetValue(ref local9));
+    SILUpload silUpload10 = objUpload;
+    string str10 = "RequestEmailCode";
+    ref string local10 = ref str10;
+    this.RequestEmailCode = SILUtility.XHTMLClean(silUpload10.GetValue(ref local10));
+    SILUpload silUpload11 = objUpload;
+    string str11 = "MFAStatus";
+    ref string local11 = ref str11;
+    this.MFAStatus = SILUtility.XHTMLClean(silUpload11.GetValue(ref local11));
+    SILUpload silUpload12 = objUpload;
+    string str12 = "Transaction";
+    ref string local12 = ref str12;
+    this.Transaction = SILUtility.CustomClean("abcdefghijklmnopqrstuvwxyz1234567890 .,!$?*#@-_=+():", silUpload12.GetValue(ref local12));
+    SILUpload silUpload13 = objUpload;
+    string str13 = "CsrfToken";
+    ref string local13 = ref str13;
+    this.CsrfTokenIncoming = SILUtility.XHTMLClean(silUpload13.GetValue(ref local13));
+    SILUpload silUpload14 = objUpload;
+    string str14 = "ContentOnly";
+    ref string local14 = ref str14;
+    this.ContentOnly = SILUtility.CustomClean("0123456789", silUpload14.GetValue(ref local14));
+    SILUpload silUpload15 = objUpload;
+    string str15 = "ReturnTo";
+    ref string local15 = ref str15;
+    this.ReturnTo = SILUtility.XHTMLClean(silUpload15.GetValue(ref local15));
+    SILUpload silUpload16 = objUpload;
+    string str16 = "NoAttch";
+    ref string local16 = ref str16;
+    this.NoAttch = SILUtility.XHTMLClean(silUpload16.GetValue(ref local16));
+    SILUpload silUpload17 = objUpload;
+    string str17 = "Confirm";
+    ref string local17 = ref str17;
+    this.Confirm = SILUtility.XHTMLClean(silUpload17.GetValue(ref local17));
+    SILUpload silUpload18 = objUpload;
+    string str18 = "pxc";
+    ref string local18 = ref str18;
+    this.PasswordChangeCode = SILUtility.XHTMLClean(silUpload18.GetValue(ref local18));
+    SILUpload silUpload19 = objUpload;
+    string str19 = "ForceNonMobile";
+    ref string local19 = ref str19;
+    this.ForceNonMobile = SILUtility.CustomClean("0123456789", silUpload19.GetValue(ref local19));
+    SILUpload silUpload20 = objUpload;
+    string str20 = "arg01";
+    ref string local20 = ref str20;
+    this.Arg01 = SILUtility.XHTMLClean(silUpload20.GetValue(ref local20));
+    string str21;
+    if (Operators.CompareString(this.Transaction, "instchangeldapsettings", false) == 0)
+    {
+      SILUpload silUpload21 = objUpload;
+      string str22 = "arg02";
+      ref string local21 = ref str22;
+      this.Arg02 = SILUtility.XHTMLClean(silUpload21.GetValue(ref local21), false);
+      SILUpload silUpload22 = objUpload;
+      str21 = "arg04";
+      ref string local22 = ref str21;
+      this.Arg04 = SILUtility.XHTMLClean(silUpload22.GetValue(ref local22), false);
+    }
+    else
+    {
+      SILUpload silUpload23 = objUpload;
+      string str23 = "arg02";
+      ref string local23 = ref str23;
+      this.Arg02 = SILUtility.XHTMLClean(silUpload23.GetValue(ref local23));
+      SILUpload silUpload24 = objUpload;
+      str21 = "arg04";
+      ref string local24 = ref str21;
+      this.Arg04 = SILUtility.XHTMLClean(silUpload24.GetValue(ref local24));
+    }
+    SILUpload silUpload25 = objUpload;
+    str21 = "arg03";
+    ref string local25 = ref str21;
+    this.Arg03 = SILUtility.XHTMLClean(silUpload25.GetValue(ref local25));
+    SILUpload silUpload26 = objUpload;
+    str21 = "arg05";
+    ref string local26 = ref str21;
+    this.Arg05 = SILUtility.XHTMLClean(silUpload26.GetValue(ref local26));
+    SILUpload silUpload27 = objUpload;
+    str21 = "arg06";
+    ref string local27 = ref str21;
+    this.Arg06 = SILUtility.XHTMLClean(silUpload27.GetValue(ref local27));
+    SILUpload silUpload28 = objUpload;
+    str21 = "arg07";
+    ref string local28 = ref str21;
+    this.Arg07 = SILUtility.XHTMLClean(silUpload28.GetValue(ref local28));
+    SILUpload silUpload29 = objUpload;
+    str21 = "arg08";
+    ref string local29 = ref str21;
+    this.Arg08 = SILUtility.XHTMLClean(silUpload29.GetValue(ref local29));
+    SILUpload silUpload30 = objUpload;
+    str21 = "arg09";
+    ref string local30 = ref str21;
+    this.Arg09 = SILUtility.XHTMLClean(silUpload30.GetValue(ref local30));
+    SILUpload silUpload31 = objUpload;
+    str21 = "arg10";
+    ref string local31 = ref str21;
+    this.Arg10 = SILUtility.XHTMLClean(silUpload31.GetValue(ref local31));
+    SILUpload silUpload32 = objUpload;
+    str21 = "arg11";
+    ref string local32 = ref str21;
+    this.Arg11 = SILUtility.XHTMLClean(silUpload32.GetValue(ref local32));
+    SILUpload silUpload33 = objUpload;
+    str21 = "arg12";
+    ref string local33 = ref str21;
+    this.Arg12 = SILUtility.XHTMLClean(silUpload33.GetValue(ref local33));
+  }
+
+  public string GetRawWebVarWEBFORMGET(string VarName)
+  {
+    return this.MyRequest.QueryString.Get(VarName) ?? string.Empty;
+  }
+
+  public void GetWebVarsWEBFORMGET()
+  {
+    NameValueCollection queryString = this.MyRequest.QueryString;
+    this.FromSignon = SILUtility.XHTMLClean(queryString.Get("fromsignon"));
+    this.FromSignonMFA = SILUtility.XHTMLClean(queryString.Get("fromsignonmfa"));
+    this.PassChange1 = queryString.Get("PassChange1");
+    this.PassChange2 = queryString.Get("PassChange2");
+    this.LoginName = SILGlobals.CleanLoginName(queryString.Get("Username"));
+    this.Password = queryString.Get("Password");
+    this.Challenge = SILUtility.XHTMLClean(queryString.Get("Challenge"));
+    this.MFACode = SILUtility.XHTMLClean(queryString.Get("MFACode"));
+    this.TrustDevice = SILUtility.XHTMLClean(queryString.Get("TrustDevice"));
+    this.RequestEmailCode = SILUtility.XHTMLClean(queryString.Get("RequestEmailCode"));
+    this.MFAStatus = SILUtility.XHTMLClean(queryString.Get("MFAStatus"));
+    this.Transaction = SILUtility.CustomClean("abcdefghijklmnopqrstuvwxyz1234567890 .,!$?*#@-_=+():", queryString.Get("Transaction"));
+    this.CsrfTokenIncoming = SILUtility.XHTMLClean(queryString.Get("CsrfToken"));
+    if (!this.AllowInsecureQueryStrings)
+    {
+      if (((!string.IsNullOrEmpty(this.Password) ? 1 : 0) | (!string.IsNullOrEmpty(this.Transaction) ? 1 : 0) & (!SILUtility.InList<string>(this.Transaction, "blowup", "wakeup", "signon", "signonfail", "signoff", "showstatus") ? 1 : 0) | (!string.IsNullOrEmpty(this.CsrfTokenIncoming) ? 1 : 0)) != 0)
+      {
+        string str = string.Empty;
+        if (!string.IsNullOrEmpty(this.Password))
+        {
+          str += "password";
+          this.Password = string.Empty;
+        }
+        if (!string.IsNullOrEmpty(this.Transaction))
+        {
+          str = $"{str} transaction={this.Transaction}";
+          this.Transaction = string.Empty;
+        }
+        if (!string.IsNullOrEmpty(this.CsrfTokenIncoming))
+        {
+          str += " csrftoken";
+          this.CsrfTokenIncoming = string.Empty;
+        }
+        this.objDebug.Log(30, "Error: The following sensitive query string arguments were included and will be ignored: " + str);
+      }
+    }
+    this.ContentOnly = SILUtility.CustomClean("0123456789", queryString.Get("ContentOnly"));
+    this.ReturnTo = SILUtility.XHTMLClean(queryString.Get("returnto"));
+    this.NoAttch = SILUtility.XHTMLClean(queryString.Get("noattch"));
+    this.Confirm = SILUtility.XHTMLClean(queryString.Get("confirm"));
+    this.PasswordChangeCode = SILUtility.XHTMLClean(queryString.Get("pxc"));
+    this.ForceNonMobile = SILUtility.CustomClean("0123456789", queryString.Get("ForceNonMobile"));
+    this.Arg01 = SILUtility.XHTMLClean(queryString.Get("arg01"));
+    if (Operators.CompareString(this.Transaction, "instchangeldapsettings", false) == 0)
+    {
+      this.Arg02 = SILUtility.XHTMLClean(queryString.Get("arg02"), false);
+      this.Arg04 = SILUtility.XHTMLClean(queryString.Get("arg04"), false);
+    }
+    else
+    {
+      this.Arg02 = SILUtility.XHTMLClean(queryString.Get("arg02"));
+      this.Arg04 = SILUtility.XHTMLClean(queryString.Get("arg04"));
+    }
+    this.Arg03 = SILUtility.XHTMLClean(queryString.Get("arg03"));
+    this.Arg05 = SILUtility.XHTMLClean(queryString.Get("arg05"));
+    this.Arg06 = SILUtility.XHTMLClean(queryString.Get("arg06"));
+    this.Arg07 = SILUtility.XHTMLClean(queryString.Get("arg07"));
+    this.Arg08 = SILUtility.XHTMLClean(queryString.Get("arg08"));
+    this.Arg09 = SILUtility.XHTMLClean(queryString.Get("arg09"));
+    this.Arg10 = SILUtility.XHTMLClean(queryString.Get("arg10"));
+    this.Arg11 = SILUtility.XHTMLClean(queryString.Get("arg11"));
+    this.Arg12 = SILUtility.XHTMLClean(queryString.Get("arg12"));
+    this.Opt01 = SILUtility.XHTMLClean(queryString.Get("Opt01"));
+    this.Opt02 = SILUtility.XHTMLClean(queryString.Get("Opt02"));
+    this.Opt03 = SILUtility.XHTMLClean(queryString.Get("Opt03"));
+    this.Opt04 = SILUtility.XHTMLClean(queryString.Get("Opt04"));
+    this.Opt05 = SILUtility.XHTMLClean(queryString.Get("Opt05"));
+    this.Opt06 = SILUtility.XHTMLClean(queryString.Get("Opt06"));
+    this.Opt07 = SILUtility.XHTMLClean(queryString.Get("Opt07"));
+    this.Opt08 = SILUtility.XHTMLClean(queryString.Get("Opt08"));
+    this.Opt09 = SILUtility.XHTMLClean(queryString.Get("Opt09"));
+    this.Opt10 = SILUtility.XHTMLClean(queryString.Get("Opt10"));
+    this.Opt11 = SILUtility.XHTMLClean(queryString.Get("Opt11"));
+    this.Opt12 = SILUtility.XHTMLClean(queryString.Get("Opt12"));
+    this.Opt13 = SILUtility.XHTMLClean(queryString.Get("Opt13"));
+    this.Opt14 = SILUtility.XHTMLClean(queryString.Get("Opt14"));
+    this.Opt15 = SILUtility.XHTMLClean(queryString.Get("Opt15"));
+    this.Opt16 = SILUtility.XHTMLClean(queryString.Get("Opt16"));
+    this.Opt17 = SILUtility.XHTMLClean(queryString.Get("Opt17"));
+    this.Opt18 = SILUtility.XHTMLClean(queryString.Get("Opt18"));
+    this.Opt19 = SILUtility.XHTMLClean(queryString.Get("Opt19"));
+    this.Opt20 = SILUtility.XHTMLClean(queryString.Get("Opt20"));
+    this.Opt21 = SILUtility.XHTMLClean(queryString.Get("Opt21"));
+    this.Opt22 = SILUtility.XHTMLClean(queryString.Get("Opt22"));
+    this.Opt23 = SILUtility.XHTMLClean(queryString.Get("Opt23"));
+    this.Opt24 = SILUtility.XHTMLClean(queryString.Get("Opt24"));
+    this.Opt25 = SILUtility.XHTMLClean(queryString.Get("Opt25"));
+    this.Opt26 = SILUtility.XHTMLClean(queryString.Get("Opt26"));
+    this.Opt27 = SILUtility.XHTMLClean(queryString.Get("Opt27"));
+    this.Opt28 = SILUtility.XHTMLClean(queryString.Get("Opt28"));
+    this.Opt29 = SILUtility.XHTMLClean(queryString.Get("Opt29"));
+    this.Opt30 = SILUtility.XHTMLClean(queryString.Get("Opt30"));
+    this.Opt31 = SILUtility.XHTMLClean(queryString.Get("Opt31"));
+    this.Opt32 = SILUtility.XHTMLClean(queryString.Get("Opt32"));
+  }
+
+  private static string CleanLoginName(string rawLoginName)
+  {
+    return !string.IsNullOrEmpty(rawLoginName) ? SILUtility.XHTMLClean(SILUtility.StripTags(rawLoginName)) : string.Empty;
+  }
+
+  public SILSessionStub.DMZ_Interfaces InterfaceType()
+  {
+    string licAgentBrand = this.LicAgentBrand;
+    SILSessionStub.DMZ_Interfaces dmzInterfaces;
+    // ISSUE: reference to a compiler-generated method
+    switch (\u003CPrivateImplementationDetails\u003E.ComputeStringHash(licAgentBrand))
+    {
+      case 3876827:
+        if (Operators.CompareString(licAgentBrand, "MOVEit Wizard JS", false) == 0)
+          goto label_31;
+        goto default;
+      case 104921595:
+        if (Operators.CompareString(licAgentBrand, "MOVEit API Win", false) == 0)
+          goto label_34;
+        goto default;
+      case 290688874:
+        if (Operators.CompareString(licAgentBrand, "MOVEit Wizard Win", false) == 0)
+          goto label_31;
+        goto default;
+      case 311552963:
+        if (Operators.CompareString(licAgentBrand, "MOVEit API Java", false) == 0)
+          goto label_34;
+        goto default;
+      case 384735875:
+        if (Operators.CompareString(licAgentBrand, "Chrome Browser", false) == 0)
+          break;
+        goto default;
+      case 696329626:
+        if (Operators.CompareString(licAgentBrand, "MOVEit Xfer Java", false) == 0)
+          goto label_35;
+        goto default;
+      case 734875440:
+        if (Operators.CompareString(licAgentBrand, "MOVEit EZ", false) == 0)
+        {
+          dmzInterfaces = Operators.CompareString(this.AgentBrand, "WS_FTP", false) != 0 ? SILSessionStub.DMZ_Interfaces.EZ : SILSessionStub.DMZ_Interfaces.WSFTP;
+          goto label_48;
+        }
+        goto default;
+      case 738130473:
+        if (Operators.CompareString(licAgentBrand, "Safari Browser", false) == 0)
+          break;
+        goto default;
+      case 810547195:
+        if (Operators.CompareString(licAgentBrand, "None", false) == 0)
+        {
+          dmzInterfaces = SILSessionStub.DMZ_Interfaces.System;
+          goto label_48;
+        }
+        goto default;
+      case 1454093970:
+        if (Operators.CompareString(licAgentBrand, "MOVEit API Perl", false) == 0)
+          goto label_34;
+        goto default;
+      case 1522915302:
+        if (Operators.CompareString(licAgentBrand, "MIDMZCheck", false) == 0)
+          goto label_34;
+        goto default;
+      case 1584613314:
+        if (Operators.CompareString(licAgentBrand, "Firefox Browser", false) == 0)
+          break;
+        goto default;
+      case 1801367939:
+        if (Operators.CompareString(licAgentBrand, "Netscape Navigator", false) == 0)
+          break;
+        goto default;
+      case 2097417656:
+        if (Operators.CompareString(licAgentBrand, "MOVEit Central", false) == 0)
+        {
+          dmzInterfaces = SILSessionStub.DMZ_Interfaces.Central;
+          goto label_48;
+        }
+        goto default;
+      case 2190695931:
+        if (Operators.CompareString(licAgentBrand, "Internet Explorer", false) == 0)
+          break;
+        goto default;
+      case 2258270956:
+        if (Operators.CompareString(licAgentBrand, "MOVEit Xfer Win", false) == 0)
+          goto label_35;
+        goto default;
+      case 2273132764:
+        if (Operators.CompareString(licAgentBrand, "Microsoft Edge", false) == 0)
+          break;
+        goto default;
+      case 2434592076:
+        if (Operators.CompareString(licAgentBrand, "MOVEit Wizard", false) == 0)
+          goto label_31;
+        goto default;
+      case 2484813564:
+        if (Operators.CompareString(licAgentBrand, "MOVEit Sync", false) == 0)
+        {
+          dmzInterfaces = SILSessionStub.DMZ_Interfaces.Sync;
+          goto label_48;
+        }
+        goto default;
+      case 2640438937:
+        if (Operators.CompareString(licAgentBrand, "MOVEit API", false) == 0)
+          goto label_34;
+        goto default;
+      case 2683441409:
+        if (Operators.CompareString(licAgentBrand, "MOVEit Transfer SFTP", false) == 0)
+        {
+          dmzInterfaces = SILSessionStub.DMZ_Interfaces.FTPSSH;
+          goto label_48;
+        }
+        goto default;
+      case 2839529575:
+        if (Operators.CompareString(licAgentBrand, "Mozilla Browser", false) == 0)
+          break;
+        goto default;
+      case 2858853164:
+        if (Operators.CompareString(licAgentBrand, "MOVEit Wizard Java", false) == 0)
+          goto label_31;
+        goto default;
+      case 3029929392:
+        if (Operators.CompareString(licAgentBrand, "MOVEit DMZ FTP", false) == 0)
+          goto label_32;
+        goto default;
+      case 3419579012:
+        if (Operators.CompareString(licAgentBrand, "Opera Browser", false) == 0)
+          break;
+        goto default;
+      case 3521262038:
+        if (Operators.CompareString(licAgentBrand, "Ipswitch Gateway", false) == 0)
+          goto label_40;
+        goto default;
+      case 3687636966:
+        if (Operators.CompareString(licAgentBrand, "MOVEit Transfer FTP", false) == 0)
+          goto label_32;
+        goto default;
+      case 3908964939:
+        if (Operators.CompareString(licAgentBrand, "MOVEit Gateway", false) == 0)
+          goto label_40;
+        goto default;
+      case 4274334684:
+        if (Operators.CompareString(licAgentBrand, "Outlook Plug-in", false) == 0)
+        {
+          dmzInterfaces = SILSessionStub.DMZ_Interfaces.OUTLOOK;
+          goto label_48;
+        }
+        goto default;
+      default:
+        switch (this.RequestType)
+        {
+          case 20:
+            dmzInterfaces = SILSessionStub.DMZ_Interfaces.Web;
+            goto label_48;
+          case 22:
+            dmzInterfaces = SILSessionStub.DMZ_Interfaces.Web;
+            goto label_48;
+          case 24:
+            dmzInterfaces = SILSessionStub.DMZ_Interfaces.Web;
+            goto label_48;
+          case 30:
+            dmzInterfaces = SILSessionStub.DMZ_Interfaces.RESTAPI;
+            goto label_48;
+          default:
+            dmzInterfaces = SILSessionStub.DMZ_Interfaces.Unknown;
+            goto label_48;
+        }
+    }
+    dmzInterfaces = SILSessionStub.DMZ_Interfaces.Web;
+    goto label_48;
+label_31:
+    dmzInterfaces = SILSessionStub.DMZ_Interfaces.Web;
+    goto label_48;
+label_32:
+    dmzInterfaces = SILSessionStub.DMZ_Interfaces.FTPSSL;
+    goto label_48;
+label_34:
+    dmzInterfaces = SILSessionStub.DMZ_Interfaces.API;
+    goto label_48;
+label_35:
+    dmzInterfaces = SILSessionStub.DMZ_Interfaces.Xfer;
+    goto label_48;
+label_40:
+    dmzInterfaces = SILSessionStub.DMZ_Interfaces.Web;
+label_48:
+    return dmzInterfaces;
+  }
+
+  public SILGlobals()
+    : this("DMZ_WEB")
+  {
+  }
+
+  public SILGlobals(string debugLogFilename)
+  {
+    this.LogAuditToEventLog = "0";
+    this.LogAuditToSyslog = "0";
+    this.ResiliencyNode = "0";
+    this.InWebfarm = false;
+    this.ShowSystemErrorMessages = "0";
+    this.LongTermCookieDuration = "2y";
+    this.LogInsecureFTPFailedSignons = "1";
+    this.ClientPollingIntervalSecs = "30";
+    this.AllowInsecureQueryStrings = false;
+    this.SecurityFlags = 1085L;
+    this.AgentIsMobile = false;
+    this.m_bDoLogHashing = true;
+    this.FormattingLocale = SILUtility.GetDefaultMachineCulture();
+    this.gotincomingvariables = false;
+    this._debugLogFilename = debugLogFilename;
+    this.Transaction = string.Empty;
+    this.CsrfTokenIncoming = string.Empty;
+    this.LoginName = string.Empty;
+    this.Password = string.Empty;
+    this.PasswordChangeCode = string.Empty;
+    this.Challenge = string.Empty;
+    this.MFACode = string.Empty;
+    this.TrustDevice = string.Empty;
+    this.RequestEmailCode = string.Empty;
+    this.OrgID = string.Empty;
+    this.FromSignon = string.Empty;
+    this.FromSignonMFA = string.Empty;
+    this.FromCertToUser = string.Empty;
+    this.ContentOnly = string.Empty;
+    this.ReturnTo = string.Empty;
+    this.ForceNonMobile = string.Empty;
+    this.r = string.Empty;
+    this.MFATemp = string.Empty;
+    this.MFAStatus = string.Empty;
+    this.MFAEmail = string.Empty;
+    this.RequestEmailCode = string.Empty;
+    this.SessionVarsStamp = string.Empty;
+    this.SuggestedPassword = string.Empty;
+    this.SSOType = string.Empty;
+    this.OIDCState = string.Empty;
+    this.OIDCNonce = string.Empty;
+    this.OIDCIdpId = string.Empty;
+    this.OIDCCodeVerifier = string.Empty;
+    this.OIDCIdToken = string.Empty;
+    this.Arg01 = string.Empty;
+    this.Arg02 = string.Empty;
+    this.Arg03 = string.Empty;
+    this.Arg04 = string.Empty;
+    this.Arg05 = string.Empty;
+    this.Arg06 = string.Empty;
+    this.Arg07 = string.Empty;
+    this.Arg08 = string.Empty;
+    this.Arg09 = string.Empty;
+    this.Arg10 = string.Empty;
+    this.Arg11 = string.Empty;
+    this.Arg12 = string.Empty;
+    this.Opt01 = string.Empty;
+    this.Opt02 = string.Empty;
+    this.Opt03 = string.Empty;
+    this.Opt04 = string.Empty;
+    this.Opt05 = string.Empty;
+    this.Opt06 = string.Empty;
+    this.Opt07 = string.Empty;
+    this.Opt08 = string.Empty;
+    this.Opt09 = string.Empty;
+    this.Opt10 = string.Empty;
+    this.Opt11 = string.Empty;
+    this.Opt12 = string.Empty;
+    this.Opt13 = string.Empty;
+    this.Opt14 = string.Empty;
+    this.Opt15 = string.Empty;
+    this.Opt16 = string.Empty;
+    this.Opt17 = string.Empty;
+    this.Opt18 = string.Empty;
+    this.Opt19 = string.Empty;
+    this.Opt20 = string.Empty;
+    this.Opt21 = string.Empty;
+    this.Opt22 = string.Empty;
+    this.Opt23 = string.Empty;
+    this.Opt24 = string.Empty;
+    this.Opt25 = string.Empty;
+    this.Opt26 = string.Empty;
+    this.Opt27 = string.Empty;
+    this.Opt28 = string.Empty;
+    this.Opt29 = string.Empty;
+    this.Opt30 = string.Empty;
+    this.Opt31 = string.Empty;
+    this.Opt32 = string.Empty;
+  }
+
+  public string MakeArgumentXML()
+  {
+    return SILUtility.MakeCDataTag("arg01", this.Arg01) + SILUtility.MakeCDataTag("arg02", this.Arg02) + SILUtility.MakeCDataTag("arg03", this.Arg03) + SILUtility.MakeCDataTag("arg04", this.Arg04) + SILUtility.MakeCDataTag("arg05", this.Arg05) + SILUtility.MakeCDataTag("arg06", this.Arg06) + SILUtility.MakeCDataTag("arg07", this.Arg07) + SILUtility.MakeCDataTag("arg08", this.Arg08) + SILUtility.MakeCDataTag("arg09", this.Arg09) + SILUtility.MakeCDataTag("arg10", this.Arg10) + SILUtility.MakeCDataTag("arg11", this.Arg11) + SILUtility.MakeCDataTag("arg12", this.Arg12) + SILUtility.MakeCDataTag("opt01", this.Opt01) + SILUtility.MakeCDataTag("opt02", this.Opt02) + SILUtility.MakeCDataTag("opt03", this.Opt03) + SILUtility.MakeCDataTag("opt04", this.Opt04) + SILUtility.MakeCDataTag("opt05", this.Opt05) + SILUtility.MakeCDataTag("opt06", this.Opt06) + SILUtility.MakeCDataTag("opt07", this.Opt07) + SILUtility.MakeCDataTag("opt08", this.Opt08) + SILUtility.MakeCDataTag("opt09", this.Opt09) + SILUtility.MakeCDataTag("opt10", this.Opt10) + SILUtility.MakeCDataTag("opt11", this.Opt11) + SILUtility.MakeCDataTag("opt12", this.Opt12) + SILUtility.MakeCDataTag("opt13", this.Opt13) + SILUtility.MakeCDataTag("opt14", this.Opt14) + SILUtility.MakeCDataTag("opt15", this.Opt15) + SILUtility.MakeCDataTag("opt16", this.Opt16) + SILUtility.MakeCDataTag("opt17", this.Opt17) + SILUtility.MakeCDataTag("opt18", this.Opt18) + SILUtility.MakeCDataTag("opt19", this.Opt19) + SILUtility.MakeCDataTag("opt20", this.Opt20) + SILUtility.MakeCDataTag("opt21", this.Opt21) + SILUtility.MakeCDataTag("opt22", this.Opt22) + SILUtility.MakeCDataTag("opt23", this.Opt23) + SILUtility.MakeCDataTag("opt24", this.Opt24) + SILUtility.MakeCDataTag("opt25", this.Opt25) + SILUtility.MakeCDataTag("opt26", this.Opt26) + SILUtility.MakeCDataTag("opt27", this.Opt27) + SILUtility.MakeCDataTag("opt28", this.Opt28) + SILUtility.MakeCDataTag("opt29", this.Opt29) + SILUtility.MakeCDataTag("opt30", this.Opt30) + SILUtility.MakeCDataTag("opt31", this.Opt31) + SILUtility.MakeCDataTag("opt32", this.Opt32) + SILUtility.MakeTag("Username", (object) this.LoginName) + SILUtility.MakeTag("LoginName", (object) this.LoginName) + SILUtility.MakeTag("Transaction", (object) this.Transaction) + SILUtility.MakeTag("CsrfToken", (object) this.CsrfTokenIncoming);
+  }
+
+  public SILDictionary<string, string> MakeQueryDict(int ArgMask)
+  {
+    SILDictionary<string, string> silDictionary = new SILDictionary<string, string>((string) null);
+    if (!string.IsNullOrEmpty(this.OrgID))
+      silDictionary.Add("orgid", this.OrgID);
+    if ((ArgMask & 1) > 0 && !string.IsNullOrEmpty(this.LoginName))
+      silDictionary.Add("username", this.LoginName);
+    string str = SILUtility.XHTMLClean(this.MyRequest.QueryString.Get("language"));
+    if (!string.IsNullOrEmpty(str))
+      silDictionary.Add("language", str);
+    if ((ArgMask & 4) > 0 && !string.IsNullOrEmpty(this.Transaction))
+      silDictionary.Add("transaction", this.Transaction);
+    if (!string.IsNullOrEmpty(this.PasswordChangeCode))
+      silDictionary.Add("pxc", this.PasswordChangeCode);
+    if ((ArgMask & 8) > 0)
+    {
+      if (!string.IsNullOrEmpty(this.Arg01))
+        silDictionary.Add("arg01", this.Arg01);
+      if (!string.IsNullOrEmpty(this.Arg02))
+        silDictionary.Add("arg02", this.Arg02);
+      if (!string.IsNullOrEmpty(this.Arg03))
+        silDictionary.Add("arg03", this.Arg03);
+      if (!string.IsNullOrEmpty(this.Arg04))
+        silDictionary.Add("arg04", this.Arg04);
+      if (!string.IsNullOrEmpty(this.Arg05))
+        silDictionary.Add("arg05", this.Arg05);
+      if (!string.IsNullOrEmpty(this.Arg06))
+        silDictionary.Add("arg06", this.Arg06);
+      if (!string.IsNullOrEmpty(this.Arg07))
+        silDictionary.Add("arg07", this.Arg07);
+      if (!string.IsNullOrEmpty(this.Arg08))
+        silDictionary.Add("arg08", this.Arg08);
+      if (!string.IsNullOrEmpty(this.Arg09))
+        silDictionary.Add("arg09", this.Arg09);
+      if (!string.IsNullOrEmpty(this.Arg10))
+        silDictionary.Add("arg10", this.Arg10);
+      if (!string.IsNullOrEmpty(this.Arg11))
+        silDictionary.Add("arg11", this.Arg11);
+      if (!string.IsNullOrEmpty(this.Arg12))
+        silDictionary.Add("arg12", this.Arg12);
+      if (!string.IsNullOrEmpty(this.Opt01))
+        silDictionary.Add("opt01", this.Opt01);
+      if (!string.IsNullOrEmpty(this.Opt02))
+        silDictionary.Add("opt02", this.Opt02);
+      if (!string.IsNullOrEmpty(this.Opt03))
+        silDictionary.Add("opt03", this.Opt03);
+      if (!string.IsNullOrEmpty(this.Opt04))
+        silDictionary.Add("opt04", this.Opt04);
+      if (!string.IsNullOrEmpty(this.Opt05))
+        silDictionary.Add("opt05", this.Opt05);
+      if (!string.IsNullOrEmpty(this.Opt06))
+        silDictionary.Add("opt06", this.Opt06);
+      if (!string.IsNullOrEmpty(this.Opt07))
+        silDictionary.Add("opt07", this.Opt07);
+      if (!string.IsNullOrEmpty(this.Opt08))
+        silDictionary.Add("opt08", this.Opt08);
+      if (!string.IsNullOrEmpty(this.Opt09))
+        silDictionary.Add("opt09", this.Opt09);
+      if (!string.IsNullOrEmpty(this.Opt10))
+        silDictionary.Add("opt10", this.Opt10);
+      if (!string.IsNullOrEmpty(this.Opt11))
+        silDictionary.Add("opt11", this.Opt11);
+      if (!string.IsNullOrEmpty(this.Opt12))
+        silDictionary.Add("opt12", this.Opt12);
+      if (!string.IsNullOrEmpty(this.Opt13))
+        silDictionary.Add("opt13", this.Opt13);
+      if (!string.IsNullOrEmpty(this.Opt14))
+        silDictionary.Add("opt14", this.Opt14);
+      if (!string.IsNullOrEmpty(this.Opt15))
+        silDictionary.Add("opt15", this.Opt15);
+      if (!string.IsNullOrEmpty(this.Opt16))
+        silDictionary.Add("opt16", this.Opt16);
+      if (!string.IsNullOrEmpty(this.Opt17))
+        silDictionary.Add("opt17", this.Opt17);
+      if (!string.IsNullOrEmpty(this.Opt18))
+        silDictionary.Add("opt18", this.Opt18);
+      if (!string.IsNullOrEmpty(this.Opt19))
+        silDictionary.Add("opt19", this.Opt19);
+      if (!string.IsNullOrEmpty(this.Opt20))
+        silDictionary.Add("opt20", this.Opt20);
+      if (!string.IsNullOrEmpty(this.Opt21))
+        silDictionary.Add("opt21", this.Opt21);
+      if (!string.IsNullOrEmpty(this.Opt22))
+        silDictionary.Add("opt22", this.Opt22);
+      if (!string.IsNullOrEmpty(this.Opt23))
+        silDictionary.Add("opt23", this.Opt23);
+      if (!string.IsNullOrEmpty(this.Opt24))
+        silDictionary.Add("opt24", this.Opt24);
+      if (!string.IsNullOrEmpty(this.Opt25))
+        silDictionary.Add("opt25", this.Opt25);
+      if (!string.IsNullOrEmpty(this.Opt26))
+        silDictionary.Add("opt26", this.Opt26);
+      if (!string.IsNullOrEmpty(this.Opt27))
+        silDictionary.Add("opt27", this.Opt27);
+      if (!string.IsNullOrEmpty(this.Opt28))
+        silDictionary.Add("opt28", this.Opt28);
+      if (!string.IsNullOrEmpty(this.Opt29))
+        silDictionary.Add("opt29", this.Opt29);
+      if (!string.IsNullOrEmpty(this.Opt30))
+        silDictionary.Add("opt30", this.Opt30);
+      if (!string.IsNullOrEmpty(this.Opt31))
+        silDictionary.Add("opt31", this.Opt31);
+      if (!string.IsNullOrEmpty(this.Opt32))
+        silDictionary.Add("opt32", this.Opt32);
+    }
+    return silDictionary;
+  }
+
+  public string MakeQueryString(int ArgMask)
+  {
+    StringBuilder OldString = new StringBuilder();
+    string Delimiter = "&";
+    if (Strings.Len(this.OrgID) > 0)
+      SILUtility.DelimitAppend(ref OldString, "orgid=" + this.OrgID, Delimiter);
+    if ((ArgMask & 1) != 0 && Strings.Len(this.LoginName) > 0)
+      SILUtility.DelimitAppend(ref OldString, "username=" + this.LoginName, Delimiter);
+    string Expression = SILUtility.XHTMLClean(this.MyRequest.QueryString.Get("language"));
+    if (Strings.Len(Expression) > 0)
+      SILUtility.DelimitAppend(ref OldString, "language=" + Expression, Delimiter);
+    if ((ArgMask & 4) != 0 && Strings.Len(this.Transaction) > 0)
+      SILUtility.DelimitAppend(ref OldString, "transaction=" + this.Transaction, Delimiter);
+    if (Strings.Len(this.PasswordChangeCode) > 0)
+      SILUtility.DelimitAppend(ref OldString, "pxc=" + this.PasswordChangeCode, Delimiter);
+    if ((ArgMask & 8) != 0)
+    {
+      if (Strings.Len(this.Arg01) > 0)
+        SILUtility.DelimitAppend(ref OldString, "arg01=" + this.Arg01, Delimiter);
+      if (Strings.Len(this.Arg02) > 0)
+        SILUtility.DelimitAppend(ref OldString, "arg02=" + this.Arg02, Delimiter);
+      if (Strings.Len(this.Arg03) > 0)
+        SILUtility.DelimitAppend(ref OldString, "arg03=" + this.Arg03, Delimiter);
+      if (Strings.Len(this.Arg04) > 0)
+        SILUtility.DelimitAppend(ref OldString, "arg04=" + this.Arg04, Delimiter);
+      if (Strings.Len(this.Arg05) > 0)
+        SILUtility.DelimitAppend(ref OldString, "arg05=" + this.Arg05, Delimiter);
+      if (Strings.Len(this.Arg06) > 0)
+        SILUtility.DelimitAppend(ref OldString, "arg06=" + this.Arg06, Delimiter);
+      if (Strings.Len(this.Arg07) > 0)
+        SILUtility.DelimitAppend(ref OldString, "arg07=" + this.Arg07, Delimiter);
+      if (Strings.Len(this.Arg08) > 0)
+        SILUtility.DelimitAppend(ref OldString, "arg08=" + this.Arg08, Delimiter);
+      if (Strings.Len(this.Arg09) > 0)
+        SILUtility.DelimitAppend(ref OldString, "arg09=" + this.Arg09, Delimiter);
+      if (Strings.Len(this.Arg10) > 0)
+        SILUtility.DelimitAppend(ref OldString, "arg10=" + this.Arg10, Delimiter);
+      if (Strings.Len(this.Arg11) > 0)
+        SILUtility.DelimitAppend(ref OldString, "arg11=" + this.Arg11, Delimiter);
+      if (Strings.Len(this.Arg12) > 0)
+        SILUtility.DelimitAppend(ref OldString, "arg12=" + this.Arg12, Delimiter);
+      if (Strings.Len(this.Opt01) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt01=" + this.Opt01, Delimiter);
+      if (Strings.Len(this.Opt02) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt02=" + this.Opt02, Delimiter);
+      if (Strings.Len(this.Opt03) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt03=" + this.Opt03, Delimiter);
+      if (Strings.Len(this.Opt04) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt04=" + this.Opt04, Delimiter);
+      if (Strings.Len(this.Opt05) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt05=" + this.Opt05, Delimiter);
+      if (Strings.Len(this.Opt06) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt06=" + this.Opt06, Delimiter);
+      if (Strings.Len(this.Opt07) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt07=" + this.Opt07, Delimiter);
+      if (Strings.Len(this.Opt08) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt08=" + this.Opt08, Delimiter);
+      if (Strings.Len(this.Opt09) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt09=" + this.Opt09, Delimiter);
+      if (Strings.Len(this.Opt10) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt10=" + this.Opt10, Delimiter);
+      if (Strings.Len(this.Opt11) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt11=" + this.Opt11, Delimiter);
+      if (Strings.Len(this.Opt12) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt12=" + this.Opt12, Delimiter);
+      if (Strings.Len(this.Opt13) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt13=" + this.Opt13, Delimiter);
+      if (Strings.Len(this.Opt14) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt14=" + this.Opt14, Delimiter);
+      if (Strings.Len(this.Opt15) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt15=" + this.Opt15, Delimiter);
+      if (Strings.Len(this.Opt16) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt16=" + this.Opt16, Delimiter);
+      if (Strings.Len(this.Opt17) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt17=" + this.Opt17, Delimiter);
+      if (Strings.Len(this.Opt18) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt18=" + this.Opt18, Delimiter);
+      if (Strings.Len(this.Opt19) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt19=" + this.Opt19, Delimiter);
+      if (Strings.Len(this.Opt20) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt20=" + this.Opt20, Delimiter);
+      if (Strings.Len(this.Opt21) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt21=" + this.Opt21, Delimiter);
+      if (Strings.Len(this.Opt22) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt22=" + this.Opt22, Delimiter);
+      if (Strings.Len(this.Opt23) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt23=" + this.Opt23, Delimiter);
+      if (Strings.Len(this.Opt24) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt24=" + this.Opt24, Delimiter);
+      if (Strings.Len(this.Opt25) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt25=" + this.Opt25, Delimiter);
+      if (Strings.Len(this.Opt26) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt26=" + this.Opt26, Delimiter);
+      if (Strings.Len(this.Opt27) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt27=" + this.Opt27, Delimiter);
+      if (Strings.Len(this.Opt28) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt28=" + this.Opt28, Delimiter);
+      if (Strings.Len(this.Opt29) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt29=" + this.Opt29, Delimiter);
+      if (Strings.Len(this.Opt30) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt30=" + this.Opt30, Delimiter);
+      if (Strings.Len(this.Opt31) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt31=" + this.Opt31, Delimiter);
+      if (Strings.Len(this.Opt32) > 0)
+        SILUtility.DelimitAppend(ref OldString, "opt32=" + this.Opt32, Delimiter);
+    }
+    return OldString.ToString();
+  }
+
+  public void GetArgsFromRedirectSessionVars()
+  {
+    this.Arg01 = this.objSession.GetValue("MyRedirectArg01");
+    this.objSession.RemoveValue("MyRedirectArg01");
+    this.Arg02 = this.objSession.GetValue("MyRedirectArg02");
+    this.objSession.RemoveValue("MyRedirectArg02");
+    this.Arg03 = this.objSession.GetValue("MyRedirectArg03");
+    this.objSession.RemoveValue("MyRedirectArg03");
+    this.Arg04 = this.objSession.GetValue("MyRedirectArg04");
+    this.objSession.RemoveValue("MyRedirectArg04");
+    this.Arg05 = this.objSession.GetValue("MyRedirectArg05");
+    this.objSession.RemoveValue("MyRedirectArg05");
+    this.Arg06 = this.objSession.GetValue("MyRedirectArg06");
+    this.objSession.RemoveValue("MyRedirectArg06");
+    this.Arg07 = this.objSession.GetValue("MyRedirectArg07");
+    this.objSession.RemoveValue("MyRedirectArg07");
+    this.Arg08 = this.objSession.GetValue("MyRedirectArg08");
+    this.objSession.RemoveValue("MyRedirectArg08");
+    this.Arg09 = this.objSession.GetValue("MyRedirectArg09");
+    this.objSession.RemoveValue("MyRedirectArg09");
+    this.Arg10 = this.objSession.GetValue("MyRedirectArg10");
+    this.objSession.RemoveValue("MyRedirectArg10");
+    this.Arg11 = this.objSession.GetValue("MyRedirectArg11");
+    this.objSession.RemoveValue("MyRedirectArg11");
+    this.Arg12 = this.objSession.GetValue("MyRedirectArg12");
+    this.objSession.RemoveValue("MyRedirectArg12");
+    this.Opt01 = this.objSession.GetValue("MyRedirectOpt01");
+    this.objSession.RemoveValue("MyRedirectOpt01");
+    this.Opt02 = this.objSession.GetValue("MyRedirectOpt02");
+    this.objSession.RemoveValue("MyRedirectOpt02");
+    this.Opt03 = this.objSession.GetValue("MyRedirectOpt03");
+    this.objSession.RemoveValue("MyRedirectOpt03");
+    this.Opt04 = this.objSession.GetValue("MyRedirectOpt04");
+    this.objSession.RemoveValue("MyRedirectOpt04");
+    this.Opt05 = this.objSession.GetValue("MyRedirectOpt05");
+    this.objSession.RemoveValue("MyRedirectOpt05");
+    this.Opt06 = this.objSession.GetValue("MyRedirectOpt06");
+    this.objSession.RemoveValue("MyRedirectOpt06");
+    this.Opt07 = this.objSession.GetValue("MyRedirectOpt07");
+    this.objSession.RemoveValue("MyRedirectOpt07");
+    this.Opt08 = this.objSession.GetValue("MyRedirectOpt08");
+    this.objSession.RemoveValue("MyRedirectOpt08");
+    this.Opt09 = this.objSession.GetValue("MyRedirectOpt09");
+    this.objSession.RemoveValue("MyRedirectOpt09");
+    this.Opt10 = this.objSession.GetValue("MyRedirectOpt10");
+    this.objSession.RemoveValue("MyRedirectOpt10");
+    this.Opt11 = this.objSession.GetValue("MyRedirectOpt11");
+    this.objSession.RemoveValue("MyRedirectOpt11");
+    this.Opt12 = this.objSession.GetValue("MyRedirectOpt12");
+    this.objSession.RemoveValue("MyRedirectOpt12");
+  }
+
+  public void SetRedirectSessionVarsFromArgs()
+  {
+    this.objSession.SetValue("MyRedirectArg01", (object) this.Arg01);
+    this.objSession.SetValue("MyRedirectArg02", (object) this.Arg02);
+    this.objSession.SetValue("MyRedirectArg03", (object) this.Arg03);
+    this.objSession.SetValue("MyRedirectArg04", (object) this.Arg04);
+    this.objSession.SetValue("MyRedirectArg05", (object) this.Arg05);
+    this.objSession.SetValue("MyRedirectArg06", (object) this.Arg06);
+    this.objSession.SetValue("MyRedirectArg07", (object) this.Arg07);
+    this.objSession.SetValue("MyRedirectArg08", (object) this.Arg08);
+    this.objSession.SetValue("MyRedirectArg09", (object) this.Arg09);
+    this.objSession.SetValue("MyRedirectArg10", (object) this.Arg10);
+    this.objSession.SetValue("MyRedirectArg11", (object) this.Arg11);
+    this.objSession.SetValue("MyRedirectArg12", (object) this.Arg12);
+    this.objSession.SetValue("MyRedirectOpt01", (object) this.Opt01);
+    this.objSession.SetValue("MyRedirectOpt02", (object) this.Opt02);
+    this.objSession.SetValue("MyRedirectOpt03", (object) this.Opt03);
+    this.objSession.SetValue("MyRedirectOpt04", (object) this.Opt04);
+    this.objSession.SetValue("MyRedirectOpt05", (object) this.Opt05);
+    this.objSession.SetValue("MyRedirectOpt06", (object) this.Opt06);
+    this.objSession.SetValue("MyRedirectOpt07", (object) this.Opt07);
+    this.objSession.SetValue("MyRedirectOpt08", (object) this.Opt08);
+    this.objSession.SetValue("MyRedirectOpt09", (object) this.Opt09);
+    this.objSession.SetValue("MyRedirectOpt10", (object) this.Opt10);
+    this.objSession.SetValue("MyRedirectOpt11", (object) this.Opt11);
+    this.objSession.SetValue("MyRedirectOpt12", (object) this.Opt12);
+  }
+
+  public void SetHTTPToNoCaching()
+  {
+    this.MyResponse.Cache.SetCacheability(HttpCacheability.NoCache);
+    this.MyResponse.Cache.SetNoStore();
+  }
+
+  public void SetHTTPSecurityHeaders()
+  {
+    StringBuilder stringBuilder = new StringBuilder();
+    int num = SILUtility.BitIsSet(this.SecurityFlags, 0L) ? 1 : 0;
+    bool flag1 = SILUtility.BitIsSet(this.SecurityFlags, 5L);
+    bool Expression1 = true;
+    bool Expression2 = SILUtility.BitIsSet(this.SecurityFlags, 7L);
+    bool flag2 = SILUtility.BitIsSet(this.SecurityFlags, 6L) | Expression2;
+    bool Expression3 = SILUtility.BitIsSet(this.SecurityFlags, 9L);
+    bool flag3 = SILUtility.BitIsSet(this.SecurityFlags, 2L);
+    bool flag4 = SILUtility.BitIsSet(this.SecurityFlags, 3L);
+    bool flag5 = SILUtility.BitIsSet(this.SecurityFlags, 10L);
+    bool flag6 = this.FeatureDiscoveryService.IsFeatureEnabled(DisableUnsafeInlineCspHeadersFeature.Name);
+    bool Expression4 = this.FeatureDiscoveryService.IsFeatureEnabled(PendoIntegrationFeature.Name);
+    bool Expression5 = this.FeatureDiscoveryService.IsFeatureEnabled(PendoDesignerFeature.Name) && this.FeatureDiscoveryService.IsFeatureEnabled(PendoIntegrationFeature.Name);
+    if (num != 0)
+    {
+      stringBuilder.Append("default-src 'none'; base-uri 'self'; object-src 'none'; ");
+      stringBuilder.AppendFormat("script-src 'self' {0}{1}{2} {3} {4} {5}; ", Interaction.IIf(flag1 && !flag6, (object) "'unsafe-inline' ", (object) ""), Interaction.IIf(Expression1, (object) $"'nonce-{this.Nonce}' ", (object) ""), Interaction.IIf(!flag6, (object) "'unsafe-eval' ", (object) ""), Interaction.IIf(Expression3, (object) "https://www.google.com https://www.gstatic.com", (object) ""), Interaction.IIf(Expression5, (object) "https://app.pendo.io", (object) ""), Interaction.IIf(Expression4, (object) $"https://pendo-io-static.storage.googleapis.com https://cdn.pendo.io https://pendo-static-5235678803722240.storage.googleapis.com https://data.pendo.io {"https://content.moveit.progress.com"} {"https://data.moveit.progress.com"}", (object) ""));
+      stringBuilder.AppendFormat("style-src 'self' 'unsafe-inline' {0}; ", RuntimeHelpers.GetObjectValue(Interaction.IIf(Expression4, (object) $" https://app.pendo.io https://cdn.pendo.io https://pendo-static-5235678803722240.storage.googleapis.com {"https://content.moveit.progress.com"}", (object) "")));
+      stringBuilder.AppendFormat("img-src 'self' data: {0} {1}; ", RuntimeHelpers.GetObjectValue(Interaction.IIf(Expression3, (object) "https://www.google.com https://www.gstatic.com", (object) "")), RuntimeHelpers.GetObjectValue(Interaction.IIf(Expression4, (object) $"https://data.pendo.io https://app.pendo.io https://cdn.pendo.io https://pendo-static-5235678803722240.storage.googleapis.com https://pendo-static-5668600916475904.storage.googleapis.com {"https://content.moveit.progress.com"} {"https://data.moveit.progress.com"}", (object) "")));
+      if (Expression4)
+        stringBuilder.Append($"connect-src 'self' https://app.pendo.io https://data.pendo.io https://pendo-static-5235678803722240.storage.googleapis.com {"https://content.moveit.progress.com"} {"https://data.moveit.progress.com"}; ");
+      else
+        stringBuilder.Append("connect-src 'self'; ");
+      if (Expression3 || Expression5)
+        stringBuilder.AppendFormat("frame-src 'self' {0} {1}; ", RuntimeHelpers.GetObjectValue(Interaction.IIf(Expression3, (object) "https://www.google.com https://www.gstatic.com", (object) "")), RuntimeHelpers.GetObjectValue(Interaction.IIf(Expression5, (object) "https://app.pendo.io", (object) "")));
+      else if (flag4)
+        stringBuilder.Append("frame-src 'none' ; ");
+      stringBuilder.Append("frame-ancestors ");
+      stringBuilder.Append(Expression5 ? "https://app.pendo.io;" : "'none'; ");
+      if (Expression5)
+        stringBuilder.Append("child-src https://app.pendo.io; ");
+      if (flag2)
+        stringBuilder.Append("report-uri /ajax.aspx/csp-report; ");
+      stringBuilder.Append("media-src 'none'; ");
+      stringBuilder.Append("font-src 'self' data:;");
+      this.MyResponse.AddHeader(Conversions.ToString(Interaction.IIf(Expression2, (object) "Content-Security-Policy-Report-Only", (object) "Content-Security-Policy")), stringBuilder.ToString());
+    }
+    if (flag3)
+      this.MyResponse.AddHeader("X-XSS-Protection", "1; mode=block");
+    if (flag4)
+      this.MyResponse.AddHeader("X-Frame-Options", "DENY");
+    if (flag5)
+      this.MyResponse.AddHeader("Referrer-Policy", "no-referrer");
+    this.MyResponse.AddHeader("X-Content-Type-Options", "nosniff");
+  }
+
+  public string MakeEncryptedURLIfNec(string URL)
+  {
+    if (!this.AllowInsecureQueryStrings)
+    {
+      this.objDebug.Log(60, "Prior to encryption, URL=" + URL);
+      int length = URL.IndexOf('?');
+      if (length > 0)
+      {
+        string str = this.objCrypt.EncryptParam(URL.Substring(checked (1 + length)));
+        URL = $"{URL.Substring(0, length)}?ep={str}";
+      }
+    }
+    return URL;
+  }
+
+  public IFileSystemFactory FileSystemFactory
+  {
+    get
+    {
+      if (this._fileSystemFactory == null)
+      {
+        if (SILGlobals.IocContainer != null)
+          SILGlobals.IocContainer.TryGetInstance<IFileSystemFactory>(out this._fileSystemFactory);
+        if (this._fileSystemFactory == null)
+          this._fileSystemFactory = this.GetFileSystemFactory();
+      }
+      return this._fileSystemFactory;
+    }
+  }
+
+  public IFeatureDiscoveryService FeatureDiscoveryService
+  {
+    get
+    {
+      if (this._featureDiscoveryService == null)
+      {
+        if (SILGlobals.IocContainer != null)
+          SILGlobals.IocContainer.TryGetInstance<IFeatureDiscoveryService>(out this._featureDiscoveryService);
+        if (this._featureDiscoveryService == null)
+          this._featureDiscoveryService = (IFeatureDiscoveryService) new MOVEit.DMZ.Crosscutting.FeatureDiscoveryService.FeatureDiscoveryService();
+      }
+      return this._featureDiscoveryService;
+    }
+  }
+
+  public IOAuthTokenCache SmtpOAuthTokenCache
+  {
+    get
+    {
+      return this.GetFromApplicationState<IOAuthTokenCache>(nameof (SmtpOAuthTokenCache), (Func<IOAuthTokenCache>) ([SpecialName] () =>
+      {
+        IOAuthTokenCache instance = (IOAuthTokenCache) null;
+        if (SILGlobals.IocContainer != null)
+          SILGlobals.IocContainer.TryGetInstance<IOAuthTokenCache>(out instance);
+        if (instance == null)
+          instance = (IOAuthTokenCache) new MOVEit.DMZ.Core.SmtpOAuthTokenCache((ILogger) this.objDebug, (IHashAlgorithmFactory) new MOVEitCryptoHashAlgorithmFactory());
+        return instance;
+      }));
+    }
+  }
+
+  private IOrgKeyProvider OrgKeyProvider
+  {
+    get
+    {
+      if (this._orgKeyProvider == null)
+      {
+        if (SILGlobals.IocContainer != null)
+          SILGlobals.IocContainer.TryGetInstance<IOrgKeyProvider>(out this._orgKeyProvider);
+        if (this._orgKeyProvider == null)
+          this._orgKeyProvider = (IOrgKeyProvider) new OrgKeyRegistryProvider((IRegistryProvider) new RegUtilityProviderWrapper());
+      }
+      return this._orgKeyProvider;
+    }
+  }
+
+  public IFileSystemFactory GetLocalFileSystemFactory()
+  {
+    return (IFileSystemFactory) new LocalFileSystemFactory((ILogger) this.objDebug, (MOVEit.DMZ.Crosscutting.Contracts.IConfigurationProvider) new DefaultConfigurationProvider());
+  }
+
+  private IFileSystemFactory GetFileSystemFactory()
+  {
+    DefaultConfigurationProvider configProvider = new DefaultConfigurationProvider();
+    AzureBlobSettings configuration = configProvider.GetConfiguration<AzureBlobSettings>();
+    return configuration == null || !configuration.IsEnabled ? (IFileSystemFactory) new LocalFileSystemFactory((ILogger) this.objDebug, (MOVEit.DMZ.Crosscutting.Contracts.IConfigurationProvider) configProvider) : (IFileSystemFactory) new AzureFileSystemFactory((ILogger) this.objDebug, (MOVEit.DMZ.Crosscutting.Contracts.IConfigurationProvider) configProvider);
+  }
+}
